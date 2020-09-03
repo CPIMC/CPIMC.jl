@@ -1,10 +1,10 @@
-function sweep(steps::Int, sampleEvery::Int, measurements, e::Ensemble, c::Configuration)
+function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble, c::Configuration)
 
     i = 0
 
     while i < steps
 
-        update(e,c)
+        update(e,c,updates)
 
         if i % sampleEvery == 0
             for (stat,obs) in measurements

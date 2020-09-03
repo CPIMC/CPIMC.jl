@@ -8,7 +8,7 @@ function main()
   e = Ensemble(200, 2*pi, 0.1, 50.0)
   c = Configuration(Set(),0)
 
-  updates = [ add_particle, remove_particle, move_particle ]
+  updates = Set([move_particle])
 
   measurements =
     [ (Variance(), totalEnergy)
@@ -45,4 +45,3 @@ function main()
 end
 
 main()
-
