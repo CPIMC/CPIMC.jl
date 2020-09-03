@@ -3,6 +3,7 @@ using OnlineStats
 include("models/canonical/model.jl")
 include("models/canonical/updates.jl")
 include("MC.jl")
+include("System.jl")
 
 function main()
     e = Ensemble(200, 2, 0.1, 50)
