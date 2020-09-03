@@ -61,7 +61,7 @@ function get_vector(index, orblist::DataFrame)
     orblist.k[orblist.i .== index][1]
 end
 
-function get_Energie(index, orblist::DataFrame)
+function get_energy(index, orblist::DataFrame)
     orblist.ek[orblist.i .== index][1]
 end
 
@@ -70,22 +70,14 @@ end
 # end
 
 ### Estimators
-function K(n::Int, e::Ensemble, c::Configuration)
-  return pi^2 / (2 * e.rs^2) * n^2
+function Ekin(n::Int, e::Ensemble, c::Configuration, orblist)
+    sum(get_energy(n,orblist) for n in c.occupations)
 end
 
-function emptyOrbs(e::Ensemble, c::Configuration)
-  return filter(x -> !(x in c.occupations), 1:e.cutoff)
-end
-
-function occVec(e::Ensemble, c::Configuration)
+function occVec(e::Ensemble, c::Configuration, orblist)
   return map(x -> Int(x in c.occupations), 1:e.cutoff)
 end
 
-function totalEnergy(e::Ensemble, c::Configuration)
-  return sum(map(x -> K(x,e,c), collect(c.occupations)))
-end
-
-function particleNumber(e::Ensemble, c::Configuration)
+function particleNumber(e::Ensemble, c::Configuration, orblist)
   return c.N
 end

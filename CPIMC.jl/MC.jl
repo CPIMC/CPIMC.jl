@@ -1,4 +1,4 @@
-function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble, c::Configuration)
+function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble, c::Configuration, orblist)
 
     i = 0
 
@@ -9,9 +9,9 @@ function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble,
         if i % sampleEvery == 0
             for (stat,obs) in measurements
                 if typeof(stat) == Group
-                    fit!(stat, eachrow(obs(e,c)))
+                    fit!(stat, eachrow(obs(e,c,orblist)))
                 else
-                    fit!(stat, obs(e,c))
+                    fit!(stat, obs(e,c,orblist))
                 end
             end
         end

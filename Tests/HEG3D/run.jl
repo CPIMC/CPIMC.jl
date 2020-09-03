@@ -5,18 +5,29 @@ include("../../CPIMC.jl/models/canonical/updates.jl")
 include("../../CPIMC.jl/MC.jl")
 include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 
+
 function main()
-    e = Ensemble(200, 2, 0.1, 50)
-    c = Configuration(Set(collect(1:50)))
+    # MC options
+    NMC = 10^3
+    cyc = 4
+
+    # system parameters
+    Nb = 200
+    N = 50
+
+    e = Ensemble(Nb, 2, 0.1, N)
+    c = Configuration(Set(collect(1:N)))
+
+    orblist = get_orblist_UEG(Nb)
 
     updates = Set([move_particle])
 
     measurements =
-    [ (Variance(), totalEnergy)
+    [ (Variance(), Ekin)
     , (Group([Variance() for i=1:e.cutoff]), occVec)
     ]
 
-    acc = sweep(10^4, 10, updates, measurements, e, c)
+    acc = sweep(NMC, cyc, updates, measurements, e, c, orblist)
 
     println("measurements:")
     println("=============")
@@ -36,6 +47,3 @@ function main()
 end
 
 main()
-
-# updates = Set([move_particle])
-# rand(1)

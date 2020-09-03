@@ -1,4 +1,4 @@
-function move_particle(e::Ensemble, c::Configuration)
+function move_particle(e::Ensemble, c::Configuration, orblist)
 
     x = rand(c.occupations)
     y = rand(emptyOrbs(e,c))
@@ -6,7 +6,7 @@ function move_particle(e::Ensemble, c::Configuration)
     delete!(c.occupations,x)
     push!(c.occupations,y)
 
-    return exp(-e.beta*(K(y,e,c)-K(x,e,c)))
+    return exp(-e.beta*(Ekin(y,e,c,orblist)-Ekin(x,e,c,orblist)))
 end
 
 function update(e,c,updates)
