@@ -70,14 +70,14 @@ end
 # end
 
 ### Estimators
-function Ekin(n::Int, e::Ensemble, c::Configuration, orblist)
+function Ekin(e::Ensemble, c::Configuration, orblist::DataFrame)
     sum(get_energy(n,orblist) for n in c.occupations)
 end
 
-function occVec(e::Ensemble, c::Configuration, orblist)
+function occVec(e::Ensemble, c::Configuration, orblist::DataFrame)
   return map(x -> Int(x in c.occupations), 1:e.cutoff)
 end
 
-function particleNumber(e::Ensemble, c::Configuration, orblist)
+function particleNumber(e::Ensemble, c::Configuration, orblist::DataFrame)
   return c.N
 end

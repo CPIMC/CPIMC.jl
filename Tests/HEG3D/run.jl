@@ -13,7 +13,7 @@ function main()
 
     # system parameters
     Nb = 200
-    N = 50
+    N = 14
 
     e = Ensemble(Nb, 2, 0.1, N)
     c = Configuration(Set(collect(1:N)))
