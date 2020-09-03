@@ -63,6 +63,10 @@ function get_vector(index, orblist::DataFrame)
     orblist.k[orblist.i .== index][1]
 end
 
+function get_Energie(index, orblist::DataFrame)
+    orblist.ek[orblist.i .== index][1]
+end
+
 # function get_sign(index, orblist::DataFrame)
     # orblist.s[orblist.i .== index][1]
 # end
