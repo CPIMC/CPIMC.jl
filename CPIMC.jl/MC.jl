@@ -1,5 +1,4 @@
 function sweep(steps::Int, sampleEvery::Int, measurements, e::Ensemble, c::Configuration)
-    # get_update()
 
     i = 0
 
