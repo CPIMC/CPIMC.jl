@@ -1,4 +1,4 @@
-#Das noch großkanonisch
+
 struct Ensemble
   "number of basis orbitals"
   cutoff :: Int
@@ -6,12 +6,15 @@ struct Ensemble
   "Brueckner parameter"
   rs :: Float64
 
-  "inverse temperature"
-  beta :: Float64
+  "reduced temperature"
+  theta :: Float64
 
   "particle number"
   N :: Int
 end
+
+function get_beta_internal(theta, N)
+  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
 
 mutable struct Configuration
   "set of currently occupied orbitals"
