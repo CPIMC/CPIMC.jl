@@ -3,7 +3,7 @@ struct Ensemble
   "number of basis orbitals"
   cutoff :: Int
 
-  "box length"
+  "Brückner Parameter"
   rs :: Float64
 
   "redused temperature"
