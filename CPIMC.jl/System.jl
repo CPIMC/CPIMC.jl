@@ -1,4 +1,4 @@
-include("CPIMC.jl/models/canonical/model.jl")
+include("./models/canonical/model.jl")
 
 ## Calculate a mapping from orbital indices to orbital quantum numbers
 ## e.g. kvectors
