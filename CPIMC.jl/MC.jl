@@ -19,5 +19,4 @@ function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble,
     i += 1
   end
 
-  return zip(updatesAccepted,updatesProposed)
 end

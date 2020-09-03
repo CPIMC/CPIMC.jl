@@ -1,47 +1,40 @@
 using OnlineStats
 
-include("model.jl")
-include("updates.jl")
+include("models/canonical/model.jl")
+include("models/canonical/updates.jl")
 include("MC.jl")
 
 function main()
-  e = Ensemble(200, 2*pi, 0.1, 50.0)
-  c = Configuration(Set(),0)
+    e = Ensemble(200, 2, 0.1, 50)
+    c = Configuration(Set(collect(1:50)))
 
-  updates = Set([move_particle])
+    updates = Set([move_particle])
 
-  measurements =
+    measurements =
     [ (Variance(), totalEnergy)
-    , (Variance(), particleNumber)
     , (Group([Variance() for i=1:e.cutoff]), occVec)
     ]
 
-  acc = sweep(10^7, 100, updates, measurements, e, c)
+    acc = sweep(10^4, 10, updates, measurements, e, c)
 
-  println("accepted/proposed:")
-  println("==================")
+    println("measurements:")
+    println("=============")
 
-  for (f,r) in zip(updates,acc)
-    println(typeof(f).name.mt.name, "\t(", r[1], "/", r[2], ")")
-  end
-
-  println("")
-  println("measurements:")
-  println("=============")
-
-  for (f,m) in measurements
-    if typeof(f) == Variance{Float64,EqualWeight}
-      println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
+    for (f,m) in measurements
+        if typeof(f) == Variance{Float64,EqualWeight}
+            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
+        end
     end
-  end
 
-  println("occupations:")
-  println("============")
-  println(mean.(measurements[3][1].stats))
-  println("")
-  println(std.(measurements[3][1].stats))
-  println("")
-
+    println("occupations:")
+    println("============")
+    println(mean.(measurements[2][1].stats))
+    println("")
+    println(std.(measurements[2][1].stats))
+    println("")
 end
 
 main()
+#
+# updates = Set([move_particle])
+# rand(1)

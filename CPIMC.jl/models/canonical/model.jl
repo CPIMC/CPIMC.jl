@@ -19,7 +19,7 @@ mutable struct Configuration
 end
 
 function K(n::Int, e::Ensemble, c::Configuration)
-  return pi^2 / (2 * e.L^2) * n^2
+  return pi^2 / (2 * e.rs^2) * n^2
 end
 
 function emptyOrbs(e::Ensemble, c::Configuration)

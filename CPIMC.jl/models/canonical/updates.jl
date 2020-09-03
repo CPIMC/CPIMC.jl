@@ -9,16 +9,16 @@ function move_particle(e::Ensemble, c::Configuration)
     return exp(-e.beta*(K(y,e,c)-K(x,e,c)))
 end
 
-function reject!(c, old_c)
-    copy!(c, old_c)
-end
-
 function update(e,c,updates)
-    copy!(old_conf,c)
-    update = rand(updates)
-    if rand() < update(e,c)
+    @assert !iszero(length(updates))
+    old_conf = c
+    up = rand(updates)
+    dp = up(e,c)
+    if rand() < dp
         # accept
     else
-        reject!(c, old_conf)
+        # reject
+        ## TODO: is this a new object ???
+        c = old_conf
     end
 end
