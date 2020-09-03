@@ -9,7 +9,7 @@ include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 function main()
     # MC options
     NMC = 10^3
-    cyc = 4
+    cyc = 50
 
     # system parameters
     Nb = 200

@@ -9,7 +9,7 @@ function move_particle(e::Ensemble, c::Configuration, orblist)
     return exp(-e.beta*(Ekin(y,e,c,orblist)-Ekin(x,e,c,orblist)))
 end
 
-function update(e,c,updates)
+function update(e,c,updates,orblist)
     @assert !iszero(length(updates))
     old_conf = c
     up = rand(updates)
