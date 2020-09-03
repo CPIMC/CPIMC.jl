@@ -1,23 +1,21 @@
+#Das noch großkanonisch
 struct Ensemble
-    "number of basis orbitals"
-    cutoff :: Int
+  "number of basis orbitals"
+  cutoff :: Int
 
-    "Brueckner parameter"
-    rs :: Float64
+  "Brueckner parameter"
+  rs :: Float64
 
-    "reduced temperature"
-    theta :: Float64
+  "reduced temperature"
+  theta :: Float64
 
-    "chemical potential"
-    mu :: Float64
+  "particle number"
+  N :: Int
 end
 
 mutable struct Configuration
   "set of currently occupied orbitals"
   occupations :: Set{Int}
-
-  "number of particles"
-  N :: Int
 end
 
 # function K(n::Int, e::Ensemble, c::Configuration)
