@@ -4,13 +4,13 @@ struct Ensemble
   cutoff :: Int
 
   "box length"
-  L :: Float64
+  rs :: Float64
 
   "inverse temperature"
-  beta :: Float64
+  theta :: Float64
 
-  "chemical potential"
-  mu :: Float64
+  "particle number"
+  N :: Int
 end
 
 mutable struct Configuration
