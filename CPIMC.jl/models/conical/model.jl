@@ -6,7 +6,7 @@ struct Ensemble
   "box length"
   rs :: Float64
 
-  "inverse temperature"
+  "redused temperature"
   theta :: Float64
 
   "particle number"
