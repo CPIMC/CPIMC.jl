@@ -1,4 +1,4 @@
-#Das noch großkanonisch
+
 struct Ensemble
   "number of basis orbitals"
   cutoff :: Int
