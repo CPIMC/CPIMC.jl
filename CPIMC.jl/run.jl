@@ -1,8 +1,9 @@
 using OnlineStats
 
-include("model.jl")
+include("CPIMC.jl/models/canonical/model.jl")
 include("updates.jl")
 include("MC.jl")
+include("System.jl")
 
 function main()
   e = Ensemble(200, 2*pi, 0.1, 50.0)
