@@ -6,8 +6,8 @@ struct Ensemble
   "Brueckner parameter"
   rs :: Float64
 
-  "reduced temperature"
-  theta :: Float64
+  "inverse temperature"
+  beta :: Float64
 
   "particle number"
   N :: Int
