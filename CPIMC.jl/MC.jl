@@ -5,13 +5,7 @@ function sweep(steps::Int, sampleEvery::Int, measurements, e::Ensemble, c::Confi
 
     while i < steps
 
-        if rand() > get_update(c)
-            ## accept
-            accept(c)
-        else
-            ## deny
-            deny(c)
-        end
+        update(e,c)
 
         if i % sampleEvery == 0
             for (stat,obs) in measurements
