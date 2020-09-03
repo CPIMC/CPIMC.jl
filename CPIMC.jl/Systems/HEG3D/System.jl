@@ -1,5 +1,3 @@
-include("./models/canonical/model.jl")
-
 ## Calculate a mapping from orbital indices to orbital quantum numbers
 ## e.g. kvectors
 ## The units are so that the possible values of each k-vector component are integer numbers (i.e. divide by 2pi/boxarea compared to a.u.)
@@ -71,14 +69,9 @@ end
     # orblist.s[orblist.i .== index][1]
 # end
 
-
-
-
-
-
 ### Estimators
 function K(n::Int, e::Ensemble, c::Configuration)
-  return pi^2 / (2 * e.L^2) * n^2
+  return pi^2 / (2 * e.rs^2) * n^2
 end
 
 function emptyOrbs(e::Ensemble, c::Configuration)

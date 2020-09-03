@@ -1,9 +1,9 @@
 using OnlineStats
 
-include("models/canonical/model.jl")
-include("models/canonical/updates.jl")
-include("MC.jl")
-include("System.jl")
+include("../../CPIMC.jl/models/canonical/model.jl")
+include("../../CPIMC.jl/models/canonical/updates.jl")
+include("../../CPIMC.jl/MC.jl")
+include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 
 function main()
     e = Ensemble(200, 2, 0.1, 50)
@@ -36,6 +36,6 @@ function main()
 end
 
 main()
-#
+
 # updates = Set([move_particle])
 # rand(1)

@@ -7,7 +7,7 @@ struct Ensemble
   rs :: Float64
 
   "reduced temperature"
-  theta :: Float64
+  beta :: Float64
 
   "particle number"
   N :: Int
