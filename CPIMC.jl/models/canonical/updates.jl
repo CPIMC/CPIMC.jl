@@ -13,7 +13,7 @@ function update(e,c,updates)
     @assert !iszero(length(updates))
     old_conf = c
     up = rand(updates)
-    dp = up(e,c)
+    dp = up(e,c,orblist)
     if rand() < dp
         # accept
     else

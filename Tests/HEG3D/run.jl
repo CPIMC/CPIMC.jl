@@ -27,7 +27,7 @@ function main()
     , (Group([Variance() for i=1:e.cutoff]), occVec)
     ]
 
-    acc = sweep(NMC, cyc, updates, measurements, e, c, orblist)
+    sweep(NMC, cyc, updates, measurements, e, c, orblist)
 
     println("measurements:")
     println("=============")
