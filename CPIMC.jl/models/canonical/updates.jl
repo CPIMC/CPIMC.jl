@@ -12,19 +12,18 @@ end
 function update(e,c,updates,orblist, max_update_length)
     @assert !iszero(length(updates))
     update_length =  rand(1:max_update_length)
-    old_conf = c
+    old_conf = Configuration(copy(c.occupations))#Funktion in klasse einbauen?
     sampling_prob_quod = 1
     for step_index in update_length
-        up = rand(updates) 
+        up = rand(updates)
         sampling_prob_quod *= up(e,c,orblist)
     end
-    acc_prob = sampling_prob_quod * exp(-e.beta*(Ekin(e,old_conf,orblist)-Ekin(e,c,orblist)))
+    acc_prob = sampling_prob_quod * exp(-e.beta*(Ekin(e,c,orblist)-Ekin(e,old_conf,orblist)))
 
     if rand() < acc_prob
         # accept
     else
         # reject
-        ## TODO: is this a new object ???
         c = old_conf
 
     end

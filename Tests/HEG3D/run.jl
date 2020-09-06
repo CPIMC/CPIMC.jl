@@ -8,14 +8,15 @@ include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 
 function main()
     # MC options
-    NMC = 10^3
-    cyc = 50
-
+    NMC = 10^5
+    cyc = 1
+    max_Update_chain_length = 50
     # system parameters
-    Nb = 200
+    Nb = 400
     N = 14
-
-    e = Ensemble(Nb, 2, 0.1, N)
+    rs = 0.1
+    theta = 0.1
+    e = Ensemble(Nb, rs, get_beta_internal(theta, N), N)
     c = Configuration(Set(collect(1:N)))
 
     orblist = get_orblist_UEG(Nb)
@@ -27,7 +28,7 @@ function main()
     , (Group([Variance() for i=1:e.cutoff]), occVec)
     ]
 
-    sweep(NMC, cyc, updates, measurements, e, c, orblist)
+    sweep(NMC, cyc, updates, measurements, e, c, orblist, max_Update_chain_length)
 
     println("measurements:")
     println("=============")
