@@ -14,7 +14,7 @@ function update(e,c,updates,orblist, max_update_length)
     update_length =  rand(1:max_update_length)
     old_conf = Configuration(copy(c.occupations))#Funktion in klasse einbauen?
     sampling_prob_quod = 1
-    for step_index in update_length
+    for step_index = 1:update_length
         up = rand(updates)
         sampling_prob_quod *= up(e,c,orblist)
     end

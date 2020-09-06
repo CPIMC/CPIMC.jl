@@ -12,10 +12,10 @@ function main()
     cyc = 1
     max_Update_chain_length = 50
     # system parameters
-    Nb = 400
+    Nb = 200
     N = 14
     rs = 0.1
-    theta = 0.1
+    theta = 0.001
     e = Ensemble(Nb, rs, get_beta_internal(theta, N), N)
     c = Configuration(Set(collect(1:N)))
 

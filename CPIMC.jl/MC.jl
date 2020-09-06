@@ -16,7 +16,7 @@ function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble,
             end
         end
 
-    i += 1
-  end
+        i += 1
+    end
 
 end
