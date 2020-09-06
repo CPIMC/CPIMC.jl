@@ -13,11 +13,11 @@ function update(e,c,updates,orblist, max_update_length)
     @assert !iszero(length(updates))
     update_length =  rand(1:max_update_length)
     old_conf = c
-    for step_index in update_length 
+    sampling_prob_quod = 1
+    for step_index in update_length
         up = rand(updates) 
-        sampling_prob_quod = 1
         sampling_prob_quod *= up(e,c,orblist)
-    end    
+    end
     acc_prob = sampling_prob_quod * exp(-e.beta*(Ekin(e,old_conf,orblist)-Ekin(e,c,orblist)))
 
     if rand() < acc_prob
@@ -26,6 +26,6 @@ function update(e,c,updates,orblist, max_update_length)
         # reject
         ## TODO: is this a new object ???
         c = old_conf
-    
+
     end
 end
