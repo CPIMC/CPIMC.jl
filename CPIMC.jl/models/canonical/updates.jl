@@ -24,7 +24,7 @@ function update(e,c,updates,orblist, max_update_length)
         # accept
     else
         # reject
-        c = old_conf
+        c.occupations = old_conf.occupations
 
     end
 end
