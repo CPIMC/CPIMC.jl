@@ -10,7 +10,7 @@ function main()
     # MC options
     NMC = 10^5
     cyc = 1
-    max_Update_chain_length = 50
+    max_Update_chain_length = 1
     # system parameters
     Nb = 200
     N = 14
