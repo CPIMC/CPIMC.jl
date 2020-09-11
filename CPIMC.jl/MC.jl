@@ -4,7 +4,7 @@ function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
 
     while i < steps
 
-        update(e,c,updates,orblist)
+        update(e,c,updates,orblist,max_Update_length)
 
         if i % sampleEvery == 0
             for (stat,obs) in measurements
@@ -16,7 +16,7 @@ function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
             end
         end
 
-    i += 1
-  end
+        i += 1
+    end
 
 end

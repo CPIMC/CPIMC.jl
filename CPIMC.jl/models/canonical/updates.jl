@@ -11,7 +11,7 @@ end
 
 function update(e,c,updates,orblist)
     @assert !iszero(length(updates))
-    old_conf = c
+    old_conf = Configuration(copy(c.occupations))#Funktion in klasse einbauen?
     up = rand(updates)
     dp = up(e,c,orblist)
     if rand() < dp
@@ -19,6 +19,6 @@ function update(e,c,updates,orblist)
     else
         # reject
         ## TODO: is this a new object ???
-        c = old_conf
+        c.occupations = old_conf.occupations
     end
 end

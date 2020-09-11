@@ -9,9 +9,14 @@ include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 function main()
     # MC options
     NMC = 10^5
+<<<<<<< HEAD
     cyc = 50
     NEquil = 10^3
 
+=======
+    cyc = 1
+    max_Update_chain_length = 1
+>>>>>>> Arifs_Branch
     # system parameters
     Nb = 20000
     N = 14
