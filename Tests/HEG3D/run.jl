@@ -8,17 +8,12 @@ include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 
 function main()
     # MC options
-    NMC = 10^5
-<<<<<<< HEAD
-    cyc = 50
-    NEquil = 10^3
+    NMC = 10^4
+    cyc = 5
+    NEquil = 10^1
 
-=======
-    cyc = 1
-    max_Update_chain_length = 1
->>>>>>> Arifs_Branch
     # system parameters
-    Nb = 20000
+    Nb = 200
     N = 14
     theta = 1
     rs = 0.5
@@ -53,6 +48,6 @@ function main()
     println(std.(measurements[2][1].stats))
     println("")
 
-
+end
 
 main()
