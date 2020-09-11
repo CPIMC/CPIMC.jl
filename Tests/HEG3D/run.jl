@@ -8,7 +8,7 @@ include("../../CPIMC.jl/Systems/HEG3D/System.jl")
 
 function main()
     # MC options
-    NMC = 10^4
+    NMC = 10^5
     cyc = 5
     NEquil = 10^1
 
@@ -23,6 +23,9 @@ function main()
 
     orblist = get_orblist_UEG(Nb)
 
+    # print(orblist)
+    println("empty rows in orblist : ", size(filter(row -> isempty(row.k), orblist ),1))
+
     updates = Set([move_particle])
 
     measurements =
@@ -36,6 +39,7 @@ function main()
     println("=============")
 
     for (f,m) in measurements
+        println("measurments $(m) : type=$(typeof(f))")
         if typeof(f) == Variance{Float64,EqualWeight}
             println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
         end

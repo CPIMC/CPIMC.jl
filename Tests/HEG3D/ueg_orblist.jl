@@ -82,7 +82,7 @@ function main()
     Emax = 10
 
     # println("Emax = ", Emax)
-    # print("orblist :\n", DataFrames.DataFrame(indx=0:Emax, qnums=vcat(collect(get_qstates(kk) for kk in 0:Emax)) ) )
+    print("orblist :\n", DataFrames.DataFrame(indx=0:Emax, qnums=vcat(collect(get_qstates(kk) for kk in 0:Emax)) ) )
 
 end
 # sort!()
