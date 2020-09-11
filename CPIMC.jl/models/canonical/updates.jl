@@ -6,7 +6,7 @@ function move_particle(e::Ensemble, c::Configuration, orblist)
     delete!(c.occupations,x)
     push!(c.occupations,y)
 
-    return exp(-e.beta*(Ekin(y,e,c,orblist)-Ekin(x,e,c,orblist)))
+    return exp(-e.beta*(get_energy(y,orblist)-get_energy(x,orblist)))
 end
 
 function update(e,c,updates,orblist)

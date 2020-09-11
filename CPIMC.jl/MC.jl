@@ -1,4 +1,4 @@
-function sweep(steps::Int, sampleEvery::Int, updates, measurements, e::Ensemble, c::Configuration, orblist)
+function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration, orblist)
 
     i = 0
 

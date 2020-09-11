@@ -81,3 +81,9 @@ end
 function particleNumber(e::Ensemble, c::Configuration, orblist::DataFrame)
   return c.N
 end
+
+
+### Units
+function get_beta_internal(theta, N)
+  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
+end
