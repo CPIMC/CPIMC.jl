@@ -1,4 +1,4 @@
-function move_particle(e::Ensemble, c::Configuration, orblist)
+function move_particle(e::Ensemble, c::Configuration)
 
     x = rand(c.occupations)
     y = rand(emptyOrbs(e,c))
