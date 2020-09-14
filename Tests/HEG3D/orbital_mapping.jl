@@ -7,11 +7,12 @@ end
 function get_vector(index) :: Array{Int16,1}
     convert(Array{Int16,1}, [ (index >>> 32) & 0xFFFF, (index >>> 16) & 0xFFFF, index & 0xFFFF ])
 end
+
 using DataFrames
+# empty orblist
+orblist = DataFrame(idx=Int64[], k=Array{Int16,1}[])
 
-orblist = DataFrame(idx=Int64[], k=Array{Int16,1}[])#, calc_k=Array{Int16,1}[])
-
-kmax = 20
+kmax = 20# maximum k component
 
 for x in Int16.(-kmax:kmax)
     for y in Int16.(-kmax:kmax)
@@ -23,5 +24,12 @@ for x in Int16.(-kmax:kmax)
     end
 end
 
+println("Number of occurences of each index: ")
+by(orblist, [:idx], count = :idx => length)
 
-orblist
+println("Number of occurences of each vector: ")
+by(orblist, [:k], count = :k => length)
+
+if any(by(orblist, [:idx], count = :idx => length).count .> 1)
+    println("There are double indices!")
+end
