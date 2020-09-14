@@ -1,5 +1,11 @@
 function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
 
+    # Equibrilation
+    # for i in 1:throwAway
+    #     update(e,c,update)
+    # end
+
+    # MC Process
     i = 0
 
     while i < steps

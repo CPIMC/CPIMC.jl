@@ -1,7 +1,7 @@
 import DataFrames
 import LinearAlgebra: dot
 
-using Plots
+# using Plots
 
 
 "return degeneracy of the shell with energy ek"
@@ -57,37 +57,57 @@ function get_orbindex(k::Array{Int,1})
 end
 
 
+function make_orblist(Emax)
+    d = DataFrames.DataFrame(i=Int[], k=Array{Array{Int,1},1}[], ek=Float64[])
+
+    i=0
+
+    for kk in 0:Emax
+        x = get_qstates(kk)
+        if !isempty(x)
+            push!(d,[i, x, kk])
+            i = i+1
+        end
+    end
+    d
+end
+
+
 function main()
 
     println("--------------------------------------------------------------")
     println("Starting Tests .... ")
 
+    # println(make_orblist(10))
+
+    println((1 << 16))
+
     # @time get_shellindex(10)
 
-    k = [rand(-3:3),rand(-3:3),rand(-3:3)]
-    ksq = dot(k,k)
-
-    println("Consider k-vector k = $(k), |k|²=$(ksq).")
-
-    si = get_shellindex(ksq)
-
-    println("Shell-Index : ", si)
-
-    println("Degeneracy of this shell : ", get_degen(si))
-
-    println("k-vectors of this shell : ", get_qstates(si))
-
-    println("Orbital Index : ", get_orbindex(k))
-
-    Emax = 10
-
-    # println("Emax = ", Emax)
-    print("orblist :\n", DataFrames.DataFrame(indx=0:Emax, qnums=vcat(collect(get_qstates(kk) for kk in 0:Emax)) ) )
+    # k = [rand(-3:3),rand(-3:3),rand(-3:3)]
+    # ksq = dot(k,k)
+    #
+    # println("Consider k-vector k = $(k), |k|²=$(ksq).")
+    #
+    # si = get_shellindex(ksq)
+    #
+    # println("Shell-Index : ", si)
+    #
+    # println("Degeneracy of this shell : ", get_degen(si))
+    #
+    # println("k-vectors of this shell : ", get_qstates(si))
+    #
+    # println("Orbital Index : ", get_orbindex(k))
+    #
+    # Emax = 10
+    #
+    # # println("Emax = ", Emax)
+    # print("orblist :\n", DataFrames.DataFrame(indx=0:Emax, qnums=vcat(collect(get_qstates(kk) for kk in 0:Emax)) ) )
 
 end
 # sort!()
 main()
 
-Emax = 500
-plot(1:Emax, collect(@elapsed vcat(collect(get_qstates(kk) for kk in 0:Emax)) for Emax in 1:Emax) , xlabel="Emax", ylabel="Time")
+# Emax = 500
+# plot(1:Emax, collect(@elapsed vcat(collect(get_qstates(kk) for kk in 0:Emax)) for Emax in 1:Emax) , xlabel="Emax", ylabel="Time")
 # plot!(x->0.000000002*x^1.5, xlims=(0,500))

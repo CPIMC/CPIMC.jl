@@ -17,7 +17,3 @@ mutable struct Configuration
   "set of currently occupied orbitals"
   occupations :: Set{Int}
 end
-
-function emptyOrbs(e::Ensemble, c::Configuration)
-  return filter(x -> !(x in c.occupations), 1:e.cutoff)
-end
