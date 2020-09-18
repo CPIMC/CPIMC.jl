@@ -14,19 +14,24 @@ import LinearAlgebra: dot
     # sign :: T
 # end
 
-function get_index(q::Array{Int16,1}) :: Int64
-    b = convert(Array{Int64,1}, q)
-    b[1] << 32 | b[2] << 16 | b[3]
+# function get_index(q::Array{Int16,1}) :: Int64
+#     b = convert(Array{Int64,1}, q)
+#     b[1] << 32 | b[2] << 16 | b[3]
+# end
+#
+# function get_vector(index) :: Array{Int16,1}
+#     # convert(Array{Int16,1}, [ (index >>> 32) & 0xFFFF, (index >>> 16) & 0xFFFF, index & 0xFFFF ])
+# end
+
+"return single particle energy for a ueg momentum vector k"
+function get_energy(k :: StaticVector{3, Int16})
+    dot(k,k)
 end
 
-function get_vector(index) :: Array{Int16,1}
-    convert(Array{Int16,1}, [ (index >>> 32) & 0xFFFF, (index >>> 16) & 0xFFFF, index & 0xFFFF ])
-end
-
-function get_energy(index)
-    vec = get_vector(index)
-    dot(vec,vec)
-end
+# function get_energy(index)
+#     vec = get_vector(index)
+#     dot(vec,vec)
+# end
 
 function get_Nb(emax::Int) :: Int
     kk = Int(floor(sqrt(emax)))
@@ -52,36 +57,63 @@ function get_Emax(Nb::Int) :: Int
     ek
 end
 
-function get_basis(e::Ensemble)
-    b :: Set{Int64} = Set{Int64}()
-    nb = 0
 
-    emax = get_Emax(e.cutoff)
+function get_orbshell(o::Orbital;dw::Int=2)
+    eq = dot(o.qnums,o.qnums)# energy of orbital
+    qmax = Int(floor(eq))
 
-    # estimate upper bound for maximum k-Component
-    # kc :: Int = Int(ceil(sqrt(e.cutoff^(1.748626417827964) + 13*e.cutoff)))# cutoff radius (TODO: better estimate)
-    kk = Int(floor(sqrt(emax)))
-    for x in -kk:kk
-        for y in -kk:kk
-            for z in -kk:kk
-                if x*x + y*y + z*z <= emax
-                    indx = get_index(Array{Int16,1}([x,y,z]))
-                    @assert !in(indx, b) "index $(indx) of array [$x,$y,$z] already in Set."
-                    push!(b, indx)
-                    nb += 1
+    os = Set{Orbital{3}}()
+
+    for x in convert.(Int16, -qmax:qmax)
+        for y in convert.(Int16, -qmax:qmax)
+            for z in convert.(Int16, -qmax:qmax)
+                if abs( x*x + y*y + z*z - eq ) <= dw
+                    push!(os, Orbital(SVector{3,Int16}(x,y,z)))
                 end
             end
         end
     end
-    print("SET :\n")
-    print(b)
-    @assert length(b) == e.cutoff "Basis size $(length(b)) not equal cutoff=$(e.cutoff). Hitted $nb orbitals."
-    b
+    os
 end
 
-function emptyOrbs(e::Ensemble, c::Configuration) :: Set{Int}
-    setdiff!(c.occupations, get_basis(e))
+function proposeOrb(c::Configuration) :: Orbital{3}
+    x = rand(c.occupations)
+    y = rand(get_orbshell(x))
+    @assert x != y "same Configuration proposed."
+    x,y
 end
+
+
+# function get_basis(e::Ensemble)
+#     b :: Set{Int64} = Set{Int64}()
+#     nb = 0
+#
+#     emax = get_Emax(e.cutoff)
+#
+#     # estimate upper bound for maximum k-Component
+#     # kc :: Int = Int(ceil(sqrt(e.cutoff^(1.748626417827964) + 13*e.cutoff)))# cutoff radius (TODO: better estimate)
+#     kk = Int(floor(sqrt(emax)))
+#     for x in -kk:kk
+#         for y in -kk:kk
+#             for z in -kk:kk
+#                 if x*x + y*y + z*z <= emax
+#                     indx = get_index(Array{Int16,1}([x,y,z]))
+#                     @assert !in(indx, b) "index $(indx) of array [$x,$y,$z] already in Set."
+#                     push!(b, indx)
+#                     nb += 1
+#                 end
+#             end
+#         end
+#     end
+#     print("SET :\n")
+#     print(b)
+#     @assert length(b) == e.cutoff "Basis size $(length(b)) not equal cutoff=$(e.cutoff). Hitted $nb orbitals."
+#     b
+# end
+
+# function emptyOrbs(e::Ensemble, c::Configuration) :: Set{Int}
+#     setdiff!(c.occupations, get_basis(e))
+# end
 
 ### Estimators
 function Ekin(e::Ensemble, c::Configuration)

@@ -1,4 +1,4 @@
-function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration, o::Set{Orbital})
 
     # Equibrilation
     # for i in 1:throwAway
@@ -10,7 +10,7 @@ function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
 
     while i < steps
 
-        update(e,c,updates)
+        update(e,c,o,updates)
 
         if i % sampleEvery == 0
             for (stat,obs) in measurements
