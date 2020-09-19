@@ -1,9 +1,9 @@
 " propose a random update and accept or reject it "
-function propose_update!(c::Configuration, updates, e::Ensemble)
+function propose_update!(c::Configuration, updates, ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
     c_old = Configuration(copy(c.occupations))
-    if rand() < up(c,e)
+    if rand() < up(c,ensemble)
         return :accept
     else
         c.occupations = c_old.occupations
@@ -12,20 +12,20 @@ function propose_update!(c::Configuration, updates, e::Ensemble)
 end
 
 " propose a chain of updates "
-function propose_update_chain!(c::Configuration, updates, chain_length::Int, e::Ensemble)
+function propose_update_chain!(c::Configuration, updates, chain_length::Int, ensemble)
 end
 
 
-function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, ensemble, c::Configuration)
     " equilibration "
     for i in 1:throwAway
-        propose_update!(c,updates,e)
+        propose_update!(c,updates,ensemble)
     end
 
     i = 0
 
     while i < steps
-        propose_update!(c,updates,e)
+        propose_update!(c,updates,ensemble)
 
         if i % sampleEvery == 0
             " calculate observables "
@@ -42,5 +42,5 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     end
 end
 
-function save_results(path, measurements, e::Ensemble)
+function save_results(path, measurements, ensemble)
 end

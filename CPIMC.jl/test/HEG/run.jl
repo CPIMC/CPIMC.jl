@@ -1,7 +1,7 @@
 using OnlineStats
 
-include("../../src/CPIMC.jl")
 include("../../src/Configuration.jl")
+include("../../src/CPIMC.jl")
 include("../../src/HEG/model.jl")
 include("../../src/HEG/Ideal/updates.jl")
 include("../../src/HEG/Ideal/estimators.jl")
@@ -17,14 +17,14 @@ function main()
     theta = 1.0
     rs = 0.5
 
-    S = get_sphere(Orbital((0,0,0),0),dk=2) ### use1 9 particles
+    S = get_sphere(Orbital((0,0,0),0),dk=2) ### use 19 particles
     N = 33
 
     println("Number of particles: ", length(S))
 
     c = Configuration(S)
 
-    e = Ensemble(rs, get_beta_internal(theta,N), N)
+    e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
 
     updates = [move_particle]
 
