@@ -1,10 +1,32 @@
-## Calculate a mapping from orbital indices to orbital quantum numbers
-## e.g. kvectors
-## The units are so that the possible values of each k-vector component are integer numbers (i.e. divide by 2pi/boxarea compared to a.u.)
-
 using StaticArrays
-using DataFrames
+
 import LinearAlgebra: dot
+
+struct Ensemble
+  "Brueckner parameter"
+  rs :: Float64
+
+  "reduced temperature"
+  beta :: Float64
+
+  "particle number"
+  N :: Int
+end
+
+"representation of single particle state"
+struct Orbital{D}
+    "D-dimensional excitation vector"
+    vec :: StaticVector{D,Int}
+    "spin"
+    spin :: Int
+end
+
+Orbital(v::Tuple,s=0) = Orbital(SVector(v),s)
+
+
+function get_beta_internal(theta, N)
+  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
+end
 
 " single particle energy for momentum vector k "
 function get_energy(o::Orbital)
@@ -47,20 +69,4 @@ function get_sphere(o::Orbital; dk::Int=2) :: Set{Orbital{3}}
 end
 
 
-### Estimators
-function Ekin(c::Configuration)
-    sum(get_energy(n) for n in c.occupations)
-end
 
-function occVec(c::Configuration)
-    get_energy.(c.occupations)
-end
-
-function particleNumber(c::Configuration)
-  return length(c.occupations)
-end
-
-### Units
-function get_beta_internal(theta, N)
-  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
-end

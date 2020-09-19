@@ -23,20 +23,9 @@ function move_particle(c::Configuration, e::Ensemble)
     dv*dw
 end
 
-function update!(c,e,updates)
-    @assert !iszero(length(updates))
-    up = rand(updates)
-    c_old = Configuration(copy(c.occupations))
-    if rand() < up(c,e)
-        # accept
-    else
-        # reject
-        c.occupations = c_old.occupations
-    end
+function add_particle()
 end
 
-
-function update!(c,updates,cl::UInt)
-    @assert !iszero(length(updates))
-    # TODO: implement chain update function with keyword argument
+function remove_particle()
 end
+

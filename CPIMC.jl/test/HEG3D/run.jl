@@ -1,9 +1,10 @@
 using OnlineStats
 
-include("../../CPIMC.jl/models/canonical/model.jl")
-include("../../CPIMC.jl/MC.jl")
-include("../../CPIMC.jl/Systems/HEG3D/System.jl")
-include("../../CPIMC.jl/models/canonical/updates.jl")# load after 'System.jl' for definition of function 'proposeOrbs(Orbital)'
+include("../../src/CPIMC.jl")
+include("../../src/Configuration.jl")
+include("../../src/HEG/model.jl")
+include("../../src/HEG/Ideal/updates.jl")
+include("../../src/HEG/Ideal/estimators.jl")
 
 
 function main()
@@ -33,7 +34,7 @@ function main()
     )
 
     print("Start MC process ... ")
-    sweep(NMC, cyc, NEquil, updates, measurements, e, c)
+    runMC(NMC, cyc, NEquil, updates, measurements, e, c)
     println(" finished.")
     println("measurements:")
     println("=============")
