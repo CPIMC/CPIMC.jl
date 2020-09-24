@@ -1,8 +1,13 @@
 function move_particle(c::Configuration, e::Ensemble)
 
-    x = rand(c.occupations)
-    oe = setdiff!(get_sphere(x), c.occupations)
-    @assert length(oe) > 0 "no empty orbitals in neighbourhood"
+    x = rand(get_non_interacting_orbs_of_set(c, c.occupations))
+    oe = get_non_interacting_orbs_of_set(c,setdiff!(get_sphere(x), c.occupations))
+
+    #if there are no empty non interacting orbitals in neighbourhood make no change
+    if length(oe) == 0
+        return(1)
+    end
+    #@assert length(oe) > 0 "no empty orbitals in neighbourhood"
 
     y = rand(oe)
     @assert x != y "same Configuration proposed."
@@ -28,4 +33,3 @@ end
 
 function remove_particle()
 end
-

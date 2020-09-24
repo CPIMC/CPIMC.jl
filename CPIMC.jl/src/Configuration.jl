@@ -65,7 +65,7 @@ function get_kinks_of(Configuration::Configuration, orbital::Orbital)
 end
 
 function is_non_interacting(Configuration::Configuration, orbital::Orbital)
-  for tau_kink,kink in Configuration.kinks
+  for (tau_kink,kink) in Configuration.kinks
     if kink.i == orbital | kink.j == orbital | kink.k == orbital | kink.l == orbital
       return(false)
     end
@@ -74,9 +74,9 @@ function is_non_interacting(Configuration::Configuration, orbital::Orbital)
 end
 
 
-function get_non_interacting_orbs_of_set(Configuration, os::Set{Orbital})
+function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{Orbital})
   non_int_orbs = Set{Orbital}()
-  for orb in os:
+  for orb in os
     if is_non_interacting(Configuration, orb)
       push!(non_int_orbs, orb)
     end
