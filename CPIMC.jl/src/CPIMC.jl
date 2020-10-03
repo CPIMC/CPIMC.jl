@@ -2,12 +2,17 @@
 function propose_update!(c::Configuration, updates, ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
-    c_old = Configuration(copy(c.occupations))
+    #print(up)
+    c_old = Configuration(copy(c.occupations),copy(c.kinks))
     if rand() < up(c,ensemble)
+        #print("   accepted\n")
         return :accept
     else
         c.occupations = c_old.occupations
+        c.kinks = c_old.kinks
+        #print("   rejected\n")
         return :reject
+
     end
 end
 

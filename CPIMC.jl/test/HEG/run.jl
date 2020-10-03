@@ -6,10 +6,15 @@ include("../../src/HEG/model.jl")
 include("../../src/HEG/Ideal/updates.jl")
 include("../../src/HEG/Ideal/estimators.jl")
 
+"""include("CPIMC.jl/src/Configuration.jl")
+include("CPIMC.jl/src/CPIMC.jl")
+include("CPIMC.jl/src/HEG/model.jl")
+include("CPIMC.jl/src/HEG/Ideal/updates.jl")
+include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 5*10^5
+    NMC = 10^4
     cyc = 3
     NEquil = 10^3
 
@@ -17,16 +22,16 @@ function main()
     theta = 1.0
     rs = 0.5
 
-    S = get_sphere(Orbital((0,0,0),0),dk=2) ### use 19 particles
-    N = 33
+    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),0),dk=1),1) ### use 19 particles
+
 
     println("Number of particles: ", length(S))
-
+    N = length(S)
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
 
-    updates = [move_particle]
+    updates = [move_particle, Add_Type_B, remove_Type_B]
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -55,4 +60,5 @@ function main()
     println("")
 end
 
-main()
+Juno.@run(main())
+#main()
