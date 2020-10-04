@@ -3,8 +3,8 @@ using OnlineStats
 include("../../src/Configuration.jl")
 include("../../src/CPIMC.jl")
 include("../../src/HEG/model.jl")
-include("../../src/HEG/Ideal/updates.jl")
-include("../../src/HEG/Ideal/estimators.jl")
+include("../../src/HEG/RCPIMC/updates.jl")
+include("../../src/HEG/RCPIMC/estimators.jl")
 
 """include("CPIMC.jl/src/Configuration.jl")
 include("CPIMC.jl/src/CPIMC.jl")
@@ -14,7 +14,7 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^4
+    NMC = 10^5
     cyc = 3
     NEquil = 10^3
 
@@ -60,5 +60,5 @@ function main()
     println("")
 end
 
-Juno.@run(main())
-#main()
+#Juno.@run(main())
+main()

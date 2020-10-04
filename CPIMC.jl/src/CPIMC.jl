@@ -31,7 +31,11 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
 
     while i < steps
         propose_update!(c,updates,ensemble)
-
+        """try###Debugg Code
+            get_occupations_at(c, ensemble.beta)
+        catch a
+            "brakepoint"
+        end"""
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements

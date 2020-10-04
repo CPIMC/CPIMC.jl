@@ -177,33 +177,67 @@ function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Or
   if length(Kinks_of_orb) == 0
       return(0,e.beta)
   end
+  #TO DO: Binäre Suche benutzten
   for (tau_kink,kink) in Kinks_of_orb
       if tau_kink > Tau
         if current_tau == 0
-          return (first(last(Kinks_of_orb))-e.beta,tau_kink)
+          return (first(last(Kinks_of_orb)),tau_kink)
         else
           return (current_tau,tau_kink)
         end
       else
-        current_tau = tau_kink
+          #es soll nciht tau als genze zurückgegeben werden
+          if tau_kink != Tau
+              current_tau = tau_kink
+          end
       end
   end
-  #Achtung das addieren und subtrahieren von e.beta scheint die letzte Stelle
-  #der Fließkomazahl zu verändern, wodurch diese nciht mehr den richtigen key in
-  #c.kinks darstellt
-  return (current_tau, first(first(Kinks_of_orb))+e.beta)
+  return (current_tau, first(first(Kinks_of_orb)))
 end
 
 function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}},Tau::Float64, e::Ensemble)
-  Tau_left  =-Inf
-  Tau_right = Inf
+  if length(Configuration.kinks) == 0
+      return (0,e.beta)
+  end
+  Tau_left_semi_token  = searchsortedafter(Configuration.kinks, Tau)
+  Tau_right_semi_token = searchsortedlast(Configuration.kinks, Tau)
+  if Tau_left_semi_token == pastendsemitoken(Configuration.kinks)
+      Tau_left = first(first(Configuration.kinks))
+  else
+      Tau_left = first(deref((Configuration.kinks, Tau_left_semi_token)))
+  end
+  if Tau_right_semi_token == beforestartsemitoken(Configuration.kinks)
+      Tau_right = first(last(Configuration.kinks))
+  else
+      Tau_right = first(deref((Configuration.kinks, Tau_right_semi_token)))
+      if Tau_right == Tau
+          Tau_right_semi_token = regress((Configuration.kinks,Tau_right_semi_token))
+          if Tau_right_semi_token == beforestartsemitoken(Configuration.kinks)
+              Tau_right = first(last(Configuration.kinks))
+          else
+              Tau_right = first(deref((Configuration.kinks, Tau_right_semi_token)))
+          end
+      end
+  end
+
   for orb in orbitals
     Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau, e)
-    if Tupel[1] > Tau_left
+
+    #hier muss man immer prüfen ob das Intervall die Grenze Beta bzw Null überschreitet
+    if Tau_left < Tau < Tupel[1]
+        "nix"
+    elseif Tupel[1] < Tau < Tau_left
+        Tau_left = Tupel[1]
+    elseif Tau_left < Tupel[1]
       Tau_left = Tupel[1]
     end
-    if Tupel[2] < Tau_right
+
+    if Tupel[2] < Tau < Tau_right
+        "nix"
+    elseif Tau_right < Tau < Tupel[2]
       Tau_right = Tupel[2]
+  elseif Tupel[2] < Tau_right
+        Tau_right = Tupel[2]
     end
   end
   return (Tau_left,Tau_right)

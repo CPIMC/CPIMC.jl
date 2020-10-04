@@ -39,8 +39,8 @@ function change_occupations(occs::Set, K::T4)
     @assert (in(K.k, occs) & in(K.l, occs))
     @assert (!in(K.i, occs) & !in(K.j, occs))
  #catch ex
-#     print("BREAK DU HORST")
-# end
+ #    print("BREAK")
+ #end
   delete!(occs, K.k)
   delete!(occs, K.l)
   push!(occs, K.i)
