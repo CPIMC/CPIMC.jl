@@ -19,26 +19,55 @@ function W_off_diag(e::Ensemble, c::Configuration)
     return(-(length(c.kinks)/e.beta))
 end
 
-function W_Diag(e::Ensemble, c::Configuration)
+function W_diag(e::Ensemble, c::Configuration)
     W_diag = 0
     if length(c.kinks) == 0
-
-        for occ1 in c.occupation
+        for occ1 in c.occupations
             redundant = true
-            for occ2 in c.occupation
+            for occ2 in c.occupations
                 if !redundant
-                    W_diag += (lamda(e.N,e.rs)/2) * 1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
+                    W_diag += (lambda(e.N,e.rs)/2) * 1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
                 end
                 if occ1 == occ2
-                    redundant == false
+                    redundant = false
                 end
             end
         end
+    else
+        occs = copy(c.occupations)
+        old_Tau = first(last(c.kinks)) - e.beta
+        for (Tau,kink) in c.kinks
+            for occ1 in occs
+                redundant = true
+                for occ2 in occs
+                    if !redundant
+                        W_diag += (lamda(e.N,e.rs)/2) *
+                                1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) *
+                                (Tau-old_Tau)
+                    end
+                    if occ1 == occ2
+                        redundant == false
+                    end
+                end
+            end
+            old_Tau = Tau
+            change_occupations(occs, kink)
+        end
+        W_diag *= 1/e.beta
     end
+    return(W_diag)
 end
 
-function E_pot(e::Ensemble, c::Configuration)
-    return(W_Diag(e, c) + W_off_diag(e,c))
+function Epot(e::Ensemble, c::Configuration)
+    return(W_diag(e, c) + W_off_diag(e,c))
+end
+
+function Etot(e::Ensemble, c::Configuration)
+    return(Ekin(e, c) + Epot(e,c))
+end
+
+function K(e::Ensemble, c::Configuration)
+    return(length(c.kinks))
 end
 
 ############Noch nicht fürs WW-System

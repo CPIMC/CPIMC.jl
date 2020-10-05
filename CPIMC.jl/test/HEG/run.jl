@@ -14,13 +14,13 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^5
+    NMC = 10^6
     cyc = 3
     NEquil = 10^3
 
     # system parameters
     theta = 1.0
-    rs = 0.5
+    rs = 0.1
 
     S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),0),dk=1),1) ### use 19 particles
 
@@ -35,6 +35,11 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
+    , :W_off_diag => (Variance(), W_off_diag)
+    , :W_diag => (Variance(), W_diag)
+    , :Epot => (Variance(), Epot)
+    , :K => (Variance(), K)
+    , :Etot => (Variance(), Etot)
     , :occN => (Group([Variance() for i=1:200]), occVec)
     )
 
@@ -52,12 +57,13 @@ function main()
 
     println("")
 
-    println("occupations:")
+    #occupations funktionieren noch nicht fürs WW-System
+    """println("occupations:")
     println("============")
     println(mean.(measurements[:occN][1].stats))
     println("")
     println(std.(measurements[:occN][1].stats))
-    println("")
+    println("")"""
 end
 
 #Juno.@run(main())
