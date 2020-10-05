@@ -1,10 +1,10 @@
 " propose a random update and accept or reject it "
-function propose_update!(c::Configuration, updates, ensemble)
+function propose_update!(c::Configuration, updates, e::Ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
     #print(up)
     c_old = Configuration(copy(c.occupations),copy(c.kinks))
-    if rand() < up(c,ensemble)
+    if rand() < up(c,e)
         #print("   accepted\n")
         return :accept
     else
@@ -17,22 +17,22 @@ function propose_update!(c::Configuration, updates, ensemble)
 end
 
 " propose a chain of updates "
-function propose_update_chain!(c::Configuration, updates, chain_length::Int, ensemble)
+function propose_update_chain!(c::Configuration, updates, chain_length::Int, e::Ensemble)
 end
 
 
-function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, ensemble, c::Configuration)
+function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
     " equilibration "
     for i in 1:throwAway
-        propose_update!(c,updates,ensemble)
+        propose_update!(c,updates,e)
     end
 
     i = 0
 
     while i < steps
-        propose_update!(c,updates,ensemble)
+        propose_update!(c,updates,e)
         """try###Debugg Code
-            get_occupations_at(c, ensemble.beta)
+            get_occupations_at(c, e.beta)
         catch a
             "brakepoint"
         end"""
@@ -40,9 +40,9 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
             " calculate observables "
             for (key,(stat,obs)) in measurements
                 if typeof(stat) == Group
-                    fit!(stat, eachrow(obs(c)))
+                    fit!(stat, eachrow(obs(e,c)))
                 else
-                    fit!(stat, obs(c))
+                    fit!(stat, obs(e,c))
                 end
             end
         end
@@ -51,5 +51,5 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     end
 end
 
-function save_results(path, measurements, ensemble)
+function save_results(path, measurements, e)
 end
