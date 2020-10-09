@@ -6,13 +6,13 @@ function Ekin(e::Ensemble, c::Configuration)
     E_kin = 0
     #betrachte das komplette intervall zwischen letztem und erstem Kink als
     #erstes intervall
-    old_Tau = first(last(c.kinks)) - e.beta
+    old_Tau = first(last(c.kinks)) - 1
     for (Tau,kink) in c.kinks
         E_kin += sum(get_energy(n) for n in c.occupations) * float(Tau - old_Tau)
         old_Tau = Tau
         change_occupations(occs, kink)
     end
-    return(E_kin * 1/e.beta)
+    return(E_kin)
 end
 
 function W_off_diag(e::Ensemble, c::Configuration)
@@ -35,7 +35,7 @@ function W_diag(e::Ensemble, c::Configuration)
         end
     else
         occs = copy(c.occupations)
-        old_Tau = first(last(c.kinks)) - e.beta
+        old_Tau = first(last(c.kinks)) - 1
         for (Tau,kink) in c.kinks
             for occ1 in occs
                 redundant = true
@@ -53,7 +53,7 @@ function W_diag(e::Ensemble, c::Configuration)
             old_Tau = Tau
             change_occupations(occs, kink)
         end
-        W_diag *= 1/e.beta
+        W_diag *= 1
     end
     return(W_diag)
 end

@@ -32,10 +32,12 @@ mutable struct Configuration{T}
   " excitations, using tau as an index "
   kinks :: SortedDict{img_time, Kink{T}}
 
+  #constructor für eine Ideale konfiguration
   Configuration(s::Set{T}) where {T} = new{T}(s,SortedDict{img_time,Kink}(Base.Forward))
-  Configuration(s::Set{T}, k:: SortedDict{img_time, Kink{T}}) where {T} = new{T}(s,k)
+  Configuration(s::Set{T}, k::SortedDict{img_time, Kink{T}}) where {T} = new{T}(s,k)
 end
 
+#Führe einen Typ-4-Kink auf einer Konfiguration aus
 function change_occupations(occs::Set, K::T4)
  #try
   @assert (in(K.k, occs) & in(K.l, occs))
@@ -49,6 +51,7 @@ function change_occupations(occs::Set, K::T4)
   push!(occs, K.j)
 end
 
+#Find occupation numbers at Tau
 function get_occupations_at(conf::Configuration, Tau::img_time)
   occupations = copy(conf.occupations)
   for (tau_kink,kink) in conf.kinks

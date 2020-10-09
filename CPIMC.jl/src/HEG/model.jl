@@ -159,7 +159,7 @@ function get_orbs_with_spin(orbitals::Set{Orbital{3}},spin::Int)
     return orbs_s
 end
 
-#returns a list of all Kinks that effect the given orbital
+#returns a list of all Kinks that affect the given orbital
 function get_kinks_of_orb(c::Configuration, orbital::Orbital)
   kinks_of_orb = SortedDict{img_time, Kink{Orbital{3}}}()
   for (tau_kink,kink) in c.kinks
@@ -187,7 +187,7 @@ function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Or
           return (current_tau,tau_kink)
         end
       else
-          #es soll nciht tau als genze zurückgegeben werden
+          #es soll nicht Tau als Grenze zurückgegeben werden
           if tau_kink != Tau
               current_tau = tau_kink
           end
