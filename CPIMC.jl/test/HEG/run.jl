@@ -30,7 +30,7 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
-    , :occN => (Group([Variance() for i=1:200]), occVec)
+    , :occN => (Hist(1:100; left = true, closed = true), occVec)## left border is closed to include the integer values
     )
 
     print("Start MC process ... ")
@@ -49,9 +49,9 @@ function main()
 
     println("occupations:")
     println("============")
-    println(mean.(measurements[:occN][1].stats))
+    println(measurements[:occN][1])
     println("")
-    println(std.(measurements[:occN][1].stats))
+#    println(std.(measurements[:occN][1].stats))## TODO: Variance() of each bin
     println("")
 end
 
