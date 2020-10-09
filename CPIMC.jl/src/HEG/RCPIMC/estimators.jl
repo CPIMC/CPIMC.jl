@@ -8,7 +8,7 @@ function Ekin(e::Ensemble, c::Configuration)
     #erstes intervall
     old_Tau = first(last(c.kinks)) - e.beta
     for (Tau,kink) in c.kinks
-        E_kin += sum(get_energy(n) for n in c.occupations) * (Tau - old_Tau)
+        E_kin += sum(get_energy(n) for n in c.occupations) * float(Tau - old_Tau)
         old_Tau = Tau
         change_occupations(occs, kink)
     end

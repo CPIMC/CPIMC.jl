@@ -38,8 +38,8 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     #samplign propability
     prop_prob = 1
     #get first tau
-    tau1 = rand()*e.beta
-    prop_prob *= 1/e.beta
+    tau1 = img_time(rand())
+    #prop_prob *= 1/e.beta
     #get effected orbitlas (abcd)
     occs = get_occupations_at(c, tau1)
     orb_c = rand(occs)
@@ -66,14 +66,14 @@ function Add_Type_B(c::Configuration, e::Ensemble)
 
     #get tau2
     #TO DO Was passiert wenn wir eine Zeit würfeln, die schon im Dictionary enthalten ist?
-    boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1,e)
+    boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1)
     delta_Tau = boarders[2]-boarders[1]
     if delta_Tau < 0
-        delta_Tau = e.beta + delta_Tau
+        delta_Tau = 1 + delta_Tau
     end
     tau2 = rand()*(delta_Tau) + boarders[1]
-    if tau2 > e.beta
-        tau2 -= e.beta
+    if tau2 > 1
+        tau2 -= 1
     end
     #Schuaen welcher der beiden imaginärzeitpunkte der "linke" ist
     if tau1 > boarders[1]
@@ -111,7 +111,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     dv = length(c.kinks)/prop_prob
     # weight factor
     dw = get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
-            exp(-(delta_Tau) * (get_energy(orb_a)
+            exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
                 + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)))
     #return quotient of poposing probabilites
     return(dv*dw)
@@ -123,7 +123,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     end
     Kink1 = rand(c.kinks)
     prop_prob = length(c.kinks)
-    Tau_Kink2 = last(get_Tau_boarders(c, Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l]),first(Kink1),e))
+    Tau_Kink2 = last(get_Tau_boarders(c, Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l]),first(Kink1)))
     Kink2 = Tau_Kink2 => c.kinks[Tau_Kink2]
     #look if Kinks are type-b-connected
     ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
@@ -137,22 +137,23 @@ function remove_Type_B(c::Configuration, e::Ensemble)
             change_occupations(c.occupations, last(Kink2))
         end
         #calculate inverse prop_prob (see  Add_Type_B)
-        boarders = get_Tau_boarders(c, ijkl ,first(Kink1),e)
+        boarders = get_Tau_boarders(c, ijkl ,first(Kink1))
         delta_Tau = boarders[2]-boarders[1]
         if delta_Tau < 0
-            delta_Tau = e.beta + delta_Tau
+            delta_Tau = 1 + delta_Tau
         end
         k = last(Kink1).k
         l = last(Kink1).l
         inverse_prop_prob = (1/e.N)*(1/e.N-1)*
             (1/length(get_orbs_with_spin(setdiff!(get_sphere(k), c.occupations),k.spin)) +
-                1/length(get_orbs_with_spin(setdiff!(get_sphere(l), c.occupations),l.spin)))
-            *(1/e.beta)*2/(delta_Tau)
+                1/length(get_orbs_with_spin(setdiff!(get_sphere(l), c.occupations),l.spin))) *
+            1 * 2/(delta_Tau)
+        #prüfen: statt dem factor 1 e.beta?
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
         # weight factor
         dw = 1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2 *
-                exp((delta_Tau) * (get_energy(last(Kink1).i)
+                exp((delta_Tau)*e.beta * (get_energy(last(Kink1).i)
                     + get_energy(last(Kink1).j) -get_energy(last(Kink1).k) -get_energy(last(Kink1).l)))
         return (dv*dw)
     else

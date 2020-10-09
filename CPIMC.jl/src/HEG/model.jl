@@ -161,7 +161,7 @@ end
 
 #returns a list of all Kinks that effect the given orbital
 function get_kinks_of_orb(c::Configuration, orbital::Orbital)
-  kinks_of_orb = SortedDict{Float64, Kink{Orbital{3}}}()
+  kinks_of_orb = SortedDict{img_time, Kink{Orbital{3}}}()
   for (tau_kink,kink) in c.kinks
     if (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
       kinks_of_orb[tau_kink] = kink
@@ -170,12 +170,13 @@ function get_kinks_of_orb(c::Configuration, orbital::Orbital)
   return kinks_of_orb
 end
 
-#returns a tuple of the imiginary times of the nearest Kinks before Tau and the nearest Kink after Tau
-function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Orbital,Tau::Float64, e::Ensemble)
+#returns a tuple of the imiginary times between 0 and 1 of the nearest Kinks before Tau and the nearest Kink after Tau
+#has to be multiplied with beta to get reeal imaginary times
+function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Orbital,Tau::img_time)
   current_tau = 0
   Kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
   if length(Kinks_of_orb) == 0
-      return(0,e.beta)
+      return(0,1)
   end
   #TO DO: Binäre Suche benutzten
   for (tau_kink,kink) in Kinks_of_orb
@@ -195,9 +196,9 @@ function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Or
   return (current_tau, first(first(Kinks_of_orb)))
 end
 
-function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}},Tau::Float64, e::Ensemble)
+function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}},Tau::img_time)
   if length(Configuration.kinks) == 0
-      return (0,e.beta)
+      return (0,1)
   end
   Tau_left_semi_token  = searchsortedafter(Configuration.kinks, Tau)
   Tau_right_semi_token = searchsortedlast(Configuration.kinks, Tau)
@@ -221,7 +222,7 @@ function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}
   end
 
   for orb in orbitals
-    Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau, e)
+    Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau)
 
     #hier muss man immer prüfen ob das Intervall die Grenze Beta bzw Null überschreitet
     if Tau_left < Tau < Tupel[1]

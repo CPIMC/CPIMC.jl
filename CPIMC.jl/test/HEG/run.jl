@@ -1,10 +1,11 @@
 using OnlineStats
 
 include("../../src/Configuration.jl")
-include("../../src/CPIMC.jl")
 include("../../src/HEG/model.jl")
 include("../../src/HEG/RCPIMC/updates.jl")
 include("../../src/HEG/RCPIMC/estimators.jl")
+include("../../src/CPIMC.jl")
+
 
 """include("CPIMC.jl/src/Configuration.jl")
 include("CPIMC.jl/src/CPIMC.jl")
@@ -14,7 +15,7 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 10^4
     cyc = 3
     NEquil = 10^3
 

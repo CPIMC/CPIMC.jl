@@ -1,5 +1,5 @@
 using DataStructures
-
+using FixedPointNumbers
 
 struct T2{T}
   " creator "
@@ -22,22 +22,24 @@ end
 const Kink{T} = Union{T2{T},T4{T}}
 
 
+const img_time = Fixed{Int64,60}
+
 " multi-particle trajectory using single particle states with type T "
 mutable struct Configuration{T}
   " set of orbitals occupied at tau=0 "
   occupations :: Set{T}
 
   " excitations, using tau as an index "
-  kinks :: SortedDict{Float64, Kink{T}}
+  kinks :: SortedDict{img_time, Kink{T}}
 
-  Configuration(s::Set{T}) where {T} = new{T}(s,SortedDict{Float64,Kink}(Base.Forward))
-  Configuration(s::Set{T}, k:: SortedDict{Float64, Kink{T}}) where {T} = new{T}(s,k)
+  Configuration(s::Set{T}) where {T} = new{T}(s,SortedDict{img_time,Kink}(Base.Forward))
+  Configuration(s::Set{T}, k:: SortedDict{img_time, Kink{T}}) where {T} = new{T}(s,k)
 end
 
 function change_occupations(occs::Set, K::T4)
  #try
-    @assert (in(K.k, occs) & in(K.l, occs))
-    @assert (!in(K.i, occs) & !in(K.j, occs))
+  @assert (in(K.k, occs) & in(K.l, occs))
+  @assert (!in(K.i, occs) & !in(K.j, occs))
  #catch ex
  #    print("BREAK")
  #end
@@ -47,7 +49,7 @@ function change_occupations(occs::Set, K::T4)
   push!(occs, K.j)
 end
 
-function get_occupations_at(conf::Configuration, Tau::Float64)
+function get_occupations_at(conf::Configuration, Tau::img_time)
   occupations = copy(conf.occupations)
   for (tau_kink,kink) in conf.kinks
     if tau_kink < Tau
