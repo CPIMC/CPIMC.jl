@@ -49,6 +49,8 @@ function Add_Type_B(c::Configuration, e::Ensemble)
         orb_d = rand(occs)
     end
     prop_prob *= 1/(e.N-1)
+    #Reihnfolge der wahld er ersten beiden orbitale nicht rlevant
+    prop_prob *= 2
     opportiunisties_orb_a = get_orbs_with_spin(setdiff!(get_sphere(orb_c), occs),orb_c.spin)
     opportiunisties_orb_b = get_orbs_with_spin(setdiff!(get_sphere(orb_d), occs),orb_d.spin)
     if (length(opportiunisties_orb_a) == 0) | (length(opportiunisties_orb_b) == 0)
@@ -114,13 +116,16 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
                 + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)))
     #return quotient of poposing probabilites
+    #print("add:",T4(orb_a,orb_b,orb_c,orb_d),dv*dw,"\n")
     return(dv*dw)
 end
 
 function remove_Type_B(c::Configuration, e::Ensemble)
+
     if length(c.kinks) == 0
         return 1
     end
+    #print(length(c.kinks),"\n")
     Kink1 = rand(c.kinks)
     prop_prob = length(c.kinks)
     Tau_Kink2 = last(get_Tau_boarders(c, Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l]),first(Kink1)))
@@ -129,7 +134,6 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
     if ijkl ==
         Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
-        #print(ijkl,"\n")
         delete!(c.kinks, first(Kink1))
         delete!(c.kinks, first(Kink2))
         #see if occupations at tau=0 are modified
@@ -144,7 +148,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         end
         k = last(Kink1).k
         l = last(Kink1).l
-        inverse_prop_prob = (1/e.N)*(1/e.N-1)*
+        inverse_prop_prob = (1/e.N)*(1/(e.N-1))* 2 *
             (1/length(get_orbs_with_spin(setdiff!(get_sphere(k), c.occupations),k.spin)) +
                 1/length(get_orbs_with_spin(setdiff!(get_sphere(l), c.occupations),l.spin))) *
             1 * 2/(delta_Tau)
@@ -152,9 +156,10 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
         # weight factor
-        dw = 1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2 *
+        dw = (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
                 exp((delta_Tau)*e.beta * (get_energy(last(Kink1).i)
                     + get_energy(last(Kink1).j) -get_energy(last(Kink1).k) -get_energy(last(Kink1).l)))
+        #print("remove: ", length(c.kinks),"     ", dv*dw,"\n")
         return (dv*dw)
     else
         return(1)

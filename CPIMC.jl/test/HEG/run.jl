@@ -15,13 +15,13 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 4* 10^6
     cyc = 3
-    NEquil = 10^3
+    NEquil = 10^4
 
     # system parameters
     theta = 1.0
-    rs = 0.1
+    rs = 0.5
 
     S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),0),dk=1),1) ### use 19 particles
 
