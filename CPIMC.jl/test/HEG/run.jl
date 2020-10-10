@@ -15,23 +15,24 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 4* 10^6
+    NMC = 5 * 10^5
     cyc = 3
-    NEquil = 10^4
+    NEquil = 3 * 10^5
 
     # system parameters
-    theta = 1.0
-    rs = 0.5
+    theta = 0.125
+    rs = 1
 
     S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),0),dk=1),1) ### use 19 particles
 
 
     println("Number of particles: ", length(S))
+    println("theta: ", theta)
+    println("rs: ", rs)
     N = length(S)
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-
     updates = [move_particle, Add_Type_B, remove_Type_B]
 
     measurements = Dict(
@@ -44,7 +45,7 @@ function main()
     , :occN => (Group([Variance() for i=1:200]), occVec)
     )
 
-    print("Start MC process ... ")
+    println("Start MC process ... ")
     runMC(NMC, cyc, NEquil, updates, measurements, e, c)
     println(" finished.")
     println("measurements:")

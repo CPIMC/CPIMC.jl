@@ -41,20 +41,20 @@ function W_diag(e::Ensemble, c::Configuration)
                 redundant = true
                 for occ2 in occs
                     if !redundant
-                        W_diag += (lamda(e.N,e.rs)/2) *
+                        W_diag += (lambda(e.N,e.rs)/2) *
                                 1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) *
                                 (Tau-old_Tau)
                     end
                     if occ1 == occ2
-                        redundant == false
+                        redundant = false
                     end
                 end
             end
             old_Tau = Tau
             change_occupations(occs, kink)
         end
-        W_diag *= 1
     end
+    W_diag *= -1
     return(W_diag)
 end
 

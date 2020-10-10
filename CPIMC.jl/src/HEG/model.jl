@@ -26,10 +26,11 @@ Orbital(v::Tuple,s=1) = Orbital(SVector(v),s)
 
 function get_beta_internal(theta, N)
   return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
+  #return (((6*(pi^2)*N)^(2/3))/((2*pi)^2)) * theta
 end
 
-function lambda(N, rs)
-    return (4/((2*pi)^3)) * ((4*pi)/3)^(1/3) * rs * N^(1/3)
+function lambda(N::Int, rs::Float64)
+    return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3)
 end
 
 " single particle energy for momentum vector k "

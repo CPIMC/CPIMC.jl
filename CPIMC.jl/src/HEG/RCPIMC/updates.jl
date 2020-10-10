@@ -49,8 +49,8 @@ function Add_Type_B(c::Configuration, e::Ensemble)
         orb_d = rand(occs)
     end
     prop_prob *= 1/(e.N-1)
-    #Reihnfolge der wahld er ersten beiden orbitale nicht rlevant
-    prop_prob *= 2
+    #Reihnfolge der wahld er ersten beiden orbitale nicht rlevant wird berücksichtigt bei der wahl von a und b
+    #prop_prob *= 2
     opportiunisties_orb_a = get_orbs_with_spin(setdiff!(get_sphere(orb_c), occs),orb_c.spin)
     opportiunisties_orb_b = get_orbs_with_spin(setdiff!(get_sphere(orb_d), occs),orb_d.spin)
     if (length(opportiunisties_orb_a) == 0) | (length(opportiunisties_orb_b) == 0)
@@ -64,7 +64,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
 
 
     #there are two ways to propose the same update that we have to consider
-    prop_prob = prop_prob*1/length(opportiunisties_orb_a) + prop_prob*1/length(opportiunisties_orb_b)
+    prop_prob *= (1/length(opportiunisties_orb_a) + 1/length(opportiunisties_orb_b))
 
     #get tau2
     #TO DO Was passiert wenn wir eine Zeit würfeln, die schon im Dictionary enthalten ist?
@@ -111,10 +111,25 @@ function Add_Type_B(c::Configuration, e::Ensemble)
 
     # quotient of proposal probabilities
     dv = length(c.kinks)/prop_prob
+
+    #calculate change in diagonal interaction energy
+    delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
+    for occ in occs
+        if occ == orb_c
+            delta_id += -1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
+        elseif occ == orb_d
+            delta_id += -1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
+        else
+            delta_id += (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
+                                                + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
+                                                - 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
+                                                - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
+        end
+    end
     # weight factor
-    dw = get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
+    dw = ((e.beta)^2) *get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
             exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
-                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)))
+                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_id)
     #return quotient of poposing probabilites
     #print("add:",T4(orb_a,orb_b,orb_c,orb_d),dv*dw,"\n")
     return(dv*dw)
@@ -146,19 +161,36 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         if delta_Tau < 0
             delta_Tau = 1 + delta_Tau
         end
-        k = last(Kink1).k
-        l = last(Kink1).l
-        inverse_prop_prob = (1/e.N)*(1/(e.N-1))* 2 *
-            (1/length(get_orbs_with_spin(setdiff!(get_sphere(k), c.occupations),k.spin)) +
-                1/length(get_orbs_with_spin(setdiff!(get_sphere(l), c.occupations),l.spin))) *
+        occs = get_occupations_at(c, first(Kink1))
+        orb_a = last(Kink1).i
+        orb_b = last(Kink1).j
+        orb_c = last(Kink1).k
+        orb_d = last(Kink1).l
+        inverse_prop_prob = (1/e.N)*(1/(e.N-1))* #2 *
+            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c), occs),orb_c.spin)) +
+                1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_d), occs),orb_d.spin))) *
             1 * 2/(delta_Tau)
-        #prüfen: statt dem factor 1 e.beta?
+        #prüfen: statt dem factor 1 1/e.beta? 1/beta^2 steht in dw
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
+        #calculate change in diagonal interaction energy
+        delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
+        for occ in occs
+            if occ == orb_c
+                delta_id += -1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
+            elseif occ == orb_d
+                delta_id += -1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
+            else
+                delta_id += (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
+                                                    + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
+                                                    - 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
+                                                    - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
+            end
+        end
         # weight factor
-        dw = (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
-                exp((delta_Tau)*e.beta * (get_energy(last(Kink1).i)
-                    + get_energy(last(Kink1).j) -get_energy(last(Kink1).k) -get_energy(last(Kink1).l)))
+        dw = (1/(e.beta)^2) * (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
+                exp((delta_Tau)*e.beta * (get_energy(orb_a)
+                    + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d) + delta_id))
         #print("remove: ", length(c.kinks),"     ", dv*dw,"\n")
         return (dv*dw)
     else

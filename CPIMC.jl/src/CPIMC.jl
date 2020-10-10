@@ -23,13 +23,24 @@ end
 
 function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
     " equilibration "
+    println("starting equilibration")
+    k = 1 #print prgoress
     for i in 1:throwAway
+        if i%(throwAway/100) == 0
+            println("eq: ",k,"/100")
+            k+=1
+        end
         propose_update!(c,updates,e)
     end
-
+    println("starting Simulation")
     i = 0
-
+    k = 1#print progress
     while i < steps
+        #print progress
+        if i%(steps/100) == 0
+            println(k,"/100")
+            k+=1
+        end
         propose_update!(c,updates,e)
         """try###Debugg Code
             get_occupations_at(c, e.beta)
