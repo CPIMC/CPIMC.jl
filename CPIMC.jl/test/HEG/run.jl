@@ -30,7 +30,7 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
-    , :occN => (Hist(1:100; left = true, closed = true), occVec)## left border is closed to include the integer values
+    , :occN => (Hist(0:100; left = true, closed = false), occVec)## left border is closed to include the integer values, last right border is open to exclude the right integer
     )
 
     print("Start MC process ... ")
