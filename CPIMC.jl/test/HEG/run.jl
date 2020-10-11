@@ -1,4 +1,6 @@
 using OnlineStats
+using DelimitedFiles
+
 
 include("../../src/Configuration.jl")
 include("../../src/CPIMC.jl")
@@ -53,6 +55,11 @@ function main()
     println("")
 #    println(std.(measurements[:occN][1].stats))## TODO: Variance() of each bin
     println("")
+
+    ## Print to results file
+    open("out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
+           writedlm(io, zip(value(measurements[:occN][1])...))
+       end
 end
 
 main()
