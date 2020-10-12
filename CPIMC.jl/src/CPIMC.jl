@@ -12,7 +12,6 @@ function propose_update!(c::Configuration, updates, e::Ensemble)
         c.kinks = c_old.kinks
         #print("   rejected\n")
         return :reject
-
     end
 end
 

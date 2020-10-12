@@ -39,6 +39,10 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     prop_prob = 1
     #get first tau
     tau1 = img_time(rand())
+    #do not allow two kinks at the same time
+    while haskey(c.kinks, tau1)
+        tau1 = img_time(rand())
+    end
     #prop_prob *= 1/e.beta
     #get effected orbitlas (abcd)
     occs = get_occupations_at(c, tau1)
@@ -58,7 +62,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
     orb_a = rand(opportiunisties_orb_a)
     orb_b = Orbital((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
-    if (!in(orb_b,opportiunisties_orb_b) | (orb_a == orb_b))
+    if (!in(orb_b,opportiunisties_orb_b) | (orb_a == orb_b) | (orb_a == orb_d) | (orb_b == orb_c))
         return 1
     end
 
@@ -67,15 +71,21 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     prop_prob *= (1/length(opportiunisties_orb_a) + 1/length(opportiunisties_orb_b))
 
     #get tau2
-    #TO DO Was passiert wenn wir eine Zeit würfeln, die schon im Dictionary enthalten ist?
     boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1)
     delta_Tau = boarders[2]-boarders[1]
     if delta_Tau < 0
         delta_Tau = 1 + delta_Tau
     end
-    tau2 = rand()*(delta_Tau) + boarders[1]
+    tau2 = img_time(rand()*(delta_Tau) + boarders[1])
     if tau2 > 1
         tau2 -= 1
+    end
+    #do not allow two kinks at the same time
+    while haskey(c.kinks, tau2)
+        tau2 = img_time(rand()*(delta_Tau) + boarders[1])
+        if tau2 > 1
+            tau2 -= 1
+        end
     end
     #Schuaen welcher der beiden imaginärzeitpunkte der "linke" ist
     if tau1 > boarders[1]
@@ -113,12 +123,13 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     dv = length(c.kinks)/prop_prob
 
     #calculate change in diagonal interaction energy
+    #occs enthält orb orb_c und orb_d aber nciht orb_a und orb_b
     delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
     for occ in occs
         if occ == orb_c
-            delta_id += -1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
+            delta_id += -(lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
         elseif occ == orb_d
-            delta_id += -1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
+            "nix"
         else
             delta_id += (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
                                                 + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
@@ -126,10 +137,20 @@ function Add_Type_B(c::Configuration, e::Ensemble)
                                                 - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
         end
     end
+    #print("add: ", delta_id, "\n")
     # weight factor
-    dw = ((e.beta)^2) *get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
+    dw = ((e.beta)^2) * get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
             exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
-                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_id)
+                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d) + delta_id))
+
+    """print("beta^2: ", ((e.beta)^2), "\n")
+    print("W^2: ", get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2, "\n")
+    print("delta_T: ", get_energy(orb_a)
+        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d), "\n")
+    print("exp(T): ", exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
+        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))), "\n")
+    print("exp(W_D): ", exp(-(delta_Tau)*e.beta * (delta_id)), "\n")
+    print("\n", "\n", "\n")"""
     #return quotient of poposing probabilites
     #print("add:",T4(orb_a,orb_b,orb_c,orb_d),dv*dw,"\n")
     return(dv*dw)
@@ -177,9 +198,9 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
         for occ in occs
             if occ == orb_c
-                delta_id += -1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
+                delta_id += -(lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
             elseif occ == orb_d
-                delta_id += -1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
+                "nix"
             else
                 delta_id += (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
                                                     + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
@@ -187,16 +208,22 @@ function remove_Type_B(c::Configuration, e::Ensemble)
                                                     - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
             end
         end
+        #print("remove: ", delta_id, "\n")
         # weight factor
         dw = (1/(e.beta)^2) * (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
                 exp((delta_Tau)*e.beta * (get_energy(orb_a)
                     + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d) + delta_id))
+
         #print("remove: ", length(c.kinks),"     ", dv*dw,"\n")
         return (dv*dw)
     else
         return(1)
     end
 end
+
+####Für richtiges rcpimc ist eine funktion change Type-b benötigt
+#### Es muss dann auchs sichergestellt werden, dass nur Kinks mit
+#### geringer anregungslänge vernichtet werden können.
 
 
 

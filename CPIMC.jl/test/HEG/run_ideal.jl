@@ -2,8 +2,12 @@ using OnlineStats
 
 include("../../src/Configuration.jl")
 include("../../src/HEG/model.jl")
-include("../../src/HEG/RCPIMC/updates.jl")
-include("../../src/HEG/RCPIMC/estimators.jl")
+
+include("../../src/HEG/Ideal/updates.jl")
+include("../../src/HEG/Ideal/estimators.jl")
+#include("../../src/HEG/RCPIMC/updates.jl")
+#include("../../src/HEG/RCPIMC/estimators.jl")
+
 include("../../src/CPIMC.jl")
 
 
@@ -15,25 +19,26 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 4* 10^5
+    NMC = 10^6
     cyc = 3
-    NEquil = 4* 10^5
+    NEquil = 10^6
 
     # system parameters
-    theta = 0.125
-    rs = 1
+    theta = 0.5
+    rs = 0.1
 
-    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1) ### use 7 particles
+    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1) ### use 33 particles
 
 
     println("Number of particles: ", length(S))
     println("theta: ", theta)
     println("rs: ", rs)
     N = length(S)
+    println("N: ", N)
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle, Add_Type_B, remove_Type_B]
+    """updates = [move_particle, Add_Type_B, remove_Type_B]
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -43,6 +48,12 @@ function main()
     , :K => (Variance(), K)
     , :Etot => (Variance(), Etot)
     , :occN => (Group([Variance() for i=1:200]), occVec)
+    )"""
+
+    updates = [move_particle]
+
+    measurements = Dict(
+      :Ekin => (Variance(), Ekin)
     )
 
     println("Start MC process ... ")

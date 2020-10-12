@@ -26,7 +26,6 @@ Orbital(v::Tuple,s=1) = Orbital(SVector(v),s)
 
 function get_beta_internal(theta, N)
   return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
-  #return (((6*(pi^2)*N)^(2/3))/((2*pi)^2)) * theta
 end
 
 function lambda(N::Int, rs::Float64)
@@ -113,7 +112,6 @@ function get_sphere(o::Orbital{1}; dk::Int=2)
             push!(os, Orbital(o.vec+SVector(x),-1))
         end
     end
-    delete!(os, o)
     os
 end
 
@@ -128,12 +126,11 @@ function get_sphere(o::Orbital{2}; dk::Int=2)
             end
         end
     end
-    delete!(os, o)
     os
 end
 
-#excluding the orbital itself
-function get_sphere(o::Orbital{3}; dk::Int=2)
+
+function get_sphere(o::Orbital{3}; dk::Int=1)
     os = Set{Orbital{3}}()
 
     for x in -dk:dk
@@ -146,7 +143,6 @@ function get_sphere(o::Orbital{3}; dk::Int=2)
             end
         end
     end
-    delete!(os, o)
     os
 end
 

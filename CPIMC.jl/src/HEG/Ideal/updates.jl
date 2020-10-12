@@ -1,8 +1,11 @@
 function move_particle(c::Configuration, e::Ensemble)
 
     x = rand(c.occupations)
-    oe = setdiff!(get_sphere(x), c.occupations)
-    @assert length(oe) > 0 "no empty orbitals in neighbourhood"
+    oe = get_orbs_with_spin(setdiff!(get_sphere(x), c.occupations),x.spin)
+    #@assert length(oe) > 0 "no empty orbitals in neighbourhood"
+    if length(oe) == 0
+        return 1
+    end
 
     y = rand(oe)
     @assert x != y "same Configuration proposed."
@@ -15,7 +18,7 @@ function move_particle(c::Configuration, e::Ensemble)
     push!(c.occupations,y)
 
     # get orbitals for reverse update
-    oe2 = setdiff!(get_sphere(y), c.occupations)
+    oe2 = get_orbs_with_spin(setdiff!(get_sphere(y), c.occupations),y.spin)
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
