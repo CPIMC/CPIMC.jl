@@ -104,7 +104,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             lasttau = tau1
         end
     end
-    delta_Tau = firsttau-lasttau
+    delta_Tau = lasttau - firsttau
     if delta_Tau < 0
         delta_Tau += 1
     end
@@ -152,14 +152,17 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
             exp(-((delta_Tau)*e.beta * (get_energy(orb_a)
                 + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_id))
-    print("add: ", delta_di)
+
     """print("beta^2: ", ((e.beta)^2), "\n") #debugg code
     print("W^2: ", get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2, "\n")
     print("delta_T: ", get_energy(orb_a)
         + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d), "\n")
     print("exp(T): ", exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
         + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))), "\n")
-    print("exp(W_D): ", exp(-(delta_Tau)*e.beta * (delta_id)), "\n")
+    print("exp(W_D): ", exp(-(delta_id)), "\n")
+    println("dv: ", dv)
+    println("dw ", dw)
+
     print("\n", "\n", "\n")"""
     """println("W_D): ", (delta_id))
     println("delta_T: ", get_energy(orb_a)
@@ -167,7 +170,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     println("exp(T): ", exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
         + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))))"""
     #return quotient of poposing probabilites
-    #print("add:",T4(orb_a,orb_b,orb_c,orb_d),dv*dw,"\n")
+    #print("add:",T4(orb_a,orb_b,orb_c,orb_d),"\n       ",dv*dw,"\n")
     return(dv*dw)
 end
 
@@ -228,8 +231,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
                 exp((delta_Tau)*e.beta * (get_energy(orb_a)
                     + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_di)
 
-        #print("remove: ", length(c.kinks),"     ", dv*dw,"\n")
-        print("remove: ", delta_di)
+        #print("remove: ", last(Kink1),"\n     ", dv*dw,"\n")
         return (dv*dw)
     else
         return(1)
