@@ -11,7 +11,7 @@ include("../../src/HEG/Ideal/estimators.jl")
 
 function main()
     # MC options
-    NMC = 5*10^5
+    NMC = 1*10^4
     cyc = 3
     NEquil = 10^3
 
@@ -33,6 +33,7 @@ function main()
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
     , :occN => (Hist(0:100; left = true, closed = false), occVec)## left border is closed to include the integer values, last right border is open to exclude the right integer
+    , :occs => (Group([Variance() for i in 1:100]), occupations)## left border is closed to include the integer values, last right border is open to exclude the right integer
     )
 
     print("Start MC process ... ")
@@ -51,15 +52,18 @@ function main()
 
     println("occupations:")
     println("============")
-    println(measurements[:occN][1])
+    println(measurements[:occN])
     println("")
 #    println(std.(measurements[:occN][1].stats))## TODO: Variance() of each bin
     println("")
 
+    println(mean.(measurements[:occs][1].stats))
+    println(std.(measurements[:occs][1].stats))
+
     ## Print to results file
-    open("out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
-           writedlm(io, zip(value(measurements[:occN][1])...))
-       end
+    # open("out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
+    #        writedlm(io, zip(value(measurements[:occN][1])...))
+    #    end
 end
 
 main()
