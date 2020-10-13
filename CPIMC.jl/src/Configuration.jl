@@ -39,23 +39,23 @@ end
 
 #Führe einen Typ-4-Kink auf einer Konfiguration aus
 function change_occupations(occs::Set, K::T4)
- #try
+  #try
   @assert (in(K.k, occs) & in(K.l, occs))
   @assert (!in(K.i, occs) & !in(K.j, occs))
- #catch ex
- #    print("BREAK")
- #end
+  #catch ex
+  #    print("BREAK")
+  #end
   delete!(occs, K.k)
   delete!(occs, K.l)
   push!(occs, K.i)
   push!(occs, K.j)
 end
 
-#Find occupation numbers at Tau
+#Find occupation numbers at Tau if there is a Kink at Tau find occupations right from it
 function get_occupations_at(conf::Configuration, Tau::img_time)
   occupations = copy(conf.occupations)
   for (tau_kink,kink) in conf.kinks
-    if tau_kink < Tau
+    if tau_kink <= Tau
       change_occupations(occupations, kink)
     else
       break

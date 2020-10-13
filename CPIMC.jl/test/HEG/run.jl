@@ -15,9 +15,9 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 4* 10^5
-    cyc = 3
-    NEquil = 4* 10^5
+    NMC = 5* 10^5
+    cyc = 10
+    NEquil = 10^5
 
     # system parameters
     theta = 0.125
@@ -30,10 +30,11 @@ function main()
     println("theta: ", theta)
     println("rs: ", rs)
     N = length(S)
+    println("N: ", N)
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle, Add_Type_B, remove_Type_B]
+    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B]
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)

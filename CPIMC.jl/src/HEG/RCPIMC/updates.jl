@@ -1,13 +1,12 @@
-
+const ex_radius = 2 #max Radius for exitation
 function move_particle(c::Configuration, e::Ensemble)
-
     free_orbitals = get_non_interacting_orbs_of_set(c, c.occupations)
     if length(free_orbitals) == 0
         return 1
     else
         x = rand(get_non_interacting_orbs_of_set(c, c.occupations))
     end
-    oe = get_orbs_with_spin(get_non_interacting_orbs_of_set(c,setdiff!(get_sphere(x), c.occupations)), x.spin)
+    oe = get_non_interacting_orbs_of_set(c,get_orbs_with_spin(setdiff!(get_sphere(x, dk = ex_radius), c.occupations), x.spin))
 
     #if there are no empty non interacting orbitals in neighbourhood make no change
     if length(oe) == 0
@@ -26,7 +25,7 @@ function move_particle(c::Configuration, e::Ensemble)
     push!(c.occupations,y)
 
     # get orbitals for reverse update
-    oe2 = setdiff!(get_sphere(y), c.occupations)
+    oe2 = setdiff!(get_sphere(y, dk = ex_radius), c.occupations)
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
@@ -55,8 +54,8 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     prop_prob *= 1/(e.N-1)
     #Reihnfolge der wahld er ersten beiden orbitale nicht rlevant wird berücksichtigt bei der wahl von a und b
     #prop_prob *= 2
-    opportiunisties_orb_a = get_orbs_with_spin(setdiff!(get_sphere(orb_c), occs),orb_c.spin)
-    opportiunisties_orb_b = get_orbs_with_spin(setdiff!(get_sphere(orb_d), occs),orb_d.spin)
+    opportiunisties_orb_a = get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin)
+    opportiunisties_orb_b = get_orbs_with_spin(setdiff!(get_sphere(orb_d, dk = ex_radius), occs),orb_d.spin)
     if (length(opportiunisties_orb_a) == 0) | (length(opportiunisties_orb_b) == 0)
         return 1
     end
@@ -72,17 +71,17 @@ function Add_Type_B(c::Configuration, e::Ensemble)
 
     #get tau2
     boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1)
-    delta_Tau = boarders[2]-boarders[1]
-    if delta_Tau < 0
-        delta_Tau = 1 + delta_Tau
+    possible_tau2_interval = boarders[2]-boarders[1]
+    if possible_tau2_interval < 0
+        possible_tau2_interval = 1 + possible_tau2_interval
     end
-    tau2 = img_time(rand()*(delta_Tau) + boarders[1])
+    tau2 = img_time(rand()*(possible_tau2_interval) + boarders[1])
     if tau2 > 1
         tau2 -= 1
     end
     #do not allow two kinks at the same time
     while haskey(c.kinks, tau2)
-        tau2 = img_time(rand()*(delta_Tau) + boarders[1])
+        tau2 = img_time(rand()*(possible_tau2_interval) + boarders[1])
         if tau2 > 1
             tau2 -= 1
         end
@@ -105,9 +104,17 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             lasttau = tau1
         end
     end
-
+    delta_Tau = firsttau-lasttau
+    if delta_Tau < 0
+        delta_Tau += 1
+    end
+    @assert(delta_Tau > 0)
+    @assert(delta_Tau <= 1)
     #there are 2 possibilites that will result into the same 2 taus
-    prop_prob *= 2/(delta_Tau)
+    prop_prob *= 2/(possible_tau2_interval)
+
+    #calculate change in diagonal interaction energy
+    delta_di = get_change_diagonal_interaction(c, e, T4(orb_a,orb_b,orb_c,orb_d), firsttau, lasttau)
 
     #change configuration
     #print(T4(orb_a,orb_b,orb_c,orb_d),"\n")
@@ -120,10 +127,12 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
 
     # quotient of proposal probabilities
-    dv = length(c.kinks)/prop_prob
+    dv = (1/length(c.kinks))/prop_prob
 
     #calculate change in diagonal interaction energy
     #occs enthält orb orb_c und orb_d aber nciht orb_a und orb_b
+    #Hier Fehler: Kinks zwischen den beiden neuen Kinks müssen berücksicht werden
+
     delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
     for occ in occs
         if occ == orb_c
@@ -139,11 +148,12 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
     #print("add: ", delta_id, "\n")
     # weight factor
-    dw = ((e.beta)^2) * get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
-            exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
-                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d) + delta_id))
-
-    """print("beta^2: ", ((e.beta)^2), "\n")
+    dw = ((e.beta)^2) *
+            get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
+            exp(-((delta_Tau)*e.beta * (get_energy(orb_a)
+                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_id))
+    print("add: ", delta_di)
+    """print("beta^2: ", ((e.beta)^2), "\n") #debugg code
     print("W^2: ", get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2, "\n")
     print("delta_T: ", get_energy(orb_a)
         + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d), "\n")
@@ -151,6 +161,11 @@ function Add_Type_B(c::Configuration, e::Ensemble)
         + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))), "\n")
     print("exp(W_D): ", exp(-(delta_Tau)*e.beta * (delta_id)), "\n")
     print("\n", "\n", "\n")"""
+    """println("W_D): ", (delta_id))
+    println("delta_T: ", get_energy(orb_a)
+        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))
+    println("exp(T): ", exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
+        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))))"""
     #return quotient of poposing probabilites
     #print("add:",T4(orb_a,orb_b,orb_c,orb_d),dv*dw,"\n")
     return(dv*dw)
@@ -163,7 +178,10 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     end
     #print(length(c.kinks),"\n")
     Kink1 = rand(c.kinks)
-    prop_prob = length(c.kinks)
+    if dot(last(Kink1).i.vec-last(Kink1).k.vec, last(Kink1).i.vec-last(Kink1).k.vec) > ex_radius^2
+        return 1
+    end
+    prop_prob = 1/length(c.kinks)
     Tau_Kink2 = last(get_Tau_boarders(c, Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l]),first(Kink1)))
     Kink2 = Tau_Kink2 => c.kinks[Tau_Kink2]
     #look if Kinks are type-b-connected
@@ -175,12 +193,17 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         #see if occupations at tau=0 are modified
         if first(Kink1) > first(Kink2)
             change_occupations(c.occupations, last(Kink2))
+            delta_Tau = first(Kink2)-first(Kink1) + 1
+        else
+            delta_Tau = first(Kink2)-first(Kink1)
         end
+        @assert(delta_Tau > 0)
+        @assert(delta_Tau <= 1)
         #calculate inverse prop_prob (see  Add_Type_B)
         boarders = get_Tau_boarders(c, ijkl ,first(Kink1))
-        delta_Tau = boarders[2]-boarders[1]
-        if delta_Tau < 0
-            delta_Tau = 1 + delta_Tau
+        possible_tau2_interval = boarders[2]-boarders[1]
+        if possible_tau2_interval < 0
+            possible_tau2_interval = 1 + possible_tau2_interval
         end
         occs = get_occupations_at(c, first(Kink1))
         orb_a = last(Kink1).i
@@ -188,33 +211,25 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         orb_c = last(Kink1).k
         orb_d = last(Kink1).l
         inverse_prop_prob = (1/e.N)*(1/(e.N-1))* #2 *
-            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c), occs),orb_c.spin)) +
-                1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_d), occs),orb_d.spin))) *
-            1 * 2/(delta_Tau)
+            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin)) +
+                1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_d, dk = ex_radius), occs),orb_d.spin))) *
+            1 * 2/(possible_tau2_interval)
         #prüfen: statt dem factor 1 1/e.beta? 1/beta^2 steht in dw
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
+
         #calculate change in diagonal interaction energy
-        delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
-        for occ in occs
-            if occ == orb_c
-                delta_id += -(lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
-            elseif occ == orb_d
-                "nix"
-            else
-                delta_id += (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
-                                                    + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
-                                                    - 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
-                                                    - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
-            end
-        end
+        delta_di = get_change_diagonal_interaction(c, e, last(Kink1), first(Kink1), first(Kink2))
+
         #print("remove: ", delta_id, "\n")
         # weight factor
-        dw = (1/(e.beta)^2) * (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
+        dw = (1/(e.beta)^2) *
+            (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
                 exp((delta_Tau)*e.beta * (get_energy(orb_a)
-                    + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d) + delta_id))
+                    + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_di)
 
         #print("remove: ", length(c.kinks),"     ", dv*dw,"\n")
+        print("remove: ", delta_di)
         return (dv*dw)
     else
         return(1)
@@ -224,7 +239,75 @@ end
 ####Für richtiges rcpimc ist eine funktion change Type-b benötigt
 #### Es muss dann auchs sichergestellt werden, dass nur Kinks mit
 #### geringer anregungslänge vernichtet werden können.
+function change_type_B(c::Configuration, e::Ensemble)
+    if length(c.kinks) == 0
+        return 1
+    end
+    #print(length(c.kinks),"\n")
+    Kink1 = rand(c.kinks)
+    Tau_Kink2 = last(get_Tau_boarders(c, Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l]),first(Kink1)))
+    Kink2 = Tau_Kink2 => c.kinks[Tau_Kink2]
+    #look if Kinks are type-b-connected
+    ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
+    if ijkl != Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
+        return(1)
+    end
+    occs = get_occupations_at(c, first(Kink1))
 
+    opportunities = get_non_interacting_orbs_of_set_in_interval(
+                        c,get_orbs_with_spin(
+                            setdiff!(
+                                get_sphere(last(Kink1).i, dk = ex_radius
+                                ), occs
+                            ), last(Kink1).i.spin
+                        ),first(Kink1),first(Kink2)
+                    )
+    delete!(opportunities, last(Kink1).k)
+    delete!(opportunities, last(Kink1).l)
+    if length(opportunities) == 0
+        return 1
+    end
+    new_orb_i = rand(opportunities)
+    new_orb_j = Orbital(last(Kink1).j.vec + last(Kink1).i.vec - new_orb_i.vec, last(Kink1).j.spin)
+    if new_orb_i == new_orb_j
+        return 1
+    end
+    if (!is_non_interacting_in_interval(c,new_orb_j,first(Kink1),first(Kink2))) |
+        in(new_orb_j,occs)
+        return 1
+    else
+        #calculate change in diagonal interaction energy
+        delta_di = get_change_diagonal_interaction(c, e, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j), first(Kink1), first(Kink2))
+
+        if first(Kink1) > first(Kink2)
+            #println(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j)
+            change_occupations(c.occupations, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
+            delta_Tau = first(Kink2)-first(Kink1) + 1
+        else
+            delta_Tau = first(Kink2)-first(Kink1)
+        end
+
+
+        dw = exp(-(e.beta*delta_Tau*(get_energy(new_orb_i) + get_energy(new_orb_j)
+                                    -get_energy(last(Kink1).i) - get_energy(last(Kink1).j)) + delta_di)) *
+            (get_abs_offdiagonal_element(e,c,T4(new_orb_i, new_orb_j, last(Kink1).k, last(Kink1).l))/
+                        get_abs_offdiagonal_element(e,c,last(Kink1)))^2
+
+        #change configuration
+        c.kinks[first(Kink1)] = T4(new_orb_i, new_orb_j, last(Kink1).k, last(Kink1).l)
+        c.kinks[first(Kink2)] = T4(last(Kink2).i, last(Kink2).j, new_orb_i, new_orb_j,)
+
+        opportunites_reverse = get_non_interacting_orbs_of_set_in_interval(
+                                    c,get_orbs_with_spin(
+                                        setdiff!(
+                                            get_sphere(last(Kink1).i, dk = ex_radius
+                                            ), occs
+                                        ), last(Kink1).i.spin
+                                    ),first(Kink1),first(Kink2)
+                                )
+        return (dw * length(opportunities)/length(opportunites_reverse))
+    end
+end
 
 
 
