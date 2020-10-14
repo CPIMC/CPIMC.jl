@@ -8,14 +8,11 @@ end
 
 function occupations(c::Configuration, emax::Int=99)
     nk = zeros(emax)
-    # for en in 0:emax
-    #     if in(en, get_energy.(c.occupations))
-    #         nk[en+1] = 1
-    #     end
-    # end
+
     for en in get_energy.(c.occupations)
         nk[en+1] = 1
     end
+
     nk
 end
 
