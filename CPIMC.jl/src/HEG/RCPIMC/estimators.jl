@@ -26,7 +26,8 @@ function W_diag(e::Ensemble, c::Configuration)
             redundant = true
             for occ2 in c.occupations
                 if !redundant
-                    W_diag += (lambda(e.N,e.rs)/2) * 1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
+                    # W_diag += (lambda(e.N,e.rs)/2) * 1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
+                    W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
                 end
                 if occ1 == occ2
                     redundant = false
@@ -41,9 +42,8 @@ function W_diag(e::Ensemble, c::Configuration)
                 redundant = true
                 for occ2 in occs
                     if !redundant
-                        W_diag += (lambda(e.N,e.rs)/2) *
-                                1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) *
-                                (Tau-old_Tau)
+                        # W_diag += (lambda(e.N,e.rs)/2) * 1/dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (Tau-old_Tau)
+                        W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (Tau-old_Tau)
                     end
                     if occ1 == occ2
                         redundant = false
@@ -70,9 +70,24 @@ function K(e::Ensemble, c::Configuration)
     return(length(c.kinks))
 end
 
-############Noch nicht fürs WW-System
-function occVec(e::Ensemble, c::Configuration)
-    get_energy.(c.occupations)
+function occupations(e::Ensemble, c::Configuration, emax::Int=100)
+    nk = zeros(emax)
+    if isempty(c.kinks)
+        for en in get_energy.(c.occupations)
+            nk[en+1] = nk[en+1] + 1
+        end
+    else
+        occs = copy(c.occupations)
+        old_Tau = first(last(c.kinks)) - 1
+        for (tau,k) in c.kinks
+            for en in get_energy.(occs)
+                nk[en+1] = nk[en+1] + (tau - old_Tau)
+            end
+            old_Tau = tau
+            change_occupations(occs,k)
+        end
+    end
+    nk
 end
 
 function particleNumber(c::Configuration)
