@@ -53,7 +53,7 @@ function get_orbshell(o::Orbital{1};dw::Int=2)
     eq = get_energy(o)
     qmax = Int(floor(eq))
 
-    os = Set{Orbital{D}}()
+    os = Set{Orbital{1}}()
 
     for x in -qmax:qmax
         if abs(x*x - eq) <= dw
@@ -65,7 +65,7 @@ function get_orbshell(o::Orbital{1};dw::Int=2)
     os
 end
 
-function get_orbshell(o::Orbital{1};dw::Int=2)
+function get_orbshell(o::Orbital{2};dw::Int=2)
     eq = get_energy(o)
     qmax = Int(floor(eq))
 
