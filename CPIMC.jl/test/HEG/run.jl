@@ -32,9 +32,7 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
-    , :occs => (Group([Variance() for i in 1:100]), occupations)## left border is closed to include the integer values, last right border is open to exclude the right integer
-    , :occ0 => (Variance(), occupation0)
-    , :occ0Samples => (CountMap(Int), occupation0)
+    , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
     print("Start MC process ... ")
@@ -55,9 +53,6 @@ function main()
     println("============")
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
-    println("occupation of zero-energy state:")
-    println("============")
-    println(measurements[:occ0Samples])
 
     # Print to results file
     open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
@@ -66,5 +61,3 @@ function main()
 end
 
 main()
-
-@time(main())
