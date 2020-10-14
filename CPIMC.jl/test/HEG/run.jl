@@ -17,15 +17,9 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-<<<<<<< HEAD
     NMC = 5* 10^5
     cyc = 10
     NEquil = 10^5
-=======
-    NMC = 1*10^6
-    cyc = 10
-    NEquil = 10^3
->>>>>>> fix_occNums
 
     # system parameters
     theta = 0.125
@@ -46,16 +40,12 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
-<<<<<<< HEAD
     , :W_off_diag => (Variance(), W_off_diag)
     , :W_diag => (Variance(), W_diag)
     , :Epot => (Variance(), Epot)
     , :K => (Variance(), K)
     , :Etot => (Variance(), Etot)
-    , :occN => (Group([Variance() for i=1:200]), occVec)
-=======
     , :occs => (Group([Variance() for i in 1:100]), occupations)
->>>>>>> fix_occNums
     )
 
     println("Start MC process ... ")
@@ -75,20 +65,13 @@ function main()
     #occupations funktionieren noch nicht fürs WW-System
     """println("occupations:")
     println("============")
-<<<<<<< HEAD
-    println(mean.(measurements[:occN][1].stats))
-    println("")
-    println(std.(measurements[:occN][1].stats))
-    println("")"""
-=======
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
 
     # Print to results file
     open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
-       end
->>>>>>> fix_occNums
+       end"""
 end
 
 #Juno.@run(main())
