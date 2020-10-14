@@ -17,7 +17,7 @@ function move_particle(c::Configuration, e::Ensemble)
     y = rand(oe)
     @assert x != y "same Configuration proposed."
 
-    delta_di = get_change_diagonal_interaction(c, e, T2(y,x), 0, 1)
+    #delta_di = get_change_diagonal_interaction(c, e, T2(y,x), 0, 1)
     # weight change
     dw = exp(-e.beta*(get_energy(y)-get_energy(x)))
 

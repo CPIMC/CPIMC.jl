@@ -45,7 +45,6 @@ function main()
     , :Epot => (Variance(), Epot)
     , :K => (Variance(), K)
     , :Etot => (Variance(), Etot)
-    , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
     println("Start MC process ... ")
