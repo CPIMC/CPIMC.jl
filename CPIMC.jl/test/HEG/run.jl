@@ -45,6 +45,7 @@ function main()
     , :Epot => (Variance(), Epot)
     , :K => (Variance(), K)
     , :Etot => (Variance(), Etot)
+    , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
     println("Start MC process ... ")
@@ -62,7 +63,7 @@ function main()
     println("")
 
     #occupations funktionieren noch nicht fürs WW-System
-    """println("occupations:")
+    println("occupations:")
     println("============")
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
@@ -70,7 +71,7 @@ function main()
     # Print to results file
     open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
-       end"""
+       end
 end
 
 #Juno.@run(main())
