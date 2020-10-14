@@ -22,8 +22,8 @@ function main()
     NEquil = 10^5
 
     # system parameters
-    theta = 0.125
-    rs = 1
+    theta = 0.0625
+    rs = 5
 
     S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1) ### use 7 particles
 
