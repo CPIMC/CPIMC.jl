@@ -1,4 +1,6 @@
 using OnlineStats
+using DelimitedFiles
+
 
 include("../../src/Configuration.jl")
 include("../../src/CPIMC.jl")
@@ -9,8 +11,8 @@ include("../../src/HEG/Ideal/estimators.jl")
 
 function main()
     # MC options
-    NMC = 5*10^5
-    cyc = 3
+    NMC = 1*10^6
+    cyc = 10
     NEquil = 10^3
 
     # system parameters
@@ -30,7 +32,7 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
-    , :occN => (Group([Variance() for i=1:200]), occVec)
+    , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
     print("Start MC process ... ")
@@ -49,10 +51,13 @@ function main()
 
     println("occupations:")
     println("============")
-    println(mean.(measurements[:occN][1].stats))
-    println("")
-    println(std.(measurements[:occN][1].stats))
-    println("")
+    println(mean.(measurements[:occs][1].stats))
+    println(std.(measurements[:occs][1].stats))
+
+    # Print to results file
+    open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
+           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
+       end
 end
 
 main()
