@@ -325,7 +325,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
         end
     end
     if length(c.kinks) == 0
-        return delta_id
+        return delta_id * e.beta
     end
     Kink_semi_token = searchsortedfirst(c.kinks,Tau1)
     if Kink_semi_token == pastendsemitoken(c.kinks)
