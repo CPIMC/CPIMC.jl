@@ -13,9 +13,10 @@ y = y[ti]
 y = y./degn[1:length(y)]# divide by degeneracy
 dy = dy[ti]
 dy = dy./degn[1:length(y)]# divide by degeneracy
-y = y./sum(y)# normalize bins
-dy = dy./sum(y)
-plot(x, y, ribbon=dy, xlabel="k", ylabel="n(k)", lw=4, label="n_k")
+sy = sum(y)
+y = y./sy# normalize bins
+dy = dy./sy
+plot(x, y, ribbon=dy, xlabel="k", ylabel="n(k)", lw=4, label="n_k", ylims=(0,1))
 vline!([2], label="kF", lw=4, la=0.7)## N=33 ↔ EF=4 → kF=2
 title!("Θ=1, rs=0.5, N=33")
 
