@@ -38,26 +38,10 @@ function main()
     print("Start MC process ... ")
     runMC(NMC, cyc, NEquil, updates, measurements, e, c)
     println(" finished.")
-    println("measurements:")
-    println("=============")
 
-    for (k,(f,m)) in measurements
-        if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
-        end
-    end
+    print_results(measurements)
 
-    println("")
-
-    println("occupations:")
-    println("============")
-    println(mean.(measurements[:occs][1].stats))
-    println(std.(measurements[:occs][1].stats))
-
-    # Print to results file
-    open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
-           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
-       end
+    save_results("./out", measurements, e)
 end
 
 main()

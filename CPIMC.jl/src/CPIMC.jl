@@ -42,5 +42,30 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     end
 end
 
+function print_results(measurements)
+    Nsamples = measurements[:Ekin][1].n
+    println("Number of Samples : ", Nsamples)
+    println("measurements:")
+    println("=============")
+
+    for (k,(f,m)) in measurements
+        if typeof(f) == Variance{Float64,Float64,EqualWeight}
+            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f) / Nsamples)
+        end
+    end
+
+    println("")
+
+    println("occupations:")
+    println("============")
+    println(mean.(measurements[:occs][1].stats))
+    println(std.(measurements[:occs][1].stats) ./ Nsamples)
+end
+
 function save_results(path, measurements, ensemble)
+    Nsamples = measurements[:Ekin][1].n
+    # Print to results file
+    open(joinpath(path, "occNums_N$(ensemble.N)_th$(replace(string(get_beta_internal(ensemble.beta,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat"), "w") do io
+           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats) ./ Nsamples))
+       end
 end
