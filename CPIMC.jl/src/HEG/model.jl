@@ -85,11 +85,11 @@ function get_orbshell(o::Orbital{3};dw::Int=2)
     os
 end
 
-function get_sphere(o::Orbital{1}; dk::Int=2)
+function get_sphere(o::Orbital{1}; dε::Int=4)
     os = Set{Orbital{1}}()
 
-    for x in -dk:dk
-        if x*x <= dk*dk
+    for x in -dε:dε
+        if x*x <= dε
             push!(os, Orbital(o.vec+SVector(x),0))
         end
     end
@@ -97,12 +97,12 @@ function get_sphere(o::Orbital{1}; dk::Int=2)
     os
 end
 
-function get_sphere(o::Orbital{2}; dk::Int=2)
+function get_sphere(o::Orbital{2}; dε::Int=4)
     os = Set{Orbital{2}}()
 
-    for x in -dk:dk
-        for y in -dk:dk
-            if x*x + y*y <= dk*dk
+    for x in -dε:dε
+        for y in -dε:dε
+            if x*x + y*y <= dε
                 push!(os, Orbital(o.vec+SVector(x,y),0))
             end
         end
@@ -111,13 +111,13 @@ function get_sphere(o::Orbital{2}; dk::Int=2)
     os
 end
 
-function get_sphere(o::Orbital{3}; dk::Int=2)
+function get_sphere(o::Orbital{3}; dε::Int=4)
     os = Set{Orbital{3}}()
 
-    for x in -dk:dk
-        for y in -dk:dk
-            for z in -dk:dk
-                if x*x + y*y + z*z <= dk*dk
+    for x in -dε:dε
+        for y in -dε:dε
+            for z in -dε:dε
+                if x*x + y*y + z*z <= dε
                     push!(os, Orbital(o.vec+SVector(x,y,z),0))
                 end
             end
