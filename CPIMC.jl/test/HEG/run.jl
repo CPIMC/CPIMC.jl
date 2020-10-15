@@ -19,10 +19,10 @@ function main()
     theta = 1.0
     rs = 0.5
 
-    S = get_sphere(Orbital((0,0,0),0),dk=2) ### use 19 particles
-    N = 33
+    S = get_sphere(Orbital((0,0,0),0),dk=2)
+    N = length(S)
 
-    println("Number of particles: ", length(S))
+    println("Number of particles: ", N)
 
     c = Configuration(S)
 
