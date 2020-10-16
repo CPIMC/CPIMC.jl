@@ -32,7 +32,7 @@ function main()
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
-    , :occs => (Group([Variance() for i in 1:100]), occupations)
+    , :occs => (Group([Variance(Int) for i in 1:100]), occupations)
     )
 
     print("Start MC process ... ")
