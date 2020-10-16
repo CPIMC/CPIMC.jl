@@ -19,7 +19,7 @@ function main()
     theta = 1.0
     rs = 0.5
 
-    S = get_sphere(Orbital((0,0,0),0),dk=2)
+    S = get_sphere(Orbital((0,0,0),0),dε=4)
     N = length(S)
 
     println("Number of particles: ", N)
