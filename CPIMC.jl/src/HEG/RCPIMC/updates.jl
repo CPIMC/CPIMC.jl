@@ -17,9 +17,9 @@ function move_particle(c::Configuration, e::Ensemble)
     y = rand(oe)
     @assert x != y "same Configuration proposed."
 
-    #delta_di = get_change_diagonal_interaction(c, e, T2(y,x), 0, 1)
+    delta_di = get_change_diagonal_interaction(c, e, T2(y,x), img_time(0), img_time(1))
     # weight change
-    dw = exp(-e.beta*(get_energy(y)-get_energy(x)))
+    dw = exp(-(e.beta*(get_energy(y)-get_energy(x)) + delta_di))
 
     # change Configuration
     delete!(c.occupations,x)
@@ -67,8 +67,10 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
 
 
-    #there are two ways to propose the same update that we have to consider
-    prop_prob *= (1/length(opportiunisties_orb_a) + 1/length(opportiunisties_orb_b))
+    #we do consider kink that difer in the order of indizes differnt states in
+    #the marcov chaina although they are identical in weight and estimators
+    #otherwise we would need a factor here
+    prop_prob *= 1/length(opportiunisties_orb_a)
 
     #get tau2
     boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1)
@@ -120,7 +122,25 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     #change configuration
     #print(T4(orb_a,orb_b,orb_c,orb_d),"\n")
     c.kinks[firsttau] = T4(orb_a,orb_b,orb_c,orb_d)
-    c.kinks[lasttau] = T4(orb_c,orb_d,orb_a,orb_b)
+    #shuffle index order of the second Kink
+    if rand() < 0.5
+        if rand() < 0.5
+            #swap both
+            c.kinks[lasttau] = T4(orb_d,orb_c,orb_b,orb_a)
+        else
+            #swap anihilators
+            c.kinks[lasttau] = T4(orb_c,orb_d,orb_b,orb_a)
+        end
+    else
+        if rand() < 0.5
+            #swap creators
+            c.kinks[lasttau] = T4(orb_d,orb_c,orb_a,orb_b)
+        else
+            #swap none
+            c.kinks[lasttau] = T4(orb_c,orb_d,orb_a,orb_b)
+        end
+    end
+    prop_prob *= 1/4
 
     #Look at wether the new pair of Kinks modifies the Occupations at Tau = 0
     if firsttau > lasttau
@@ -215,10 +235,8 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         orb_c = last(Kink1).k
         orb_d = last(Kink1).l
         inverse_prop_prob = (1/e.N)*(1/(e.N-1))* #2 *
-            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin)) +
-                1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_d, dk = ex_radius), occs),orb_d.spin))) *
-            1 * 2/(possible_tau2_interval)
-        #prüfen: statt dem factor 1 1/e.beta? 1/beta^2 steht in dw
+            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin))) *
+             2/(possible_tau2_interval) * (1/4)
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
 
@@ -239,9 +257,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     end
 end
 
-####Für richtiges rcpimc ist eine funktion change Type-b benötigt
-#### Es muss dann auchs sichergestellt werden, dass nur Kinks mit
-#### geringer anregungslänge vernichtet werden können.
+
 function change_type_B(c::Configuration, e::Ensemble)
     if length(c.kinks) == 0
         return 1
@@ -312,7 +328,18 @@ function change_type_B(c::Configuration, e::Ensemble)
     end
 end
 
-
+function shuffle_indixes(c::Configuration, e::Ensemble)
+    if length(c.kinks) == 0
+        return(1)
+    end
+    kink = rand(c.kinks)
+    if rand() > 0.5
+        c.kinks[first(kink)] = T4(last(kink).j,last(kink).i,last(kink).k,last(kink).l)
+    else
+        c.kinks[first(kink)] = T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)
+    end
+    return(1)
+end
 
 
 

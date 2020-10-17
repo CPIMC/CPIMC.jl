@@ -2,11 +2,11 @@ using OnlineStats
 using DelimitedFiles
 
 
-include("../../src/Configuration.jl")
-include("../../src/HEG/model.jl")
-include("../../src/HEG/RCPIMC/updates.jl")
-include("../../src/HEG/RCPIMC/estimators.jl")
-include("../../src/CPIMC.jl")
+include("../../../src/Configuration.jl")
+include("../../../src/HEG/model.jl")
+include("../../../src/HEG/RCPIMC/updates.jl")
+include("../../../src/HEG/RCPIMC/estimators.jl")
+include("../../../src/CPIMC.jl")
 
 
 """include("CPIMC.jl/src/Configuration.jl")
@@ -17,13 +17,13 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 5* 10^5
+    NMC = 10^7
     cyc = 10
-    NEquil = 10^5
+    NEquil = 10^7
 
     # system parameters
-    theta = 0.0625
-    rs = 5
+    theta = 0.125
+    rs = 1
 
     S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1) ### use 7 particles
 
@@ -36,7 +36,7 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B]
+    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B,shuffle_indixes]
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -44,7 +44,7 @@ function main()
     , :W_diag => (Variance(), W_diag)
     , :Epot => (Variance(), Epot)
     , :K => (Variance(), K)
-    , :Etot => (Variance(), Etot)
+    , :E => (Variance(), E)
     , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
@@ -69,9 +69,9 @@ function main()
     println(std.(measurements[:occs][1].stats))
 
     # Print to results file
-    open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
-           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
-       end
+    #open("../out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
+    #       writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
+    #   end
 end
 
 #Juno.@run(main())

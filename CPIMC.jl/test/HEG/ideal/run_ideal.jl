@@ -1,10 +1,10 @@
 using OnlineStats
 
-include("../../src/Configuration.jl")
-include("../../src/HEG/model.jl")
+include("../../../src/Configuration.jl")
+include("../../../src/HEG/model.jl")
 
-include("../../src/HEG/Ideal/updates.jl")
-include("../../src/HEG/Ideal/estimators.jl")
+include("../../../src/HEG/Ideal/updates.jl")
+include("../../../src/HEG/Ideal/estimators.jl")
 #include("../../src/HEG/RCPIMC/updates.jl")
 #include("../../src/HEG/RCPIMC/estimators.jl")
 

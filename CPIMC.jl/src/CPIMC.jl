@@ -27,8 +27,8 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     for i in 1:throwAway
         if i%(throwAway/100) == 0
             println("eq: ",k,"/100")
-            #println("K: ",length(c.kinks))
-            """if length(c.kinks) > 20
+            """println("K: ",length(c.kinks))
+            if length(c.kinks) > 20
                 for künk in c.kinks
                     println(künk)
                 end
@@ -45,7 +45,14 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         #print progress
         if i%(steps/100) == 0
             println(k,"/100")
-            #println("K: ",length(c.kinks))
+            """println("K: ",length(c.kinks))
+            if length(c.kinks) >= 14
+                println(c.occupations,"\n")
+                for ki in c.kinks
+                    println(ki)
+                end
+                println("\n\n\n")
+            end"""
             k+=1
         end
         propose_update!(c,updates,e)

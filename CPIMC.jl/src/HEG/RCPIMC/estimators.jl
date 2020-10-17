@@ -62,7 +62,7 @@ function Epot(e::Ensemble, c::Configuration)
     return(W_diag(e, c) + W_off_diag(e,c))
 end
 
-function Etot(e::Ensemble, c::Configuration)
+function E(e::Ensemble, c::Configuration)
     return(Ekin(e, c) + Epot(e,c))
 end
 
@@ -74,14 +74,18 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100)
     nk = zeros(emax)
     if isempty(c.kinks)
         for en in get_energy.(c.occupations)
-            nk[en+1] = nk[en+1] + 1
+            if en < emax
+                nk[en+1] = nk[en+1] + 1
+            end
         end
     else
         occs = copy(c.occupations)
         old_Tau = first(last(c.kinks)) - 1
         for (tau,k) in c.kinks
             for en in get_energy.(occs)
-                nk[en+1] = nk[en+1] + (tau - old_Tau)
+                if en < emax
+                    nk[en+1] = nk[en+1] + (tau - old_Tau)
+                end
             end
             old_Tau = tau
             change_occupations(occs,k)

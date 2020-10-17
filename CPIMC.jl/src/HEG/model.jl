@@ -29,7 +29,8 @@ function get_beta_internal(theta, N)
 end
 
 function lambda(N::Int, rs::Float64)
-    return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3)
+    #Warum Faktor 2 am ende?
+    return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
 end
 
 " single particle energy for momentum vector k "
@@ -45,8 +46,11 @@ function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbit
     if Kink.i.spin == Kink.j.spin
         wijkl -= 1/dot((Kink.i.vec-Kink.l.vec), (Kink.i.vec-Kink.l.vec))
     end
-    wijkl *= lambda(e.N,e.rs) * 1/2
-    return abs(wijkl)
+    #the factor lamda/2 is due to the use of internal units
+    wijkl *= lambda(e.N,e.rs)/2
+    # We sample with the weight of antisymmetriesed matrixelement but we do not restrict
+    # the orders of indizies of our possible kinks we therefor need an extrra factor 1/4 in the weight-funktion
+    return abs(wijkl) * 1/4
 end
 
 function get_orbshell(o::Orbital{1};dw::Int=2)
@@ -266,7 +270,7 @@ function is_non_interacting_in_interval(Configuration::Configuration, orbital::O
       end
   else
       for (tau_kink,kink) in Configuration.kinks
-        if !((tau_kink <= Tau_first) | (tau_kink >= Tau_last))
+        if ((tau_kink <= Tau_first) & (tau_kink >= Tau_last))
             "nix"
         elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
               return(false)
@@ -325,7 +329,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
         end
     end
     if length(c.kinks) == 0
-        return delta_id * e.beta
+        return -delta_id * e.beta
     end
     Kink_semi_token = searchsortedfirst(c.kinks,Tau1)
     if Kink_semi_token == pastendsemitoken(c.kinks)
@@ -350,12 +354,12 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
                                     - 1/dot((Kink.j.vec-orb_c.vec),(Kink.j.vec-orb_c.vec))
                                     - 1/dot((Kink.j.vec-orb_d.vec),(Kink.j.vec-orb_d.vec)))
         delta_id -= delta_Tau * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.i.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
+                                (1/dot((Kink.k.vec-orb_a.vec),(Kink.k.vec-orb_a.vec))
                                     + 1/dot((Kink.k.vec-orb_b.vec),(Kink.k.vec-orb_b.vec))
                                     - 1/dot((Kink.k.vec-orb_c.vec),(Kink.k.vec-orb_c.vec))
                                     - 1/dot((Kink.k.vec-orb_d.vec),(Kink.k.vec-orb_d.vec)))
         delta_id -= delta_Tau * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.i.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
+                                (1/dot((Kink.l.vec-orb_a.vec),(Kink.l.vec-orb_a.vec))
                                     + 1/dot((Kink.l.vec-orb_b.vec),(Kink.l.vec-orb_b.vec))
                                     - 1/dot((Kink.l.vec-orb_c.vec),(Kink.l.vec-orb_c.vec))
                                     - 1/dot((Kink.l.vec-orb_d.vec),(Kink.l.vec-orb_d.vec)))
@@ -367,5 +371,62 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
         Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
         loop_counter += 1
     end
-    return delta_id * e.beta
+    return -delta_id * e.beta
+end
+
+#This function assumes for now that all kinks in configuration.kinks are of type 4
+function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink::T2, Tau1, Tau2)
+    orb_a = LeftKink.i
+    orb_b = LeftKink.j
+    delta_Tau12 = Tau2 - Tau1
+    if delta_Tau12 < 0
+        delta_Tau12 += 1
+    end
+    delta_id = 0
+    occs = get_occupations_at(c, Tau1)
+    @assert(!in(orb_a, occs))
+    for occ in occs
+        if occ == orb_b
+            "nix"
+        else
+            delta_id += delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
+                                                - 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)))
+
+        end
+    end
+    if length(c.kinks) == 0
+        return -delta_id * e.beta
+    end
+    Kink_semi_token = searchsortedfirst(c.kinks,Tau1)
+    if Kink_semi_token == pastendsemitoken(c.kinks)
+        Kink_semi_token = startof(c.kinks)
+    end
+    Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
+    loop_counter = 0
+    while ((Tau1 < Tau_Kink < Tau2) | (Tau_Kink < Tau2 < Tau1) | (Tau2 < Tau1 < Tau_Kink)) & (loop_counter < length(c.kinks))
+        delta_Tau = Tau2 - Tau_Kink
+        if delta_Tau < 0
+            delta_Tau += 1
+        end
+
+        delta_id += delta_Tau * (lambda(e.N,e.rs)/2) *
+                                (1/dot((Kink.i.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
+                                    - 1/dot((Kink.i.vec-orb_b.vec),(Kink.i.vec-orb_b.vec)))
+        delta_id += delta_Tau * (lambda(e.N,e.rs)/2) *
+                                (1/dot((Kink.j.vec-orb_a.vec),(Kink.j.vec-orb_a.vec))
+                                    - 1/dot((Kink.j.vec-orb_b.vec),(Kink.j.vec-orb_b.vec)))
+        delta_id -= delta_Tau * (lambda(e.N,e.rs)/2) *
+                                (1/dot((Kink.k.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
+                                    - 1/dot((Kink.k.vec-orb_b.vec),(Kink.k.vec-orb_b.vec)))
+        delta_id -= delta_Tau * (lambda(e.N,e.rs)/2) *
+                                (1/dot((Kink.l.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
+                                    - 1/dot((Kink.l.vec-orb_b.vec),(Kink.l.vec-orb_b.vec)))
+        Kink_semi_token = advance((c.kinks,Kink_semi_token))
+        if Kink_semi_token == pastendsemitoken(c.kinks)
+            Kink_semi_token = startof(c.kinks)
+        end
+        Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
+        loop_counter += 1
+    end
+    return -delta_id * e.beta
 end
