@@ -1,17 +1,15 @@
 using OnlineStats
 using DelimitedFiles
 
-
-include("../../src/Configuration.jl")
-include("../../src/CPIMC.jl")
 include("../../src/HEG/model.jl")
-include("../../src/HEG/Ideal/updates.jl")
+include("../../src/Configuration.jl")
 include("../../src/HEG/Ideal/estimators.jl")
-
+include("../../src/CPIMC.jl")
+include("../../src/HEG/Ideal/updates.jl")
 
 function main()
     # MC options
-    NMC = 1*10^6
+    NMC = 1 * 10^7
     cyc = 10
     NEquil = 10^3
 
@@ -19,29 +17,29 @@ function main()
     theta = 1.0
     rs = 0.5
 
-    S = get_sphere(Orbital((0,0,0),0),dε=4)
-    N = length(S)
+    S = get_sphere(Orbital((0, 0, 0), 0), dε = 4)
 
+    N = length(S)
     println("Number of particles: ", N)
 
     c = Configuration(S)
 
-    e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
+    e = Ensemble(rs, get_beta_internal(theta, N), N) # get_beta_internal only works for 3D
 
-    updates = [move_particle]
+    updates = Update.([move_particle!], 0, 0)
 
     measurements = Dict(
-      :Ekin => (Variance(), Ekin)
-    , :occs => (Group([Variance(Int) for i in 1:100]), occupations)
+        :Ekin => (Variance(), Ekin),
+        :occs => (Group([Variance(UInt) for i = 1:100]), occupations),
     )
 
     print("Start MC process ... ")
-    runMC(NMC, cyc, NEquil, updates, measurements, e, c)
+    sweep(NMC, cyc, NEquil, updates, measurements, e, c)
     println(" finished.")
 
     print_results(measurements)
 
-    save_results("./out", measurements, e)
+    # save_results("./out", measurements, e)
 end
 
 main()

@@ -23,7 +23,6 @@ end
 
 Orbital(v::Tuple,s=0) = Orbital(SVector(v),s)
 
-
 function get_beta_internal(theta, N)
   return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
 end
