@@ -26,7 +26,7 @@ function move_particle(c::Configuration, e::Ensemble)
     push!(c.occupations,y)
 
     # get orbitals for reverse update
-    oe2 = setdiff!(get_sphere(y, dk = ex_radius), c.occupations)
+    oe2 = get_non_interacting_orbs_of_set(c,get_orbs_with_spin(setdiff!(get_sphere(y, dk = ex_radius), c.occupations), y.spin))
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
@@ -43,18 +43,14 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     while haskey(c.kinks, tau1)
         tau1 = img_time(rand())
     end
-    #prop_prob *= 1/e.beta
-    #get effected orbitlas (abcd)
     occs = get_occupations_at(c, tau1)
     orb_c = rand(occs)
     prop_prob *= 1/e.N
-    orb_d = orb_c
+    orb_d = rand(occs)
     while orb_d == orb_c
         orb_d = rand(occs)
     end
     prop_prob *= 1/(e.N-1)
-    #Reihnfolge der wahld er ersten beiden orbitale nicht rlevant wird berücksichtigt bei der wahl von a und b
-    #prop_prob *= 2
     opportiunisties_orb_a = get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin)
     opportiunisties_orb_b = get_orbs_with_spin(setdiff!(get_sphere(orb_d, dk = ex_radius), occs),orb_d.spin)
     if (length(opportiunisties_orb_a) == 0) | (length(opportiunisties_orb_b) == 0)
@@ -62,13 +58,14 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
     orb_a = rand(opportiunisties_orb_a)
     orb_b = Orbital((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
-    if (!in(orb_b,opportiunisties_orb_b) | (orb_a == orb_b) | (orb_a == orb_d) | (orb_b == orb_c))
+    @assert !((orb_a == orb_d) | (orb_b == orb_c))
+    if (!in(orb_b,opportiunisties_orb_b) | (orb_a == orb_b))
         return 1
     end
 
 
-    #we do consider kink that difer in the order of indizes differnt states in
-    #the marcov chaina although they are identical in weight and estimators
+    #we do consider kinks that differ in the order of indizes differnt states in
+    #the marcov chain although they are identical in weight and estimators
     #otherwise we would need a factor here
     prop_prob *= 1/length(opportiunisties_orb_a)
 
@@ -150,29 +147,12 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     # quotient of proposal probabilities
     dv = (1/length(c.kinks))/prop_prob
 
-    #calculate change in diagonal interaction energy
-    #occs enthält orb orb_c und orb_d aber nciht orb_a und orb_b
-    #Hier Fehler: Kinks zwischen den beiden neuen Kinks müssen berücksicht werden
-
-    delta_id = (lambda(e.N,e.rs)/2) * 1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
-    for occ in occs
-        if occ == orb_c
-            delta_id += -(lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec))
-        elseif occ == orb_d
-            "nix"
-        else
-            delta_id += (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
-                                                + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
-                                                - 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
-                                                - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
-        end
-    end
     #print("add: ", delta_id, "\n")
     # weight factor
     dw = ((e.beta)^2) *
             get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
-            exp(-((delta_Tau)*e.beta * (get_energy(orb_a)
-                + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_id))
+            exp(-((delta_Tau)*e.beta * (get_energy(orb_a) +
+                 get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di))
 
     """print("beta^2: ", ((e.beta)^2), "\n") #debugg code
     print("W^2: ", get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2, "\n")
@@ -234,7 +214,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         orb_b = last(Kink1).j
         orb_c = last(Kink1).k
         orb_d = last(Kink1).l
-        inverse_prop_prob = (1/e.N)*(1/(e.N-1))* #2 *
+        inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
             (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin))) *
              2/(possible_tau2_interval) * (1/4)
         # quotient of proposal probabilities
@@ -247,8 +227,8 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         # weight factor
         dw = (1/(e.beta)^2) *
             (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
-                exp((delta_Tau)*e.beta * (get_energy(orb_a)
-                    + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d)) + delta_di)
+                exp((delta_Tau)*e.beta * (get_energy(orb_a) +
+                     get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
 
         #print("remove: ", last(Kink1),"\n     ", dv*dw,"\n")
         return (dv*dw)
@@ -307,8 +287,8 @@ function change_type_B(c::Configuration, e::Ensemble)
         end
 
 
-        dw = exp(-(e.beta*delta_Tau*(get_energy(new_orb_i) + get_energy(new_orb_j)
-                                    -get_energy(last(Kink1).i) - get_energy(last(Kink1).j)) + delta_di)) *
+        dw = exp(-(e.beta*delta_Tau*(get_energy(new_orb_i) + get_energy(new_orb_j) -
+                                    get_energy(last(Kink1).i) - get_energy(last(Kink1).j)) + delta_di)) *
             (get_abs_offdiagonal_element(e,c,T4(new_orb_i, new_orb_j, last(Kink1).k, last(Kink1).l))/
                         get_abs_offdiagonal_element(e,c,last(Kink1)))^2
 
@@ -319,7 +299,7 @@ function change_type_B(c::Configuration, e::Ensemble)
         opportunites_reverse = get_non_interacting_orbs_of_set_in_interval(
                                     c,get_orbs_with_spin(
                                         setdiff!(
-                                            get_sphere(last(Kink1).i, dk = ex_radius
+                                            get_sphere(new_orb_i, dk = ex_radius
                                             ), occs
                                         ), last(Kink1).i.spin
                                     ),first(Kink1),first(Kink2)

@@ -17,9 +17,9 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^7
+    NMC = 10^6
     cyc = 10
-    NEquil = 10^7
+    NEquil = 10^6
 
     # system parameters
     theta = 0.125

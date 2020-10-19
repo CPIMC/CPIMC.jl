@@ -41,10 +41,16 @@ end
 
 
 function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbital{3}})
-    @assert ((Kink.i.spin == Kink.k.spin) & (Kink.j.spin == Kink.l.spin))
-    wijkl =  1/dot((Kink.i.vec-Kink.k.vec), (Kink.i.vec-Kink.k.vec))
+    wijkl = 0
     if Kink.i.spin == Kink.j.spin
+        wijkl +=  1/dot((Kink.i.vec-Kink.k.vec), (Kink.i.vec-Kink.k.vec)) -
+                    1/dot((Kink.i.vec-Kink.l.vec), (Kink.i.vec-Kink.l.vec))
+    elseif Kink.i.spin == Kink.k.spin
+        wijkl +=  1/dot((Kink.i.vec-Kink.k.vec), (Kink.i.vec-Kink.k.vec))
+    elseif Kink.i.spin == Kink.l.spin
         wijkl -= 1/dot((Kink.i.vec-Kink.l.vec), (Kink.i.vec-Kink.l.vec))
+    else
+        @assert false
     end
     #the factor lamda/2 is due to the use of internal units
     wijkl *= lambda(e.N,e.rs)/2
@@ -52,6 +58,8 @@ function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbit
     # the orders of indizies of our possible kinks we therefor need an extrra factor 1/4 in the weight-funktion
     return abs(wijkl) * 1/4
 end
+
+
 
 function get_orbshell(o::Orbital{1};dw::Int=2)
     eq = get_energy(o)
@@ -177,7 +185,7 @@ function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Or
   current_tau = 0
   Kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
   if length(Kinks_of_orb) == 0
-      return(0,1)
+      return(img_time(0),img_time(1))
   end
   #TO DO: Binäre Suche benutzten
   for (tau_kink,kink) in Kinks_of_orb
@@ -199,8 +207,9 @@ end
 
 function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}},Tau::img_time)
   if length(Configuration.kinks) == 0
-      return (0,1)
+      return(img_time(0),img_time(1))
   end
+  #initially we set Tau right and Taul left to the nearest Kinks left and right of Tau
   Tau_left_semi_token  = searchsortedafter(Configuration.kinks, Tau)
   Tau_right_semi_token = searchsortedlast(Configuration.kinks, Tau)
   if Tau_left_semi_token == pastendsemitoken(Configuration.kinks)
@@ -221,11 +230,11 @@ function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}
           end
       end
   end
-
+  #Suche jetzt das nächsten Taus die ein orbital in orbitals tatsächlich beeinflussen
   for orb in orbitals
     Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau)
 
-    #hier muss man immer prüfen ob das Intervall die Grenze Beta bzw Null überschreitet
+    #hier muss man immer prüfen ob das Intervall die Grenze Beta bzw 1 überschreitet
     if Tau_left < Tau < Tupel[1]
         "nix"
     elseif Tupel[1] < Tau < Tau_left
@@ -313,8 +322,8 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
     if delta_Tau12 < 0
         delta_Tau12 += 1
     end
-    delta_id = delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec))
-                                        -1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
+    delta_id = delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec)) -
+                                        1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
     occs = get_occupations_at(c, Tau1)
     for occ in occs
         if occ == orb_c
@@ -322,10 +331,10 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
         elseif occ == orb_d
             "nix"
         else
-            delta_id += delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
-                                                + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
-                                                - 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
-                                                - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
+            delta_id += delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec)) +
+                                                 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)) -
+                                                 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec)) -
+                                                 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
         end
     end
     if length(c.kinks) == 0
