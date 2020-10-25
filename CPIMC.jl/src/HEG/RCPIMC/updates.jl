@@ -18,8 +18,11 @@ function move_particle(c::Configuration, e::Ensemble)
     @assert x != y "same Configuration proposed."
 
     delta_di = get_change_diagonal_interaction(c, e, T2(y,x), img_time(0), img_time(1))
+    @assert delta_di != Inf
     # weight change
     dw = exp(-(e.beta*(get_energy(y)-get_energy(x)) + delta_di))
+    #println("kindiff:", e.beta*(get_energy(y)-get_energy(x)))
+    #println("wdiagdiff:", delta_di,"\n")
 
     # change Configuration
     delete!(c.occupations,x)
@@ -30,8 +33,9 @@ function move_particle(c::Configuration, e::Ensemble)
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
-
-    dv*dw
+    @assert delta_di != Inf
+    @assert (dv*dw) >= 0
+    return (dv*dw)
 end
 
 function Add_Type_B(c::Configuration, e::Ensemble)
@@ -73,7 +77,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1)
     possible_tau2_interval = boarders[2]-boarders[1]
     if possible_tau2_interval < 0
-        possible_tau2_interval = 1 + possible_tau2_interval
+        possible_tau2_interval += 1
     end
     tau2 = img_time(rand()*(possible_tau2_interval) + boarders[1])
     if tau2 > 1
@@ -111,8 +115,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     @assert(delta_Tau > 0)
     @assert(delta_Tau <= 1)
     #there are 2 possibilites that will result into the same 2 taus
-    prop_prob *= 2/(possible_tau2_interval)
-
+    prop_prob *= 2.0/float(possible_tau2_interval)
     #calculate change in diagonal interaction energy
     delta_di = get_change_diagonal_interaction(c, e, T4(orb_a,orb_b,orb_c,orb_d), firsttau, lasttau)
 
@@ -147,31 +150,16 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     # quotient of proposal probabilities
     dv = (1/length(c.kinks))/prop_prob
 
-    #print("add: ", delta_id, "\n")
     # weight factor
     dw = ((e.beta)^2) *
             get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
             exp(-((delta_Tau)*e.beta * (get_energy(orb_a) +
                  get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di))
+    #println("exp(-delta_di):     ",exp(-delta_di))
+    #println("W^2:     ",get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2)
 
-    """print("beta^2: ", ((e.beta)^2), "\n") #debugg code
-    print("W^2: ", get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2, "\n")
-    print("delta_T: ", get_energy(orb_a)
-        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d), "\n")
-    print("exp(T): ", exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
-        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))), "\n")
-    print("exp(W_D): ", exp(-(delta_id)), "\n")
-    println("dv: ", dv)
-    println("dw ", dw)
-
-    print("\n", "\n", "\n")"""
-    """println("W_D): ", (delta_id))
-    println("delta_T: ", get_energy(orb_a)
-        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))
-    println("exp(T): ", exp(-(delta_Tau)*e.beta * (get_energy(orb_a)
-        + get_energy(orb_b) -get_energy(orb_c) -get_energy(orb_d))))"""
-    #return quotient of poposing probabilites
-    #print("add:",T4(orb_a,orb_b,orb_c,orb_d),"\n       ",dv*dw,"\n")
+    #println(dv*dw)
+    #@assert (dv*dw) >= 0
     return(dv*dw)
 end
 
@@ -182,6 +170,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     end
     #print(length(c.kinks),"\n")
     Kink1 = rand(c.kinks)
+    # if teh difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
     if dot(last(Kink1).i.vec-last(Kink1).k.vec, last(Kink1).i.vec-last(Kink1).k.vec) > ex_radius^2
         return 1
     end
@@ -216,21 +205,24 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         orb_d = last(Kink1).l
         inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
             (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin))) *
-             2/(possible_tau2_interval) * (1/4)
+             2.0/float(possible_tau2_interval) * (1/4)
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
 
         #calculate change in diagonal interaction energy
         delta_di = get_change_diagonal_interaction(c, e, last(Kink1), first(Kink1), first(Kink2))
 
-        #print("remove: ", delta_id, "\n")
+
         # weight factor
-        dw = (1/(e.beta)^2) *
-            (1/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
+        dw = (1.0/(e.beta)^2) *
+            (1.0/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
                 exp((delta_Tau)*e.beta * (get_energy(orb_a) +
                      get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
 
-        #print("remove: ", last(Kink1),"\n     ", dv*dw,"\n")
+         #println("kindiff:", (delta_Tau)*e.beta * (get_energy(orb_a) +
+         #               get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)))
+         #println("wdiagdiff:", delta_di,"\n")
+        @assert (dv*dw) >= 0
         return (dv*dw)
     else
         return(1)
@@ -304,6 +296,7 @@ function change_type_B(c::Configuration, e::Ensemble)
                                         ), last(Kink1).i.spin
                                     ),first(Kink1),first(Kink2)
                                 )
+        @assert (dw * length(opportunities)/length(opportunites_reverse)) >= 0
         return (dw * length(opportunities)/length(opportunites_reverse))
     end
 end

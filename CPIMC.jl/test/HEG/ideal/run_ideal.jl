@@ -8,7 +8,7 @@ include("../../../src/HEG/Ideal/estimators.jl")
 #include("../../src/HEG/RCPIMC/updates.jl")
 #include("../../src/HEG/RCPIMC/estimators.jl")
 
-include("../../src/CPIMC.jl")
+include("../../../src/CPIMC.jl")
 
 
 """include("CPIMC.jl/src/Configuration.jl")
@@ -20,14 +20,14 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 function main()
     # MC options
     NMC = 10^6
-    cyc = 3
+    cyc = 10
     NEquil = 10^6
 
     # system parameters
-    theta = 0.5
-    rs = 0.1
+    theta = 0.0625
+    rs = 1
 
-    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1) ### use 33 particles
+    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1) ### use 33 particles
 
 
     println("Number of particles: ", length(S))
