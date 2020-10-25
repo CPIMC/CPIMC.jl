@@ -12,8 +12,6 @@ function move_particle(c::Configuration, e::Ensemble)
     if length(oe) == 0
         return(1)
     end
-    #@assert length(oe) > 0 "no empty orbitals in neighbourhood"
-
     y = rand(oe)
     @assert x != y "same Configuration proposed."
 
@@ -68,7 +66,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
 
 
-    #we do consider kinks that differ in the order of indizes differnt states in
+    #we do consider kinks that differ only in the order of indizes differnt states in
     #the marcov chain although they are identical in weight and estimators
     #otherwise we would need a factor here
     prop_prob *= 1/length(opportiunisties_orb_a)
@@ -90,7 +88,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             tau2 -= 1
         end
     end
-    #Schuaen welcher der beiden imaginärzeitpunkte der "linke" ist
+    #See whick of the two imiginary time point is the "left boarder of the intervall"
     if tau1 > boarders[1]
         if tau2 > boarders[1]
             firsttau = min(tau1,tau2)
@@ -120,7 +118,6 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     delta_di = get_change_diagonal_interaction(c, e, T4(orb_a,orb_b,orb_c,orb_d), firsttau, lasttau)
 
     #change configuration
-    #print(T4(orb_a,orb_b,orb_c,orb_d),"\n")
     c.kinks[firsttau] = T4(orb_a,orb_b,orb_c,orb_d)
     #shuffle index order of the second Kink
     if rand() < 0.5
@@ -155,11 +152,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2 *
             exp(-((delta_Tau)*e.beta * (get_energy(orb_a) +
                  get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di))
-    #println("exp(-delta_di):     ",exp(-delta_di))
-    #println("W^2:     ",get_abs_offdiagonal_element(e,c,T4(orb_a,orb_b,orb_c,orb_d))^2)
-
-    #println(dv*dw)
-    #@assert (dv*dw) >= 0
+    @assert (dv*dw) >= 0
     return(dv*dw)
 end
 
@@ -168,9 +161,8 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     if length(c.kinks) == 0
         return 1
     end
-    #print(length(c.kinks),"\n")
     Kink1 = rand(c.kinks)
-    # if teh difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
+    # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
     if dot(last(Kink1).i.vec-last(Kink1).k.vec, last(Kink1).i.vec-last(Kink1).k.vec) > ex_radius^2
         return 1
     end
@@ -218,10 +210,6 @@ function remove_Type_B(c::Configuration, e::Ensemble)
             (1.0/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
                 exp((delta_Tau)*e.beta * (get_energy(orb_a) +
                      get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
-
-         #println("kindiff:", (delta_Tau)*e.beta * (get_energy(orb_a) +
-         #               get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)))
-         #println("wdiagdiff:", delta_di,"\n")
         @assert (dv*dw) >= 0
         return (dv*dw)
     else

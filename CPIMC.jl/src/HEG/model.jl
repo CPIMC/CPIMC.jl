@@ -55,7 +55,7 @@ function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbit
     #the factor lamda/2 is due to the use of internal units
     wijkl *= lambda(e.N,e.rs)/2
     # We sample with the weight of antisymmetriesed matrixelement but we do not restrict
-    # the orders of indizies of our possible kinks we therefor need an extrra factor 1/4 in the weight-funktion
+    # the orders of indizies of our possible kinks. We therefor need an extrra factor 1/4 in the weight-funktion
     return abs(wijkl) * 1/4
 end
 
@@ -179,15 +179,15 @@ function get_kinks_of_orb(c::Configuration, orbital::Orbital)
   return kinks_of_orb
 end
 
-#returns a tuple of the imiginary times between 0 and 1 of the nearest Kinks before Tau and the nearest Kink after Tau
-#has to be multiplied with beta to get reeal imaginary times
+#Returns a tuple of the imiginary times between 0 and 1 of the nearest Kinks before Tau and the nearest Kink after Tau,
+# which effect the given orbital. Has to be multiplied with beta to get real imaginary times.
 function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Orbital,Tau::img_time)
   current_tau = 0
   Kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
   if length(Kinks_of_orb) == 0
       return(img_time(0),img_time(1))
   end
-  #TO DO: Binäre Suche benutzten
+  #TO DO: Binäre Suche benutzten?
   for (tau_kink,kink) in Kinks_of_orb
       if tau_kink > Tau
         if current_tau == 0
@@ -209,7 +209,7 @@ function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}
   if length(Configuration.kinks) == 0
       return(img_time(0),img_time(1))
   end
-  #initially we set Tau right and Taul left to the nearest Kinks left and right of Tau
+  #Initially we set Tau right and Taul left to the nearest Kinks left and right of Tau.
   Tau_left_semi_token  = searchsortedafter(Configuration.kinks, Tau)
   Tau_right_semi_token = searchsortedlast(Configuration.kinks, Tau)
   if Tau_left_semi_token == pastendsemitoken(Configuration.kinks)
@@ -230,11 +230,11 @@ function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}
           end
       end
   end
-  #Suche jetzt das nächsten Taus die ein orbital in orbitals tatsächlich beeinflussen
+  #Now search for the nearst Taus that do actually effect one of the Orbitals
   for orb in orbitals
     Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau)
 
-    #hier muss man immer prüfen ob das Intervall die Grenze Beta bzw 1 überschreitet
+    #here we always have to check wether the given intervall extends over 1
     if Tau_left < Tau < Tupel[1]
         "nix"
     elseif Tupel[1] < Tau < Tau_left

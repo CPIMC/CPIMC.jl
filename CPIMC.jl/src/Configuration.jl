@@ -37,7 +37,7 @@ mutable struct Configuration{T}
   Configuration(s::Set{T}, k::SortedDict{img_time, Kink{T}}) where {T} = new{T}(s,k)
 end
 
-#Führe einen Typ-4-Kink auf einer Konfiguration aus
+#Execute a type-4 Kink on a set of occupationnumbers
 function change_occupations(occs::Set, K::T4)
   #try
   @assert (in(K.k, occs) & in(K.l, occs))
