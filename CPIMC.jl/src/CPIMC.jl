@@ -2,15 +2,12 @@
 function propose_update!(c::Configuration, updates, e::Ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
-    #print(up)
     c_old = Configuration(copy(c.occupations),copy(c.kinks))
     if rand() < up(c,e)
-        #print("   accepted\n")
         return :accept
     else
         c.occupations = c_old.occupations
         c.kinks = c_old.kinks
-        #print("   rejected\n")
         return :reject
     end
 end
@@ -26,14 +23,8 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     k = 1 #print prgoress
     for i in 1:throwAway
         if i%(throwAway/100) == 0
-            println("eq: ",k,"/100")
-            println("K: ",length(c.kinks))
-            """if length(c.kinks) > 20
-                for künk in c.kinks
-                    println(künk)
-                end
-                assert(false)
-            end"""
+            print("eq: ",k,"/100","    ")
+            #println("K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)
@@ -44,8 +35,8 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     while i < steps
         #print progress
         if i%(steps/100) == 0
-            println(k,"/100")
-            println("K: ",length(c.kinks))
+            print(k,"/100","    ")
+            #println("K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)

@@ -38,6 +38,13 @@ function get_energy(o::Orbital)
     dot(o.vec,o.vec)
 end
 
+function E_Ry(E_internal::Float64, lam::Float64)
+    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
+
+function abs_E_Mad(N::Int, lam::Float64) #internal units
+    return 2.83729747948527 * pi/2.0 * N * (lam/2)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
 
 
 function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbital{3}})
