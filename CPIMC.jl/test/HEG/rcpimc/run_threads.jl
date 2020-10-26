@@ -17,9 +17,9 @@ include("src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^4
-    cyc = 20
-    NEquil = 10^4
+    NMC = 10^7
+    cyc = 10
+    NEquil = 10^6
 
     # system parameters
     theta = 0.5

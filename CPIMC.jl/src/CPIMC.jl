@@ -80,7 +80,7 @@ function runMC_multythreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
     k = 1#print progress
     while i < steps
         #print progress
-        if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
+        if (i%(steps/100) == 0) & (Threads.threadid() == 1)
             print(k,"/100","    ")
             #println("K: ",length(c.kinks))
             k+=1
