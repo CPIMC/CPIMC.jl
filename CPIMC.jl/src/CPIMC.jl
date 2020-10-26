@@ -55,5 +55,56 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     end
 end
 
+#measurements should be the only variable modified by multyple threads
+function runMC_multythreaded(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+    l = Threads.ReentrantLock()
+    @assert(length(c.kinks) == 0)
+    c = Configuration(copy(c.occupations))  #c should be a different objekt for each thread
+    " equilibration "
+    if (Threads.threadid() == 1)
+        println("\nstarting equilibration")
+    end
+    k = 1 #print prgoress
+    for i in 1:throwAway
+        if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
+            print("eq: ",k,"/100","    ")
+            #println("K: ",length(c.kinks))
+            k+=1
+        end
+        propose_update!(c,updates,e)
+    end
+    if (Threads.threadid() == 1)
+        println("\nstarting Simulation")
+    end
+    i = 0
+    k = 1#print progress
+    while i < steps
+        #print progress
+        if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
+            print(k,"/100","    ")
+            #println("K: ",length(c.kinks))
+            k+=1
+        end
+        propose_update!(c,updates,e)
+        if i % sampleEvery == 0
+            " calculate observables "
+            for (key,(stat,obs)) in measurements
+                if typeof(stat) == Group
+                    Threads.lock(l)
+                        fit!(stat, eachrow(obs(e,c)))
+                    Threads.unlock(l)
+                else
+                    Threads.lock(l)
+                        fit!(stat, obs(e,c))
+                    Threads.unlock(l)
+                end
+            end
+        end
+        i += 1
+    end
+    println("\nThread",Threads.threadid(),"finished")
+end
+
+
 function save_results(path, measurements, e)
 end

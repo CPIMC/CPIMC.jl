@@ -9,11 +9,11 @@ include("../../../src/HEG/RCPIMC/estimators.jl")
 include("../../../src/CPIMC.jl")
 
 
-"""include("CPIMC.jl/src/Configuration.jl")
-include("CPIMC.jl/src/CPIMC.jl")
-include("CPIMC.jl/src/HEG/model.jl")
-include("CPIMC.jl/src/HEG/Ideal/updates.jl")
-include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
+"""include("src/Configuration.jl")
+include("src/CPIMC.jl")
+include("src/HEG/model.jl")
+include("src/HEG/RCPIMC/updates.jl")
+include("src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
@@ -51,7 +51,13 @@ function main()
     )
 
     println("Start MC process ... ")
-    runMC(NMC, cyc, NEquil, updates, measurements, e, c)
+    Marcov_Chain_builders = Array{Task}(undef,Threads.nthreads())#die Anzahl threads ist inital die Anzahl Kerne
+    for t in 1:Threads.nthreads()
+        Marcov_Chain_builders[t] = Threads.@spawn(runMC_multythreaded(NMC, cyc, NEquil, updates, measurements, e, c))
+    end
+    for mcb in Marcov_Chain_builders
+        wait(mcb)
+    end
     println(" finished.")
     println("measurements:")
     println("=============")
