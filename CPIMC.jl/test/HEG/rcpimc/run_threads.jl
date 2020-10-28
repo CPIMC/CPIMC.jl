@@ -17,12 +17,12 @@ include("src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^7
-    cyc = 10
-    NEquil = 10^6
+    NMC = 10^5
+    cyc = 100
+    NEquil = 10^5
 
     # system parameters
-    theta = 0.5
+    theta = 5
     rs = 10
 
     #S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1)
@@ -64,11 +64,11 @@ function main()
 
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
+            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(NMC*Threads.nthreads()/cyc))
             if  (k == :Epot) | (k == :E)
-                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/2)
+                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC*Threads.nthreads()/cyc)/2)
             elseif (k == :Ekin)
-                println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/2)
+                println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC*Threads.nthreads()/cyc)/2)
             end
         end
     end
@@ -81,11 +81,24 @@ function main()
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
 
-    # Print to results file
-    #open("../out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
-    #       writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
-    #   end
+    # create occnumsfile
+    open("test/HEG/rcpimc/out/occNums_05WdiagnoB_$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
+    end
+    #create resultsfile
+    open("test/HEG/rcpimc/out/results_05WdiagnoB_$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+        for (k,(f,m)) in measurements
+            if typeof(f) == Variance{Float64,Float64,EqualWeight}
+                write(io, string(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(NMC*Threads.nthreads()/cyc),"\n"))
+                if  (k == :Epot) | (k == :E)
+                    write(io, string(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", (E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC*Threads.nthreads()/cyc)/2),"\n"))
+                elseif (k == :Ekin)
+                    write(io,string(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC*Threads.nthreads()/cyc)/2,"\n"))
+                end
+            end
+        end
+    end
 end
 
-#Juno.@run(main())
-main()
+Juno.@run(main())
+#main()

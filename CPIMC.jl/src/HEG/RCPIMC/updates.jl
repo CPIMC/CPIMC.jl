@@ -258,8 +258,8 @@ function change_type_B(c::Configuration, e::Ensemble)
         #calculate change in diagonal interaction energy
         delta_di = get_change_diagonal_interaction(c, e, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j), first(Kink1), first(Kink2))
 
+        #change occupations
         if first(Kink1) > first(Kink2)
-            #println(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j)
             change_occupations(c.occupations, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
             delta_Tau = first(Kink2)-first(Kink1) + 1
         else
@@ -272,10 +272,10 @@ function change_type_B(c::Configuration, e::Ensemble)
             (get_abs_offdiagonal_element(e,c,T4(new_orb_i, new_orb_j, last(Kink1).k, last(Kink1).l))/
                         get_abs_offdiagonal_element(e,c,last(Kink1)))^2
 
-        #change configuration
+        #change Kinks
         c.kinks[first(Kink1)] = T4(new_orb_i, new_orb_j, last(Kink1).k, last(Kink1).l)
         c.kinks[first(Kink2)] = T4(last(Kink2).i, last(Kink2).j, new_orb_i, new_orb_j,)
-
+        change_occupations(occs, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
         opportunites_reverse = get_non_interacting_orbs_of_set_in_interval(
                                     c,get_orbs_with_spin(
                                         setdiff!(
@@ -284,6 +284,8 @@ function change_type_B(c::Configuration, e::Ensemble)
                                         ), last(Kink1).i.spin
                                     ),first(Kink1),first(Kink2)
                                 )
+        delete!(opportunites_reverse, last(Kink1).k)
+        delete!(opportunites_reverse, last(Kink1).l)
         @assert (dw * length(opportunities)/length(opportunites_reverse)) >= 0
         return (dw * length(opportunities)/length(opportunites_reverse))
     end

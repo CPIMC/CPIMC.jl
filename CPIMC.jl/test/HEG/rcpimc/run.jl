@@ -17,9 +17,9 @@ include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^4
+    NMC = 10^6
     cyc = 20
-    NEquil = 10^4
+    NEquil = 10^6
 
     # system parameters
     theta = 0.5
@@ -58,11 +58,11 @@ function main()
 
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
+            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(NMC/cyc))
             if  (k == :Epot) | (k == :E)
-                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/2)
+                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
             elseif (k == :Ekin)
-                println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/2)
+                println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
             end
         end
     end
