@@ -24,7 +24,7 @@ end
 Orbital(v::Tuple,s=1) = Orbital(SVector(v),s)
 
 
-function get_beta_internal(theta, N)
+function get_beta_internal(theta::Float64, N::Int)
   return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)   #if using unpolarized system need a factor 1/2 under the ^(2/3)
 end
 
@@ -333,9 +333,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
                                         1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
     occs = get_occupations_at(c, Tau1)
     for occ in occs
-        if occ == orb_c
-            "nix"
-        elseif occ == orb_d
+        if ((occ == orb_c) | (occ == orb_d) | (occ == orb_a) | (occ == orb_b))
             "nix"
         else
             delta_di += delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
@@ -402,7 +400,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
     occs = get_occupations_at(c, Tau1)
     @assert(!in(orb_a, occs))
     for occ in occs
-        if occ == orb_b
+        if ((occ == orb_b) | (occ == orb_a))
             "nix"
         else
             delta_di += delta_Tau12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
