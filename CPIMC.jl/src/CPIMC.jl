@@ -72,7 +72,6 @@ function save_results(path, measurements, ensemble; options...)
             writedlm(io, zip(["obs"], ["mean"], ["error"]); options...)
             for (k,(f,m)) in measurements
                 if typeof(f) == Variance{Float64,Float64,EqualWeight}
-                    # writedlm(io, [typeof(m).name.mt.name, mean(f), std(f) / Nsamples])
                     writedlm(io, zip([string(k)], [mean(f)], [std(f) / Nsamples]); options...)
                 end
             end
