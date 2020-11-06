@@ -9,17 +9,17 @@ include("../../src/HEG/Ideal/updates.jl")
 include("../../src/HEG/Ideal/estimators.jl")
 
 
-function main()
+function simulation(NMC, cyc, NEquil, theta, rs, dε)
     # MC options
-    NMC = 1*10^6
-    cyc = 10
-    NEquil = 10^3
+    NMC = NMC
+    cyc = cyc
+    NEquil = NEquil
 
     # system parameters
-    theta = 1.0
-    rs = 0.5
+    theta = theta
+    rs = rs
 
-    S = get_sphere(Orbital((0,0,0),0),dε=4)
+    S = get_sphere(Orbital((0,0,0),0),dε=dε)
     N = length(S)
 
     println("Number of particles: ", N)
@@ -42,6 +42,20 @@ function main()
     print_results(measurements)
 
     save_results("./out", measurements, e)
+end
+
+function main()
+    T_vals = [0.0625,0.125,0.25,0.5,0.75,1,1.5,2,4]
+    R_vals = [0.0625,0.125,0.25,0.5,0.75,1,1.5,2,4]
+
+    i = 0
+    for th in T_vals
+        for rs in R_vals
+            simulation(10^8, 20, 10^4, th, rs, 3)
+            i += 1
+            println(100*i/(length(T_vals)*length(R_vals))," % completed.")
+        end
+    end
 end
 
 main()
