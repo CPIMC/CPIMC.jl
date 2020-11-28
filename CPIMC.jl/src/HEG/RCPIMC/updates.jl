@@ -16,6 +16,15 @@ function move_particle(c::Configuration, e::Ensemble)
     @assert x != y "same Configuration proposed."
 
     delta_di = get_change_diagonal_interaction(c, e, T2(y,x), img_time(0), img_time(1))
+    """if delta_di < 0
+        if get_energy(y)-get_energy(x) > 0
+            println("\n","\n","y:", y)
+            println("x:", x)
+            println("delta_T: ",get_energy(y)-get_energy(x))
+            println("delta_W_diag: ", delta_di)
+            println(c.occupations,"\n","\n")
+        end
+    end"""
     @assert delta_di != Inf
     # weight change
     dw = exp(-(e.beta*(get_energy(y)-get_energy(x)) + delta_di))
@@ -65,11 +74,8 @@ function Add_Type_B(c::Configuration, e::Ensemble)
         return 1
     end
 
+    #We will change the proposal probability after we get tau2
 
-    #we do consider kinks that differ only in the order of indizes differnt states in
-    #the marcov chain although they are identical in weight and estimators
-    #otherwise we would need a factor here
-    prop_prob *= 1/length(opportiunisties_orb_a)
 
     #get tau2
     boarders = get_Tau_boarders(c, Set([orb_a,orb_b,orb_c,orb_d]),tau1)
@@ -112,8 +118,29 @@ function Add_Type_B(c::Configuration, e::Ensemble)
     end
     @assert(delta_Tau > 0)
     @assert(delta_Tau <= 1)
-    #there are 2 possibilites that will result into the same 2 taus
-    prop_prob *= 2.0/float(possible_tau2_interval)
+
+
+    #We do consider states that differ only threw the order off indices of kinks
+    #as different states, that contribute all with the same weight with is already
+    #blocked over all permutations (see function “get_abs_offdiagonal_element”),
+    #therefore the updates where we end up with the same kinks but start building
+    #the kink with a different Excitation will result in a different order off indices
+    #and therefore considered a different Update (to compensate that we use a factor ¼
+    #in the off diagonal Matrix element contribution) .
+
+    #However we have to consider the different ways off getting to the same
+    #update by choosing the imaginary times in a different order.
+
+    #Therefore we modify the proposal_probability in the following way
+    occs_tau2 = get_occupations_at(c, tau2)
+    opportiunisties_orb_a_tau2 = get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_tau2),orb_c.spin)
+    @assert length(opportiunisties_orb_a_tau2) != 0
+    prop_prob *= (1.0/length(opportiunisties_orb_a) + 1.0/length(opportiunisties_orb_a_tau2)) * 1.0/float(possible_tau2_interval)
+
+
+
+
+
     #calculate change in diagonal interaction energy
     delta_di = get_change_diagonal_interaction(c, e, T4(orb_a,orb_b,orb_c,orb_d), firsttau, lasttau)
 
@@ -190,14 +217,17 @@ function remove_Type_B(c::Configuration, e::Ensemble)
         if possible_tau2_interval < 0
             possible_tau2_interval = 1 + possible_tau2_interval
         end
-        occs = get_occupations_at(c, first(Kink1))
+        occs_tau_kink1 = get_occupations_at(c, first(Kink1))
+        occs_tau_kink2 = get_occupations_at(c, first(Kink2))
         orb_a = last(Kink1).i
         orb_b = last(Kink1).j
         orb_c = last(Kink1).k
         orb_d = last(Kink1).l
+        #See how prop_prob changes in the function Add_Type_B to understand this expression
         inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
-            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin))) *
-             2.0/float(possible_tau2_interval) * (1/4)
+            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_tau_kink1),orb_c.spin))
+                + 1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_tau_kink2),orb_c.spin))) *
+             1.0/float(possible_tau2_interval) * (1/4)
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
 
@@ -251,8 +281,8 @@ function change_type_B(c::Configuration, e::Ensemble)
     if new_orb_i == new_orb_j
         return 1
     end
-    if (!is_non_interacting_in_interval(c,new_orb_j,first(Kink1),first(Kink2))) |
-        in(new_orb_j,occs)
+    if (!is_non_interacting_in_interval(c,new_orb_j,first(Kink1),first(Kink2)) |
+        in(new_orb_j,occs))
         return 1
     else
         #calculate change in diagonal interaction energy
@@ -273,8 +303,13 @@ function change_type_B(c::Configuration, e::Ensemble)
                         get_abs_offdiagonal_element(e,c,last(Kink1)))^2
 
         #change Kinks
+
         c.kinks[first(Kink1)] = T4(new_orb_i, new_orb_j, last(Kink1).k, last(Kink1).l)
-        c.kinks[first(Kink2)] = T4(last(Kink2).i, last(Kink2).j, new_orb_i, new_orb_j,)
+        if rand() <= 0.5
+            c.kinks[first(Kink2)] = T4(last(Kink2).i, last(Kink2).j, new_orb_i, new_orb_j,)
+        else
+            c.kinks[first(Kink2)] = T4(last(Kink2).i, last(Kink2).j, new_orb_j, new_orb_i,)
+        end
         change_occupations(occs, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
         opportunites_reverse = get_non_interacting_orbs_of_set_in_interval(
                                     c,get_orbs_with_spin(
