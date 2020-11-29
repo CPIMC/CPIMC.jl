@@ -19,16 +19,16 @@ function main()
     # MC options
     NMC = 10^6
     cyc = 20
-    NEquil = 2*10^5
+    NEquil = 10^5
 
     # system parameters
-    theta = 1.0
-    rs = 0.5
+    theta = 0.5
+    rs = 10.0
 
-    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1)
+    #S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1)
 
     #4Particles
-    #S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
+    S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("theta: ", theta)
