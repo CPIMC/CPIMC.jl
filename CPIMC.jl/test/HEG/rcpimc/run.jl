@@ -22,13 +22,13 @@ function main()
     NEquil = 10^5
 
     # system parameters
-    theta = 0.06250000000000000000000000000000000000000000000000000000000#Nulleb um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
+    theta = 0.5#Nulleb um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
     rs = 10
 
-    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1)
+    #S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1)
 
     #4Particles
-    #S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
+    S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("theta: ", theta)
@@ -38,7 +38,7 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle]#, Add_Type_B, remove_Type_B, change_type_B,shuffle_indixes]
+    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B,shuffle_indixes]
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -81,5 +81,5 @@ function main()
     #   end
 end
 
-#Juno.@run(main())
-main()
+Juno.@run(main())
+#main()

@@ -192,7 +192,7 @@ function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Or
   current_tau = 0
   Kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
   if length(Kinks_of_orb) == 0
-      return(img_time(0),img_time(1))
+      return("nix","nix")
   end
   #TO DO: Binäre Suche benutzten?
   for (tau_kink,kink) in Kinks_of_orb
@@ -238,27 +238,36 @@ function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}
       end
   end
   #Now search for the nearst Taus that do actually effect one of the Orbitals
+  non_interacting_orb_counter = 0
   for orb in orbitals
+    @assert(Tau_right != img_time(1))
     Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau)
+    if Tupel[1] == "nix"
+        non_interacting_orb_counter += 1
+    else
+        #here we always have to check wether the given intervall extends over 1
+        if Tau_left < Tau < Tupel[1]
+            "nix"
+        elseif Tupel[1] < Tau < Tau_left
+            Tau_left = Tupel[1]
+        elseif Tau_left < Tupel[1]
+          Tau_left = Tupel[1]
+        end
 
-    #here we always have to check wether the given intervall extends over 1
-    if Tau_left < Tau < Tupel[1]
-        "nix"
-    elseif Tupel[1] < Tau < Tau_left
-        Tau_left = Tupel[1]
-    elseif Tau_left < Tupel[1]
-      Tau_left = Tupel[1]
-    end
-
-    if Tupel[2] < Tau < Tau_right
-        "nix"
-    elseif Tau_right < Tau < Tupel[2]
-      Tau_right = Tupel[2]
-  elseif Tupel[2] < Tau_right
-        Tau_right = Tupel[2]
+        if Tupel[2] < Tau < Tau_right
+            "nix"
+        elseif Tau_right < Tau < Tupel[2]
+          Tau_right = Tupel[2]
+        elseif Tupel[2] < Tau_right
+            Tau_right = Tupel[2]
+        end
     end
   end
-  return (Tau_left,Tau_right)
+  if non_interacting_orb_counter == length(orbitals)
+      return return(img_time(0),img_time(1))
+  else
+      return (Tau_left,Tau_right)
+  end
 end
 
 
@@ -350,6 +359,14 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
         Kink_semi_token = startof(c.kinks)
     end
     Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
+    #The Kink at Tau1 is already considered in occs
+    if Tau_Kink == Tau1
+        Kink_semi_token = advance((c.kinks,Kink_semi_token))
+        if Kink_semi_token == pastendsemitoken(c.kinks)
+            Kink_semi_token = startof(c.kinks)
+        end
+        Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
+    end
     loop_counter = 0
     while ((Tau1 < Tau_Kink < Tau2) | (Tau_Kink < Tau2 < Tau1) | (Tau2 < Tau1 < Tau_Kink)) & (loop_counter < length(c.kinks))
         delta_Tau = Tau2 - Tau_Kink
@@ -416,6 +433,14 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, LeftKink
         Kink_semi_token = startof(c.kinks)
     end
     Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
+    #The Kink at Tau1 is already considered in occs
+    if Tau_Kink == Tau1
+        Kink_semi_token = advance((c.kinks,Kink_semi_token))
+        if Kink_semi_token == pastendsemitoken(c.kinks)
+            Kink_semi_token = startof(c.kinks)
+        end
+        Tau_Kink,Kink = deref((c.kinks,Kink_semi_token))
+    end
     loop_counter = 0
     while ((Tau1 < Tau_Kink < Tau2) | (Tau_Kink < Tau2 < Tau1) | (Tau2 < Tau1 < Tau_Kink)) & (loop_counter < length(c.kinks))
         delta_Tau = Tau2 - Tau_Kink

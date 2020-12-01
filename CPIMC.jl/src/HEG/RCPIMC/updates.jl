@@ -94,8 +94,21 @@ function Add_Type_B(c::Configuration, e::Ensemble)
             tau2 -= 1
         end
     end
-    #See whick of the two imiginary time point is the "left boarder of the intervall"
-    if tau1 > boarders[1]
+    #See which of the two imiginary time point is the "left boarder of the intervall"
+    #If there are no Kinks effecting any of the new Kinks orbitals then anyone
+    #of the two taus can be firsttau
+    if boarders[2] == 1
+        if rand() < 0.5
+            firsttau = tau1
+            lasttau = tau2
+        else
+            firsttau = tau2
+            lasttau = tau1
+        end
+        prop_prob *= 0.5
+    #If there are Kinks which Tau is firsttau depends on which is the
+    #left one inside the given Interval
+    elseif tau1 > boarders[1]
         if tau2 > boarders[1]
             firsttau = min(tau1,tau2)
             lasttau = max(tau1,tau2)
@@ -198,7 +211,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     Kink2 = Tau_Kink2 => c.kinks[Tau_Kink2]
     #look if Kinks are type-b-connected
     ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
-    
+
     if ijkl ==
         Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
         delete!(c.kinks, first(Kink1))
@@ -229,6 +242,9 @@ function remove_Type_B(c::Configuration, e::Ensemble)
             (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_tau_kink1),orb_c.spin))
                 + 1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_tau_kink2),orb_c.spin))) *
              1.0/float(possible_tau2_interval) * (1/4)
+        if boarders[2] == 1
+            inverse_prop_prob *= 0.5
+        end
         # quotient of proposal probabilities
         dv = inverse_prop_prob/prop_prob
 
