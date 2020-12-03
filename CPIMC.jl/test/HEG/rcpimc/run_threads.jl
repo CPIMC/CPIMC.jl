@@ -17,18 +17,18 @@ include("src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 10^7
     cyc = 20
     NEquil = 10^5
 
     # system parameters
-    theta = 0.5
-    rs = 10.0
+    theta = 1.0
+    rs = 1.0
 
-    #S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1)
+    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=2),1)
 
     #4Particles
-    S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
+    #S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("theta: ", theta)
@@ -38,7 +38,7 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle, Add_Type_B, remove_Type_B, shuffle_indixes, shuffle_indixes]#
+    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B, shuffle_indixes]#
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)

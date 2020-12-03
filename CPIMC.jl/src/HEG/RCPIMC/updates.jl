@@ -212,8 +212,7 @@ function remove_Type_B(c::Configuration, e::Ensemble)
     #look if Kinks are type-b-connected
     ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
 
-    if ijkl ==
-        Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
+    if ijkl == Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
         delete!(c.kinks, first(Kink1))
         delete!(c.kinks, first(Kink2))
         #see if occupations at tau=0 are modified
