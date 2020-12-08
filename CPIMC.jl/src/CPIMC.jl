@@ -43,7 +43,7 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                if typeof(stat) == Group
+                if typeof(stat) == Group#####################Diese BEdingung ist anscheinend niemals erfüllt
                     fit!(stat, eachrow(obs(e,c)))
                 else
                     fit!(stat, obs(e,c))
