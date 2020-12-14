@@ -41,17 +41,23 @@ function simulation(NMC, cyc, NEquil, theta, rs, dε)
 
     print_results(measurements)
 
-    save_results("./out", measurements, e)
+    # save_results("./out", measurements, e)
 end
 
 function main()
-    T_vals = [0.0625,0.125,0.25,0.5,0.75,1,1.5,2,4]
-    R_vals = [0.0625,0.125,0.25,0.5,0.75,1,1.5,2,4]
+    # MC options
+    NMC = 1 * 10^7
+    cyc = 10
+    NEquil = 10^3
+    # system parameters
+    T_vals = [1.0]
+    R_vals = [0.5]
+    dε = 4# 33 particles
 
     i = 0
     for th in T_vals
         for rs in R_vals
-            simulation(10^8, 20, 10^4, th, rs, 3)
+            simulation(NMC, cyc, NEquil, th, rs, dε)
             i += 1
             println(100*i/(length(T_vals)*length(R_vals))," % completed.")
         end
