@@ -6,17 +6,17 @@ function Ekin(e::Ensemble, c::Configuration)
     E_kin = 0
     #betrachte das komplette intervall zwischen letztem und erstem Kink als
     #erstes intervall
-    old_Tau = first(last(c.kinks)) - 1
-    for (Tau,kink) in c.kinks
-        E_kin += sum(get_energy(n) for n in occs) * float(Tau - old_Tau)
-        old_Tau = Tau
+    old_τ = first(last(c.kinks)) - 1
+    for (τ,kink) in c.kinks
+        E_kin += sum(get_energy(n) for n in occs) * float(τ - old_τ)
+        old_τ = τ
         change_occupations(occs, kink)
     end
     return(E_kin)
 end
 
 function W_off_diag(e::Ensemble, c::Configuration)
-    return(-(length(c.kinks)/e.beta))
+    return(-(length(c.kinks)/e.β))
 end
 
 function W_diag(e::Ensemble, c::Configuration)
@@ -35,20 +35,20 @@ function W_diag(e::Ensemble, c::Configuration)
         end
     else
         occs = copy(c.occupations)
-        old_Tau = first(last(c.kinks)) - 1
-        for (Tau,kink) in c.kinks
+        old_τ = first(last(c.kinks)) - 1
+        for (τ,kink) in c.kinks
             for occ1 in occs
                 redundant = true
                 for occ2 in occs
                     if !redundant
-                        W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (Tau-old_Tau)
+                        W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (τ-old_τ)
                     end
                     if occ1 == occ2
                         redundant = false
                     end
                 end
             end
-            old_Tau = Tau
+            old_τ = τ
             change_occupations(occs, kink)
         end
     end
@@ -78,14 +78,14 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100)
         end
     else
         occs = copy(c.occupations)
-        old_Tau = first(last(c.kinks)) - 1
+        old_τ = first(last(c.kinks)) - 1
         for (tau,k) in c.kinks
             for en in get_energy.(occs)
                 if en < emax
-                    nk[en+1] = nk[en+1] + (tau - old_Tau)
+                    nk[en+1] = nk[en+1] + (tau - old_τ)
                 end
             end
-            old_Tau = tau
+            old_τ = tau
             change_occupations(occs,k)
         end
     end

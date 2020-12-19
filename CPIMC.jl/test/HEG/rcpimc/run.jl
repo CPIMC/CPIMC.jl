@@ -17,7 +17,7 @@ include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^6###############################################################
+    NMC = 10^4###############################################################
     cyc = 20
     NEquil = 10^4
 
@@ -25,10 +25,10 @@ function main()
     theta = 0.5#Nulleb um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
     rs = 10
 
-    #S = get_orbs_with_spin(get_sphere(Orbital_HEG((0,0,0),1),dk=1),1)
+    #S = get_orbs_with_spin(get_sphere(OrbitalHEG((0,0,0),1),dk=1),1)
 
     #4Particles
-    S = Set{Orbital_HEG{3}}([Orbital_HEG((0,0,0),1), Orbital_HEG((1,0,0),1), Orbital_HEG((0,1,0),1), Orbital_HEG((0,0,1),1)])
+    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("theta: ", theta)
@@ -37,8 +37,8 @@ function main()
     println("N: ", N)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B,shuffle_indixes]
+    e = Ensemble(rs, get_β_internal(theta,N), N) # get_β_internal only works for 3D
+    updates = [move_particle, add_type_B, remove_type_B, change_type_B,shuffle_indices]
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -60,7 +60,7 @@ function main()
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
             println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(NMC/cyc))
             if  (k == :Epot) | (k == :E)
-                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
+                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
             elseif (k == :Ekin)
                 println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
             end

@@ -14,7 +14,6 @@ include("src/HEG/model.jl")
 include("src/CPIMC.jl")
 include("src/HEG/RCPIMC/updates.jl")
 include("src/HEG/RCPIMC/estimators.jl")"""
-
 function main()
     # MC options
     NMC = 10^6
@@ -24,11 +23,10 @@ function main()
     # system parameters
     theta = 1.0
     rs = 1.0
-
-    S = get_orbs_with_spin(get_sphere(Orbital_HEG((0,0,0),1),dk=2),1)
+    S = get_orbs_with_spin(get_sphere(OrbitalHEG((0,0,0),1),dk=2),1)
 
     #4Particles
-    #S = Set{Orbital{3}}([Orbital_HEG((0,0,0),1), Orbital_HEG((1,0,0),1), Orbital_HEG((0,1,0),1), Orbital_HEG((0,0,1),1)])
+    #S = Set{Orbital{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("#################################################")
     println("N: ", length(S))
@@ -37,8 +35,8 @@ function main()
     N = length(S)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
-    updates = [move_particle, Add_Type_B, remove_Type_B, change_type_B, shuffle_indixes]#
+    e = Ensemble(rs, get_β_internal(theta,N), N) # get_β_internal only works for 3D
+    updates = [move_particle, add_type_B, remove_type_B, change_type_B, shuffle_indices]#
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -90,7 +88,7 @@ function main()
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
             println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1))
             if  (k == :Epot) | (k == :E)
-                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2)
+                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2)
             elseif (k == :Ekin)
                 println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2)
             end
@@ -118,7 +116,7 @@ function main()
             if typeof(f) == Variance{Float64,Float64,EqualWeight}
                 write(io, string(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1),"\n"))
                 if  (k == :Epot) | (k == :E)
-                    write(io, string(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_Mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", (E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2),"\n"))
+                    write(io, string(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", (E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2),"\n"))
                 elseif (k == :Ekin)
                     write(io,string(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2,"\n"))
                 end
