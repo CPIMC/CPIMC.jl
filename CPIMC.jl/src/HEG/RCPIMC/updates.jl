@@ -68,7 +68,7 @@ function Add_Type_B(c::Configuration, e::Ensemble)
         return 1
     end
     orb_a = rand(opportiunisties_orb_a)
-    orb_b = Orbital((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
+    orb_b = Orbital_HEG((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
     @assert !((orb_a == orb_d) | (orb_b == orb_c))
     if (!in(orb_b,opportiunisties_orb_b) | (orb_a == orb_b))
         return 1
@@ -293,7 +293,7 @@ function change_type_B(c::Configuration, e::Ensemble)
         return 1
     end
     new_orb_i = rand(opportunities)
-    new_orb_j = Orbital(last(Kink1).j.vec + last(Kink1).i.vec - new_orb_i.vec, last(Kink1).j.spin)
+    new_orb_j = Orbital_HEG(last(Kink1).j.vec + last(Kink1).i.vec - new_orb_i.vec, last(Kink1).j.spin)
     if new_orb_i == new_orb_j
         return 1
     end

@@ -5,23 +5,21 @@ import LinearAlgebra: dot
 struct Ensemble
   "Brueckner parameter"
   rs :: Float64
-
   "reduced temperature"
   beta :: Float64
-
   "particle number"
   N :: Int
 end
 
 "representation of single particle state"
-struct Orbital{D}
+struct Orbital_HEG{D} <: Orbital
     "D-dimensional excitation vector"
     vec :: StaticVector{D,Int}
     "spin"
     spin :: Int
 end
 
-Orbital(v::Tuple,s=1) = Orbital(SVector(v),s)
+Orbital_HEG(v::Tuple,s=1) = Orbital_HEG(SVector(v),s)
 
 
 function get_beta_internal(theta::Float64, N::Int)
@@ -34,7 +32,7 @@ function lambda(N::Int, rs::Float64)
 end
 
 " single particle energy for momentum vector k "
-function get_energy(o::Orbital)
+function get_energy(o::Orbital_HEG)
     dot(o.vec,o.vec)
 end
 
@@ -47,7 +45,7 @@ function abs_E_Mad(N::Int, lam::Float64) #internal units
 end
 
 
-function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbital{3}})
+function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{Orbital_HEG{3}})
     wijkl = 0
     if Kink.i.spin == Kink.j.spin
         wijkl +=  1/dot((Kink.i.vec-Kink.k.vec), (Kink.i.vec-Kink.k.vec)) -
@@ -68,33 +66,33 @@ end
 
 
 
-function get_orbshell(o::Orbital{1};dw::Int=2)
+function get_orbshell(o::Orbital_HEG{1};dw::Int=2)
     eq = get_energy(o)
     qmax = Int(floor(eq))
 
-    os = Set{Orbital{1}}()
+    os = Set{Orbital_HEG{1}}()
 
     for x in -qmax:qmax
         if abs(x*x - eq) <= dw
-            push!(os, Orbital((x,1)))
-            push!(os, Orbital((x,-1)))
+            push!(os, Orbital_HEG((x,1)))
+            push!(os, Orbital_HEG((x,-1)))
         end
     end
 
     os
 end
 
-function get_orbshell(o::Orbital{2};dw::Int=2)
+function get_orbshell(o::Orbital_HEG{2};dw::Int=2)
     eq = get_energy(o)
     qmax = Int(floor(eq))
 
-    os = Set{Orbital{2}}()
+    os = Set{Orbital_HEG{2}}()
 
     for x in -qmax:qmax
         for y in -qmax:qmax
             if abs(x*x + y*y - eq) <= dw
-                push!(os, Orbital((x,y),1))
-                push!(os, Orbital((x,y),-1))
+                push!(os, Orbital_HEG((x,y),1))
+                push!(os, Orbital_HEG((x,y),-1))
             end
         end
     end
@@ -102,18 +100,18 @@ function get_orbshell(o::Orbital{2};dw::Int=2)
     os
 end
 
-function get_orbshell(o::Orbital{3};dw::Int=2)
+function get_orbshell(o::Orbital_HEG{3};dw::Int=2)
     eq = get_energy(o)
     qmax = Int(floor(eq))
 
-    os = Set{Orbital{3}}()
+    os = Set{Orbital_HEG{3}}()
 
     for x in -qmax:qmax
         for y in -qmax:qmax
             for z in -qmax:qmax
                 if abs( x*x + y*y + z*z - eq ) <= dw
-                    push!(os, Orbital((x,y,z),1))
-                    push!(os, Orbital((x,y,z),-1))
+                    push!(os, Orbital_HEG((x,y,z),1))
+                    push!(os, Orbital_HEG((x,y,z),-1))
                 end
             end
         end
@@ -122,26 +120,26 @@ function get_orbshell(o::Orbital{3};dw::Int=2)
     os
 end
 
-function get_sphere(o::Orbital{1}; dk::Int=2)
-    os = Set{Orbital{1}}()
+function get_sphere(o::Orbital_HEG{1}; dk::Int=2)
+    os = Set{Orbital_HEG{1}}()
 
     for x in -dk:dk
         if x*x <= dk*dk
-            push!(os, Orbital(o.vec+SVector(x),1))
-            push!(os, Orbital(o.vec+SVector(x),-1))
+            push!(os, Orbital_HEG(o.vec+SVector(x),1))
+            push!(os, Orbital_HEG(o.vec+SVector(x),-1))
         end
     end
     os
 end
 
-function get_sphere(o::Orbital{2}; dk::Int=2)
-    os = Set{Orbital{2}}()
+function get_sphere(o::Orbital_HEG{2}; dk::Int=2)
+    os = Set{Orbital_HEG{2}}()
 
     for x in -dk:dk
         for y in -dk:dk
             if x*x + y*y <= dk*dk
-                push!(os, Orbital(o.vec+SVector(x,y),1))
-                push!(os, Orbital(o.vec+SVector(x,y),-1))
+                push!(os, Orbital_HEG(o.vec+SVector(x,y),1))
+                push!(os, Orbital_HEG(o.vec+SVector(x,y),-1))
             end
         end
     end
@@ -149,15 +147,15 @@ function get_sphere(o::Orbital{2}; dk::Int=2)
 end
 
 
-function get_sphere(o::Orbital{3}; dk::Int=2)
-    os = Set{Orbital{3}}()
+function get_sphere(o::Orbital_HEG{3}; dk::Int=2)
+    os = Set{Orbital_HEG{3}}()
 
     for x in -dk:dk
         for y in -dk:dk
             for z in -dk:dk
                 if x*x + y*y + z*z <= dk*dk
-                    push!(os, Orbital(o.vec+SVector(x,y,z),1))
-                    push!(os, Orbital(o.vec+SVector(x,y,z),-1))
+                    push!(os, Orbital_HEG(o.vec+SVector(x,y,z),1))
+                    push!(os, Orbital_HEG(o.vec+SVector(x,y,z),-1))
                 end
             end
         end
@@ -165,8 +163,8 @@ function get_sphere(o::Orbital{3}; dk::Int=2)
     os
 end
 
-function get_orbs_with_spin(orbitals::Set{Orbital{3}},spin::Int)
-    orbs_s = Set{Orbital{3}}()
+function get_orbs_with_spin(orbitals::Set{Orbital_HEG{3}},spin::Int)
+    orbs_s = Set{Orbital_HEG{3}}()
     for orb in orbitals
         if orb.spin==spin
             push!(orbs_s, orb)
@@ -175,157 +173,7 @@ function get_orbs_with_spin(orbitals::Set{Orbital{3}},spin::Int)
     return orbs_s
 end
 
-#returns a list of all Kinks that affect the given orbital
-function get_kinks_of_orb(c::Configuration, orbital::Orbital)
-  kinks_of_orb = SortedDict{img_time, Kink{Orbital{3}}}()
-  for (tau_kink,kink) in c.kinks
-    if (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-      kinks_of_orb[tau_kink] = kink
-    end
-  end
-  return kinks_of_orb
-end
 
-#Returns a tuple of the imiginary times between 0 and 1 of the nearest Kinks before Tau and the nearest Kink after Tau,
-# which effect the given orbital. Has to be multiplied with beta to get real imaginary times.
-function get_nearest_Tau_effecting_orb(Configuration::Configuration, orbital::Orbital,Tau::img_time)
-  current_tau = 0
-  Kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
-  if length(Kinks_of_orb) == 0
-      return("nix","nix")
-  end
-  #TO DO: Binäre Suche benutzten?
-  for (tau_kink,kink) in Kinks_of_orb
-      if tau_kink > Tau
-        if current_tau == 0
-          return (first(last(Kinks_of_orb)),tau_kink)
-        else
-          return (current_tau,tau_kink)
-        end
-      else
-          #es soll nicht Tau als Grenze zurückgegeben werden
-          if tau_kink != Tau
-              current_tau = tau_kink
-          end
-      end
-  end
-  return (current_tau, first(first(Kinks_of_orb)))
-end
-
-function get_Tau_boarders(Configuration::Configuration, orbitals::Set{Orbital{3}},Tau::img_time)
-  if length(Configuration.kinks) == 0
-      return(img_time(0),img_time(1))
-  end
-  #Initially we set Tau right and Taul left to the nearest Kinks left and right of Tau.
-  Tau_left_semi_token  = searchsortedafter(Configuration.kinks, Tau)
-  Tau_right_semi_token = searchsortedlast(Configuration.kinks, Tau)
-  if Tau_left_semi_token == pastendsemitoken(Configuration.kinks)
-      Tau_left = first(first(Configuration.kinks))
-  else
-      Tau_left = first(deref((Configuration.kinks, Tau_left_semi_token)))
-  end
-  if Tau_right_semi_token == beforestartsemitoken(Configuration.kinks)
-      Tau_right = first(last(Configuration.kinks))
-  else
-      Tau_right = first(deref((Configuration.kinks, Tau_right_semi_token)))
-      if Tau_right == Tau
-          Tau_right_semi_token = regress((Configuration.kinks,Tau_right_semi_token))
-          if Tau_right_semi_token == beforestartsemitoken(Configuration.kinks)
-              Tau_right = first(last(Configuration.kinks))
-          else
-              Tau_right = first(deref((Configuration.kinks, Tau_right_semi_token)))
-          end
-      end
-  end
-  #Now search for the nearst Taus that do actually effect one of the Orbitals
-  non_interacting_orb_counter = 0
-  for orb in orbitals
-    @assert(Tau_right != img_time(1))
-    Tupel = get_nearest_Tau_effecting_orb(Configuration, orb, Tau)
-    if Tupel[1] == "nix"
-        non_interacting_orb_counter += 1
-    else
-        #here we always have to check wether the given intervall extends over 1
-        if Tau_left < Tau < Tupel[1]
-            "nix"
-        elseif Tupel[1] < Tau < Tau_left
-            Tau_left = Tupel[1]
-        elseif Tau_left < Tupel[1]
-          Tau_left = Tupel[1]
-        end
-
-        if Tupel[2] < Tau < Tau_right
-            "nix"
-        elseif Tau_right < Tau < Tupel[2]
-          Tau_right = Tupel[2]
-        elseif Tupel[2] < Tau_right
-            Tau_right = Tupel[2]
-        end
-    end
-  end
-  if non_interacting_orb_counter == length(orbitals)
-      return return(img_time(0),img_time(1))
-  else
-      return (Tau_left,Tau_right)
-  end
-end
-
-
-
-#see if an orb has no Kinks
-function is_non_interacting(Configuration::Configuration, orbital::Orbital)
-  for (tau_kink,kink) in Configuration.kinks
-    if (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-      return(false)
-    end
-  end
-  return(true)
-end
-
-#see if an orb has no Kinks between two Taus (ignoring Kinks at one of the Taus)
-function is_non_interacting_in_interval(Configuration::Configuration, orbital::Orbital, Tau_first::img_time, Tau_last::img_time)
-  @assert Tau_first != Tau_last
-  if Tau_first < Tau_last
-      for (tau_kink,kink) in Configuration.kinks
-        if (tau_kink <= Tau_first) | (tau_kink >= Tau_last)
-            "nix"
-        elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-              return(false)
-        end
-      end
-  else
-      for (tau_kink,kink) in Configuration.kinks
-        if ((tau_kink <= Tau_first) & (tau_kink >= Tau_last))
-            "nix"
-        elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-              return(false)
-        end
-      end
-  end
-  return(true)
-end
-
-#returns all orbs with no kinks
-function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{Orbital{3}})
-  non_int_orbs = Set{Orbital{3}}()
-  for orb in os
-    if is_non_interacting(Configuration, orb)
-      push!(non_int_orbs, orb)
-    end
-  end
-  return(non_int_orbs)
-end
-
-#returns all orbs with no kinks between 2 taus, ignoring Kinks at one of the Taus
-function get_non_interacting_orbs_of_set_in_interval(Configuration::Configuration, os::Set{Orbital{3}}, Tau_first::img_time, Tau_last::img_time )
-  non_int_orbs = Set{Orbital{3}}()
-  for orb in os
-    if is_non_interacting_in_interval(Configuration, orb, Tau_first, Tau_last)
-      push!(non_int_orbs, orb)
-    end
-  end
-  return(non_int_orbs)
-end
 
 #calculates the change in the diagonal interaction when changing ocupation between Tau1 and Tau2 accoring to LeftKink
 #already multiplied by e.beta

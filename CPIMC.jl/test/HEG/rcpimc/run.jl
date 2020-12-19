@@ -10,25 +10,25 @@ include("../../../src/CPIMC.jl")
 
 
 """include("CPIMC.jl/src/Configuration.jl")
-include("CPIMC.jl/src/CPIMC.jl")
 include("CPIMC.jl/src/HEG/model.jl")
-include("CPIMC.jl/src/HEG/Ideal/updates.jl")
-include("CPIMC.jl/src/HEG/Ideal/estimators.jl")"""
+include("CPIMC.jl/src/CPIMC.jl")
+include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
+include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^7###############################################################
+    NMC = 10^6###############################################################
     cyc = 20
-    NEquil = 10^5
+    NEquil = 10^4
 
     # system parameters
     theta = 0.5#Nulleb um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
     rs = 10
 
-    #S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1)
+    #S = get_orbs_with_spin(get_sphere(Orbital_HEG((0,0,0),1),dk=1),1)
 
     #4Particles
-    S = Set{Orbital{3}}([Orbital((0,0,0),1), Orbital((1,0,0),1), Orbital((0,1,0),1), Orbital((0,0,1),1)])
+    S = Set{Orbital_HEG{3}}([Orbital_HEG((0,0,0),1), Orbital_HEG((1,0,0),1), Orbital_HEG((0,1,0),1), Orbital_HEG((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("theta: ", theta)
@@ -81,5 +81,5 @@ function main()
     #   end
 end
 
-Juno.@run(main())
-#main()
+#Juno.@run(main())
+main()
