@@ -17,27 +17,30 @@ include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^4###############################################################
+    NMC = 10^6###############################################################
     cyc = 20
-    NEquil = 10^4
-
+    NEquil = 10^5
+    #auffälligerBalken um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
+    """#####################################################################
+    ########################################################################
+    ####################################################################"""
     # system parameters
-    theta = 0.5#Nulleb um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
+    θ = 0.5
     rs = 10
 
-    #S = get_orbs_with_spin(get_sphere(OrbitalHEG((0,0,0),1),dk=1),1)
+    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
 
     #4Particles
     S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("Number of particles: ", length(S))
-    println("theta: ", theta)
+    println("θ: ", θ)
     println("rs: ", rs)
     N = length(S)
     println("N: ", N)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_β_internal(theta,N), N) # get_β_internal only works for 3D
+    e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
     updates = [move_particle, add_type_B, remove_type_B, change_type_B,shuffle_indices]
 
     measurements = Dict(
@@ -76,7 +79,7 @@ function main()
     println(std.(measurements[:occs][1].stats))
 
     # Print to results file
-    #open("../out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
+    #open("../out/occNums_N$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
     #       writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
     #   end
 end

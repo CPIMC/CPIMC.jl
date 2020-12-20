@@ -21,21 +21,21 @@ function main()
     NEquil = 10^5
 
     # system parameters
-    theta = 1.0
+    θ = 1.0
     rs = 1.0
-    S = get_orbs_with_spin(get_sphere(OrbitalHEG((0,0,0),1),dk=2),1)
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
 
     #4Particles
     #S = Set{Orbital{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("#################################################")
     println("N: ", length(S))
-    println("theta: ", theta)
+    println("θ: ", θ)
     println("rs: ", rs)
     N = length(S)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_β_internal(theta,N), N) # get_β_internal only works for 3D
+    e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
     updates = [move_particle, add_type_B, remove_type_B, change_type_B, shuffle_indices]#
 
     measurements = Dict(
@@ -105,13 +105,13 @@ function main()
 
     println(pwd())
     # create occnumsfile
-    #open("test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-    open("CPIMC.jl/test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    #open("test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("CPIMC.jl/test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
     end
     #create resultsfile
-    #open("test/HEG/rcpimc/out/results_$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-    open("CPIMC.jl/test/HEG/rcpimc/out/results_$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    #open("test/HEG/rcpimc/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("CPIMC.jl/test/HEG/rcpimc/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
         for (k,(f,m)) in measurements
             if typeof(f) == Variance{Float64,Float64,EqualWeight}
                 write(io, string(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1),"\n"))

@@ -21,23 +21,22 @@ function main()
     # MC options
     NMC = 10^6
     cyc = 10
-    NEquil = 10^6
+    NEquil = 10^4
 
     # system parameters
-    theta = 0.0625
+    θ = 0.0625
     rs = 1
-
-    S = get_orbs_with_spin(get_sphere(Orbital((0,0,0),1),dk=1),1) ### use 33 particles
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2) ### use 33 particles
 
 
     println("Number of particles: ", length(S))
-    println("theta: ", theta)
+    println("θ: ", θ)
     println("rs: ", rs)
     N = length(S)
     println("N: ", N)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_beta_internal(theta,N), N) # get_beta_internal only works for 3D
+    e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
     """updates = [move_particle, Add_Type_B, remove_Type_B]
 
     measurements = Dict(
@@ -77,7 +76,7 @@ function main()
     println(std.(measurements[:occs][1].stats))
 
     # Print to results file
-    open("./out/occNums_N$(N)_th$(replace(string(theta),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
+    open("CPIMC.jl/test/HEG/rcpimc/out/occNums_N$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
        end
 end

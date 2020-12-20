@@ -6,7 +6,7 @@ function move_particle(c::Configuration, e::Ensemble)
     else
         x = rand(get_non_interacting_orbs_of_set(c, c.occupations))
     end
-    oe = get_non_interacting_orbs_of_set(c,get_orbs_with_spin(setdiff!(get_sphere(x, dk = ex_radius), c.occupations), x.spin))
+    oe = get_non_interacting_orbs_of_set(c,setdiff!(get_sphere_with_same_spin(x, dk = ex_radius), c.occupations))
 
     #if there are no empty non interacting orbitals in neighbourhood make no change
     if length(oe) == 0
@@ -36,7 +36,7 @@ function move_particle(c::Configuration, e::Ensemble)
     push!(c.occupations,y)
 
     # get orbitals for reverse update
-    oe2 = get_non_interacting_orbs_of_set(c,get_orbs_with_spin(setdiff!(get_sphere(y, dk = ex_radius), c.occupations), y.spin))
+    oe2 = get_non_interacting_orbs_of_set(c,setdiff!(get_sphere_with_same_spin(y, dk = ex_radius), c.occupations))
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
@@ -62,8 +62,8 @@ function add_type_B(c::Configuration, e::Ensemble)
         orb_d = rand(occs)
     end
     prop_prob *= 1/(e.N-1)
-    opportunities_orb_a = get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs),orb_c.spin)
-    opportunities_orb_b = get_orbs_with_spin(setdiff!(get_sphere(orb_d, dk = ex_radius), occs),orb_d.spin)
+    opportunities_orb_a = setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs)
+    opportunities_orb_b = setdiff!(get_sphere_with_same_spin(orb_d, dk = ex_radius), occs)
     if (length(opportunities_orb_a) == 0) | (length(opportunities_orb_b) == 0)
         return 1
     end
@@ -146,7 +146,7 @@ function add_type_B(c::Configuration, e::Ensemble)
 
     #Therefore we modify the proposal_probability in the following way
     occs_τ2 = get_occupations_at(c, τ2)
-    opportunities_orb_a_τ2 = get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_τ2),orb_c.spin)
+    opportunities_orb_a_τ2 = setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ2)
     @assert length(opportunities_orb_a_τ2) != 0
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
 
@@ -238,8 +238,8 @@ function remove_type_B(c::Configuration, e::Ensemble)
         orb_d = last(Kink1).l
         #See how prop_prob changes in the function add_type_B to understand this expression
         inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
-            (1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_τ_kink1),orb_c.spin))
-                + 1/length(get_orbs_with_spin(setdiff!(get_sphere(orb_c, dk = ex_radius), occs_τ_kink2),orb_c.spin))) *
+            (1/length(setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink1))
+                + 1/length(setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink2))) *
              1.0/float(possible_τ2_interval) * (1/4)
         if borders[2] == 1
             inverse_prop_prob *= 0.5
@@ -280,11 +280,9 @@ function change_type_B(c::Configuration, e::Ensemble)
     occs = get_occupations_at(c, first(Kink1))
 
     opportunities = get_non_interacting_orbs_of_set_in_interval(
-                        c,get_orbs_with_spin(
-                            setdiff!(
-                                get_sphere(last(Kink1).i, dk = ex_radius
-                                ), occs
-                            ), last(Kink1).i.spin
+                        c,setdiff!(
+                            get_sphere_with_same_spin(last(Kink1).i, dk = ex_radius
+                            ), occs
                         ),first(Kink1),first(Kink2)
                     )
     delete!(opportunities, last(Kink1).k)
@@ -328,11 +326,9 @@ function change_type_B(c::Configuration, e::Ensemble)
         end
         change_occupations(occs, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
         opportunites_reverse = get_non_interacting_orbs_of_set_in_interval(
-                                    c,get_orbs_with_spin(
-                                        setdiff!(
-                                            get_sphere(new_orb_i, dk = ex_radius
-                                            ), occs
-                                        ), last(Kink1).i.spin
+                                    c,setdiff!(
+                                        get_sphere_with_same_spin(new_orb_i, dk = ex_radius
+                                        ), occs
                                     ),first(Kink1),first(Kink2)
                                 )
         delete!(opportunites_reverse, last(Kink1).k)

@@ -120,26 +120,24 @@ function get_orbshell(o::OrbitalHEG{3};dw::Int=2)
     os
 end
 
-function get_sphere(o::OrbitalHEG{1}; dk::Int=2)
+function get_sphere_with_same_spin(o::OrbitalHEG{1}; dk::Int=2)
     os = Set{OrbitalHEG{1}}()
 
     for x in -dk:dk
         if x*x <= dk*dk
-            push!(os, OrbitalHEG(o.vec+SVector(x),1))
-            push!(os, OrbitalHEG(o.vec+SVector(x),-1))
+            push!(os, OrbitalHEG(o.vec+SVector(x),o.spin))
         end
     end
     os
 end
 
-function get_sphere(o::OrbitalHEG{2}; dk::Int=2)
+function get_sphere_with_same_spin(o::OrbitalHEG{2}; dk::Int=2)
     os = Set{OrbitalHEG{2}}()
 
     for x in -dk:dk
         for y in -dk:dk
             if x*x + y*y <= dk*dk
-                push!(os, OrbitalHEG(o.vec+SVector(x,y),1))
-                push!(os, OrbitalHEG(o.vec+SVector(x,y),-1))
+                push!(os, OrbitalHEG(o.vec+SVector(x,y),o.spin))
             end
         end
     end
@@ -147,15 +145,14 @@ function get_sphere(o::OrbitalHEG{2}; dk::Int=2)
 end
 
 
-function get_sphere(o::OrbitalHEG{3}; dk::Int=2)
+function get_sphere_with_same_spin(o::OrbitalHEG{3}; dk::Int=2)
     os = Set{OrbitalHEG{3}}()
 
     for x in -dk:dk
         for y in -dk:dk
             for z in -dk:dk
                 if x*x + y*y + z*z <= dk*dk
-                    push!(os, OrbitalHEG(o.vec+SVector(x,y,z),1))
-                    push!(os, OrbitalHEG(o.vec+SVector(x,y,z),-1))
+                    push!(os, OrbitalHEG(o.vec+SVector(x,y,z),o.spin))
                 end
             end
         end
