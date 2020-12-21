@@ -55,8 +55,8 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     end
 end
 
-#measurements should be the only variable modified by multyple threads
-function runMC_multythreaded(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+#This you can us if you want to use the same online stats objekt with different threads
+function runMC_multythreaded_with_lock(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
     l = Threads.ReentrantLock()
     @assert(length(c.kinks) == 0)
     c = Configuration(copy(c.occupations))  #c should be a different objekt for each thread
@@ -104,6 +104,53 @@ function runMC_multythreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
     end
     println("\nThread",Threads.threadid(),"finished")
 end
+
+#Only use if all threads do not access any objekts in common
+function runMC_multythreaded(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+    @assert(length(c.kinks) == 0)
+    c = Configuration(copy(c.occupations))  #c should be a different objekt for each thread
+    " equilibration "
+    if (Threads.threadid() == 1)
+        println("\nstarting equilibration")
+    end
+    k = 1 #print prgoress
+    for i in 1:throwAway
+        if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
+            print("eq: ",k,"/100","    ")
+            #println("K: ",length(c.kinks))
+            k+=1
+        end
+        propose_update!(c,updates,e)
+    end
+    if (Threads.threadid() == 1)
+        println("\nstarting Simulation")
+    end
+    i = 0
+    k = 1#print progress
+    while i < steps
+        #print progress
+        if (i%(steps/100) == 0) & (Threads.threadid() == 1)
+            print(k,"/100","    ")
+            #println("K: ",length(c.kinks))
+            k+=1
+        end
+        propose_update!(c,updates,e)
+        if i % sampleEvery == 0
+            " calculate observables "
+            for (key,(stat,obs)) in measurements
+                if typeof(stat) == Group
+                        fit!(stat, eachrow(obs(e,c)))
+                else
+                        fit!(stat, obs(e,c))
+                end
+            end
+        end
+        i += 1
+    end
+    println("\nThread",Threads.threadid(),"finished")
+end
+
+
 
 
 function save_results(path, measurements, e)

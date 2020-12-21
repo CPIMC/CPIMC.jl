@@ -16,15 +16,6 @@ function move_particle(c::Configuration, e::Ensemble)
     @assert x != y "same Configuration proposed."
 
     delta_di = get_change_diagonal_interaction(c, e, T2(y,x), ImgTime(0), ImgTime(1))
-    """if delta_di < 0
-        if get_energy(y)-get_energy(x) > 0
-            println("\n","\n","y:", y)
-            println("x:", x)
-            println("delta_T: ",get_energy(y)-get_energy(x))
-            println("delta_W_diag: ", delta_di)
-            println(c.occupations,"\n","\n")
-        end
-    end"""
     @assert delta_di != Inf
     # weight change
     dw = exp(-(e.β*(get_energy(y)-get_energy(x)) + delta_di))

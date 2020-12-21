@@ -16,9 +16,9 @@ include("src/HEG/RCPIMC/updates.jl")
 include("src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 10^4
     cyc = 20
-    NEquil = 10^5
+    NEquil = 10^4
 
     # system parameters
     θ = 1.0
@@ -103,7 +103,6 @@ function main()
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
 
-    println(pwd())
     # create occnumsfile
     #open("test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
     open("CPIMC.jl/test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
