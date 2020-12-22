@@ -79,19 +79,19 @@ function get_kinks_of_orb(c::Configuration, orbital::Orbital)
   return kinks_of_orb
 end
 
-#Returns a tuple of the imiginary times between 0 and 1 of the nearest Kinks before τ and the nearest Kink after τ,
+#Returns a tuple of the imaginary times between 0 and 1 of the nearest Kinks before τ and the nearest Kink after τ,
 # which effect the given orbital. Has to be multiplied with β to get real imaginary times.
-function get_nearest_τ_effecting_orb(Configuration::Configuration, orbital::Orbital,τ::ImgTime)
+function get_nearest_τ_affecting_orb(Configuration::Configuration, orbital::Orbital,τ::ImgTime)
   current_τ = 0
-  Kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
-  if length(Kinks_of_orb) == 0
+  kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
+  if length(kinks_of_orb) == 0
       return("nix","nix")
   end
   #TO DO: Binäre Suche benutzten?
-  for (τ_kink,kink) in Kinks_of_orb
+  for (τ_kink,kink) in kinks_of_orb
       if τ_kink > τ
         if current_τ == 0
-          return (first(last(Kinks_of_orb)),τ_kink)
+          return (first(last(kinks_of_orb)),τ_kink)
         else
           return (current_τ,τ_kink)
         end
@@ -102,7 +102,7 @@ function get_nearest_τ_effecting_orb(Configuration::Configuration, orbital::Orb
           end
       end
   end
-  return (current_τ, first(first(Kinks_of_orb)))
+  return (current_τ, first(first(kinks_of_orb)))
 end
 
 
@@ -136,25 +136,25 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
   non_interacting_orb_counter = 0
   for orb in orbitals
     @assert(τ_right != ImgTime(1))
-    Tupel = get_nearest_τ_effecting_orb(Configuration, orb, τ)
-    if Tupel[1] == "nix"
+    tupel = get_nearest_τ_affecting_orb(Configuration, orb, τ)
+    if tupel[1] == "nix"
         non_interacting_orb_counter += 1
     else
         #here we always have to check wether the given intervall extends over 1
-        if τ_left < τ < Tupel[1]
+        if τ_left < τ < tupel[1]
             "nix"
-        elseif Tupel[1] < τ < τ_left
-            τ_left = Tupel[1]
-        elseif τ_left < Tupel[1]
-          τ_left = Tupel[1]
+        elseif tupel[1] < τ < τ_left
+            τ_left = tupel[1]
+        elseif τ_left < tupel[1]
+          τ_left = tupel[1]
         end
 
-        if Tupel[2] < τ < τ_right
+        if tupel[2] < τ < τ_right
             "nix"
-        elseif τ_right < τ < Tupel[2]
-          τ_right = Tupel[2]
-        elseif Tupel[2] < τ_right
-            τ_right = Tupel[2]
+        elseif τ_right < τ < tupel[2]
+          τ_right = tupel[2]
+        elseif tupel[2] < τ_right
+            τ_right = tupel[2]
         end
     end
   end
@@ -201,7 +201,7 @@ function is_non_interacting_in_interval(Configuration::Configuration, orbital::O
 end
 
 #returns all orbs with no kinks
-function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{<:Orbital})
+function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{<:Orbital})# ":: Set{<:Orbital}" funktioniert nicht
   non_int_orbs = Set() #Set{<:Orbital}() funktioniert nicht, anscheineinend lassen
   #sich Set-objekte nicht mit angabe eine abstarken types erstellen.
   for orb in os
@@ -213,7 +213,7 @@ function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{<
 end
 
 #returns all orbs with no kinks between 2 τs, ignoring Kinks at one of the τs
-function get_non_interacting_orbs_of_set_in_interval(Configuration::Configuration, os::Set{<:Orbital}, τ_first::ImgTime, τ_last::ImgTime )
+function get_non_interacting_orbs_of_set_in_interval(Configuration::Configuration, os::Set{<:Orbital}, τ_first::ImgTime, τ_last::ImgTime )# :: Set{<:Orbital}
   non_int_orbs = Set() #Set{<:Orbital}() funktioniert nicht, anscheineinend lassen
   #sich Set-objekte nicht mit angabe eine abstarken types erstellen.
   for orb in os

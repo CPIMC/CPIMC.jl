@@ -45,15 +45,15 @@ function abs_E_mad(N::Int, lam::Float64) #internal units
 end
 
 
-function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,Kink::T4{OrbitalHEG{3}})
+function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,kink::T4{OrbitalHEG{3}})
     wijkl = 0
-    if Kink.i.spin == Kink.j.spin
-        wijkl +=  1/dot((Kink.i.vec-Kink.k.vec), (Kink.i.vec-Kink.k.vec)) -
-                    1/dot((Kink.i.vec-Kink.l.vec), (Kink.i.vec-Kink.l.vec))
-    elseif Kink.i.spin == Kink.k.spin
-        wijkl +=  1/dot((Kink.i.vec-Kink.k.vec), (Kink.i.vec-Kink.k.vec))
-    elseif Kink.i.spin == Kink.l.spin
-        wijkl -= 1/dot((Kink.i.vec-Kink.l.vec), (Kink.i.vec-Kink.l.vec))
+    if kink.i.spin == kink.j.spin
+        wijkl +=  1/dot((kink.i.vec-kink.k.vec), (kink.i.vec-kink.k.vec)) -
+                    1/dot((kink.i.vec-kink.l.vec), (kink.i.vec-kink.l.vec))
+    elseif kink.i.spin == kink.k.spin
+        wijkl +=  1/dot((kink.i.vec-kink.k.vec), (kink.i.vec-kink.k.vec))
+    elseif kink.i.spin == kink.l.spin
+        wijkl -= 1/dot((kink.i.vec-kink.l.vec), (kink.i.vec-kink.l.vec))
     else
         @assert false
     end
@@ -199,52 +199,52 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
     if length(c.kinks) == 0
         return -delta_di * e.β
     end
-    Kink_semi_token = searchsortedfirst(c.kinks,τ1)
-    if Kink_semi_token == pastendsemitoken(c.kinks)
-        Kink_semi_token = startof(c.kinks)
+    kink_semi_token = searchsortedfirst(c.kinks,τ1)
+    if kink_semi_token == pastendsemitoken(c.kinks)
+        kink_semi_token = startof(c.kinks)
     end
-    τ_Kink,Kink = deref((c.kinks,Kink_semi_token))
-    #The Kink at τ1 is already considered in occs
-    if τ_Kink == τ1
-        Kink_semi_token = advance((c.kinks,Kink_semi_token))
-        if Kink_semi_token == pastendsemitoken(c.kinks)
-            Kink_semi_token = startof(c.kinks)
+    τ_kink,kink = deref((c.kinks,kink_semi_token))
+    #The kink at τ1 is already considered in occs
+    if τ_kink == τ1
+        kink_semi_token = advance((c.kinks,kink_semi_token))
+        if kink_semi_token == pastendsemitoken(c.kinks)
+            kink_semi_token = startof(c.kinks)
         end
-        τ_Kink,Kink = deref((c.kinks,Kink_semi_token))
+        τ_kink,kink = deref((c.kinks,kink_semi_token))
     end
     loop_counter = 0
-    while ((τ1 < τ_Kink < τ2) | (τ_Kink < τ2 < τ1) | (τ2 < τ1 < τ_Kink)) & (loop_counter < length(c.kinks))
-        delta_τ = τ2 - τ_Kink
+    while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
+        delta_τ = τ2 - τ_kink
         if delta_τ < 0
             delta_τ += 1
         end
 
         delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.i.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
-                                    + 1/dot((Kink.i.vec-orb_b.vec),(Kink.i.vec-orb_b.vec))
-                                    - 1/dot((Kink.i.vec-orb_c.vec),(Kink.i.vec-orb_c.vec))
-                                    - 1/dot((Kink.i.vec-orb_d.vec),(Kink.i.vec-orb_d.vec)))
+                                (1/dot((kink.i.vec-orb_a.vec),(kink.i.vec-orb_a.vec))
+                                    + 1/dot((kink.i.vec-orb_b.vec),(kink.i.vec-orb_b.vec))
+                                    - 1/dot((kink.i.vec-orb_c.vec),(kink.i.vec-orb_c.vec))
+                                    - 1/dot((kink.i.vec-orb_d.vec),(kink.i.vec-orb_d.vec)))
         delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.j.vec-orb_a.vec),(Kink.j.vec-orb_a.vec))
-                                    + 1/dot((Kink.j.vec-orb_b.vec),(Kink.j.vec-orb_b.vec))
-                                    - 1/dot((Kink.j.vec-orb_c.vec),(Kink.j.vec-orb_c.vec))
-                                    - 1/dot((Kink.j.vec-orb_d.vec),(Kink.j.vec-orb_d.vec)))
+                                (1/dot((kink.j.vec-orb_a.vec),(kink.j.vec-orb_a.vec))
+                                    + 1/dot((kink.j.vec-orb_b.vec),(kink.j.vec-orb_b.vec))
+                                    - 1/dot((kink.j.vec-orb_c.vec),(kink.j.vec-orb_c.vec))
+                                    - 1/dot((kink.j.vec-orb_d.vec),(kink.j.vec-orb_d.vec)))
         delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.k.vec-orb_a.vec),(Kink.k.vec-orb_a.vec))
-                                    + 1/dot((Kink.k.vec-orb_b.vec),(Kink.k.vec-orb_b.vec))
-                                    - 1/dot((Kink.k.vec-orb_c.vec),(Kink.k.vec-orb_c.vec))
-                                    - 1/dot((Kink.k.vec-orb_d.vec),(Kink.k.vec-orb_d.vec)))
+                                (1/dot((kink.k.vec-orb_a.vec),(kink.k.vec-orb_a.vec))
+                                    + 1/dot((kink.k.vec-orb_b.vec),(kink.k.vec-orb_b.vec))
+                                    - 1/dot((kink.k.vec-orb_c.vec),(kink.k.vec-orb_c.vec))
+                                    - 1/dot((kink.k.vec-orb_d.vec),(kink.k.vec-orb_d.vec)))
         delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.l.vec-orb_a.vec),(Kink.l.vec-orb_a.vec))
-                                    + 1/dot((Kink.l.vec-orb_b.vec),(Kink.l.vec-orb_b.vec))
-                                    - 1/dot((Kink.l.vec-orb_c.vec),(Kink.l.vec-orb_c.vec))
-                                    - 1/dot((Kink.l.vec-orb_d.vec),(Kink.l.vec-orb_d.vec)))
+                                (1/dot((kink.l.vec-orb_a.vec),(kink.l.vec-orb_a.vec))
+                                    + 1/dot((kink.l.vec-orb_b.vec),(kink.l.vec-orb_b.vec))
+                                    - 1/dot((kink.l.vec-orb_c.vec),(kink.l.vec-orb_c.vec))
+                                    - 1/dot((kink.l.vec-orb_d.vec),(kink.l.vec-orb_d.vec)))
 
-        Kink_semi_token = advance((c.kinks,Kink_semi_token))
-        if Kink_semi_token == pastendsemitoken(c.kinks)
-            Kink_semi_token = startof(c.kinks)
+        kink_semi_token = advance((c.kinks,kink_semi_token))
+        if kink_semi_token == pastendsemitoken(c.kinks)
+            kink_semi_token = startof(c.kinks)
         end
-        τ_Kink,Kink = deref((c.kinks,Kink_semi_token))
+        τ_kink,kink = deref((c.kinks,kink_semi_token))
         loop_counter += 1
     end
     return -delta_di * e.β
@@ -273,43 +273,43 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
     if length(c.kinks) == 0
         return -delta_di * e.β
     end
-    Kink_semi_token = searchsortedfirst(c.kinks,τ1)
-    if Kink_semi_token == pastendsemitoken(c.kinks)
-        Kink_semi_token = startof(c.kinks)
+    kink_semi_token = searchsortedfirst(c.kinks,τ1)
+    if kink_semi_token == pastendsemitoken(c.kinks)
+        kink_semi_token = startof(c.kinks)
     end
-    τ_Kink,Kink = deref((c.kinks,Kink_semi_token))
-    #The Kink at τ1 is already considered in occs
-    if τ_Kink == τ1
-        Kink_semi_token = advance((c.kinks,Kink_semi_token))
-        if Kink_semi_token == pastendsemitoken(c.kinks)
-            Kink_semi_token = startof(c.kinks)
+    τ_kink,kink = deref((c.kinks,kink_semi_token))
+    #The kink at τ1 is already considered in occs
+    if τ_kink == τ1
+        kink_semi_token = advance((c.kinks,kink_semi_token))
+        if kink_semi_token == pastendsemitoken(c.kinks)
+            kink_semi_token = startof(c.kinks)
         end
-        τ_Kink,Kink = deref((c.kinks,Kink_semi_token))
+        τ_kink,kink = deref((c.kinks,kink_semi_token))
     end
     loop_counter = 0
-    while ((τ1 < τ_Kink < τ2) | (τ_Kink < τ2 < τ1) | (τ2 < τ1 < τ_Kink)) & (loop_counter < length(c.kinks))
-        delta_τ = τ2 - τ_Kink
+    while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
+        delta_τ = τ2 - τ_kink
         if delta_τ < 0
             delta_τ += 1
         end
 
         delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.i.vec-orb_a.vec),(Kink.i.vec-orb_a.vec))
-                                    - 1/dot((Kink.i.vec-orb_b.vec),(Kink.i.vec-orb_b.vec)))
+                                (1/dot((kink.i.vec-orb_a.vec),(kink.i.vec-orb_a.vec))
+                                    - 1/dot((kink.i.vec-orb_b.vec),(kink.i.vec-orb_b.vec)))
         delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.j.vec-orb_a.vec),(Kink.j.vec-orb_a.vec))
-                                    - 1/dot((Kink.j.vec-orb_b.vec),(Kink.j.vec-orb_b.vec)))
+                                (1/dot((kink.j.vec-orb_a.vec),(kink.j.vec-orb_a.vec))
+                                    - 1/dot((kink.j.vec-orb_b.vec),(kink.j.vec-orb_b.vec)))
         delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.k.vec-orb_a.vec),(Kink.k.vec-orb_a.vec))
-                                    - 1/dot((Kink.k.vec-orb_b.vec),(Kink.k.vec-orb_b.vec)))
+                                (1/dot((kink.k.vec-orb_a.vec),(kink.k.vec-orb_a.vec))
+                                    - 1/dot((kink.k.vec-orb_b.vec),(kink.k.vec-orb_b.vec)))
         delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((Kink.l.vec-orb_a.vec),(Kink.l.vec-orb_a.vec))
-                                    - 1/dot((Kink.l.vec-orb_b.vec),(Kink.l.vec-orb_b.vec)))
-        Kink_semi_token = advance((c.kinks,Kink_semi_token))
-        if Kink_semi_token == pastendsemitoken(c.kinks)
-            Kink_semi_token = startof(c.kinks)
+                                (1/dot((kink.l.vec-orb_a.vec),(kink.l.vec-orb_a.vec))
+                                    - 1/dot((kink.l.vec-orb_b.vec),(kink.l.vec-orb_b.vec)))
+        kink_semi_token = advance((c.kinks,kink_semi_token))
+        if kink_semi_token == pastendsemitoken(c.kinks)
+            kink_semi_token = startof(c.kinks)
         end
-        τ_Kink,Kink = deref((c.kinks,Kink_semi_token))
+        τ_kink,kink = deref((c.kinks,kink_semi_token))
         loop_counter += 1
     end
     return -delta_di * e.β

@@ -65,7 +65,7 @@ function main()
     for t in 1:Threads.nthreads()
         m = deepcopy(measurements_Mean)
         push!(Measurements_of_runs,m)
-        Marcov_Chain_builders[t] = Threads.@spawn(runMC_multythreaded(NMC, cyc, NEquil, updates, m, e, c))
+        Marcov_Chain_builders[t] = Threads.@spawn(runMC_multithreaded(NMC, cyc, NEquil, updates, m, e, c))
     end
     for mcb in Marcov_Chain_builders
         wait(mcb)

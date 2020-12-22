@@ -56,7 +56,7 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
 end
 
 #This you can us if you want to use the same online stats objekt with different threads
-function runMC_multythreaded_with_lock(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+function runMC_multithreaded_with_lock(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
     l = Threads.ReentrantLock()
     @assert(length(c.kinks) == 0)
     c = Configuration(copy(c.occupations))  #c should be a different objekt for each thread
@@ -106,7 +106,7 @@ function runMC_multythreaded_with_lock(steps::Int, sampleEvery::Int, throwAway::
 end
 
 #Only use if all threads do not access any objekts in common
-function runMC_multythreaded(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
+function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updates, measurements, e::Ensemble, c::Configuration)
     @assert(length(c.kinks) == 0)
     c = Configuration(copy(c.occupations))  #c should be a different objekt for each thread
     " equilibration "
