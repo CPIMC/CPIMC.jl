@@ -1,4 +1,4 @@
-function Ekin(c::Configuration) :: Float64
+function Ekin(e::Ensemble, c::Configuration)
     sum(get_energy(n) for n in c.occupations)
 end
 
@@ -14,6 +14,6 @@ function occupations(c::Configuration, emax::Int=100) :: Array{Int,1}
     nk
 end
 
-function particleNumber(c::Configuration) :: Int
+function particleNumber(e::Ensemble, c::Configuration)
   return length(c.occupations)
 end
