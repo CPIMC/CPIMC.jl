@@ -5,12 +5,12 @@ mutable struct Update
 end
 
 " change to Configuration "
-mutable struct Step{T <: Union{Orbital,Kink,Configuration,Nothing}}
+mutable struct Step{S<:Union{Nothing,Basis,Configuration},T<:Union{Nothing,Basis,Configuration}}
+    drop :: S
     add :: T
-    drop :: T
 end
 
-Step{T}() where T = Step{T}(T(),T())
+Step{T}() where T = Step{T,T}(T(),T())
 Step() = Step(nothing,nothing)
 
 import Base.empty!# for method extension
@@ -18,16 +18,6 @@ import Base.empty!# for method extension
 # TODO: is this really an in-place operation?
 function empty!(Δ)
     Δ = Step()
-end
-
-function empty!(Δ::Step{Orbital})
-    empty!(Δ.add.occupations)
-    empty!(Δ.drop.occupations)
-end
-
-function empty!(Δ::Step{Kink})
-    empty!(Δ.add.kinks)
-    empty!(Δ.drop.kinks)
 end
 
 function empty!(Δ::Step{Configuration})
@@ -40,37 +30,36 @@ end
 import Base.isempty# for method extension
 
 isempty(Δ::Step) = false
-isempty(Δ::Step{Nothing}) = true
+isempty(Δ::Step{Nothing,Nothing}) = true
 
-weight(Δ::Step, e) = weight(Δ.add, Δ.drop, e)
+" return the weight-change of a MC Step. "
+weight(Δ::Step, e::Ensemble) :: Float64 = weight(Δ.add, Δ.drop, e)
 
-function weight(add::Nothing, drop::Nothing, e) :: Float64
+" return the weight-change of a MC Step given by the changes in the configuration. "
+function weight(add::Configuration{T}, drop::Configuration{T}, e::Ensemble) :: Float64 where {T}
+    return weight(add.occupations, drop.occupations, e) * weight(add.kinks, drop.kinks, e)
+end
+
+" return the weight-change of a MC Step where the configuration is not changed. "
+function weight(add::Nothing, drop::Nothing, e::Ensemble) :: Float64
     1.0
 end
 
-function weight(add::Orbital, drop::Orbital, e) :: Float64
-    return exp( -e.beta * sum( vcat( get_energy(add), -get_energy(drop) ) ) )# explicit summation to minimize cancellation
+" return the weight-change of a single diagonal single-particle matrix element "
+function weight(add::Orbital, drop::Orbital, e::Ensemble) :: Float64
+    exp( -e.beta * ( get_energy(add) - get_energy(drop) ) )
 end
 
-function weight(add::Set{T}, drop::Set{T}, e) :: Float64 where {T}
-    return prod(weight.(add, drop))
+" return the weight-change of a set of diagonal single-particle matrix elements "
+function weight(add::Set{T}, drop::Set{T}, e::Ensemble) :: Float64 where {T <: Orbital}
+    return exp( -e.beta * ( sum( vcat( get_energy.(add),  - get_energy.(drop) ) ) ) )# explicit summation to minimize cancellation
 end
 
-" TODO: implement kink-weight "
-function weight(add::SortedDict{Float64, Kink}, drop::SortedDict{Float64, Kink}) :: Float64
-    throw(ErrorException("Kinks are not weighted !"))
-    return 1.0# TODO: kinks are not weighted !!!
+" return the weight-change of a SortedDict of off-diagonal single-particle matrix elements (a.k.a. kinks) "
+function weight(add::SortedDict{Float64, Kink{T}}, drop::SortedDict{Float64, Kink{T}}, e) :: Float64 where {T}
+    return prod( get_energy.(add) ) / prod( get_energy.(drop) )
 end
 
-" TODO: implement kink-weight "
-function weight(add::Kink, drop::Kink, e) :: Float64
-    throw(ErrorException("Kinks are not weighted !"))
-    return 1.0# TODO: kinks are not weighted !!!
-end
-
-function weight(add::Configuration{T}, drop::Configuration{T}, e) :: Float64 where {T}
-    return weight(add.occupations, drop.occupations, e) * weight(add.kinks, drop.kinks, e)
-end
 
 # " perform multiple MC steps on configuration c "
 # function step!(c::Configuration, Δ::Step, e, updates; chain_length)
@@ -105,10 +94,18 @@ function step!(c::Configuration, e::Ensemble, updates::Array{Update,1})
     up = rand(updates)
     up.proposed += 1
     dv, Δ = up.update!(c, e)
+    # !isnothing(Δ.add) && print("proposed step : $(Δ.drop.vec) → $(Δ.add.vec)\nacceptance prob.: $(dv)\tweight: $(weight(Δ, e))")
+    # isnothing(Δ.add) && print("no step proposed: $(Δ.drop) -> $(Δ.add)\nacceptance prob.: $(dv)\tweight: $(weight(Δ, e))")
     if rand() < dv
         promote!(c, Δ)
         up.accepted += 1
+        # print("   ✓ accepted.\n")
+    else
+        # print("   x denied.\n")
     end
+    # println("current configuration : $([o.vec for o in c.occupations])")
+
+    # println("type $([typeof(o) for o in c.occupations])")
 end
 
 """change configuration as given by Δ
@@ -142,14 +139,14 @@ function sweep(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                fit!(stat, obs, c)
+                if typeof(stat) == Group
+                    fit!(stat, eachrow(obs(c)))
+                else
+                    fit!(stat, obs(c))
+                end
             end
         end
 
         i += 1
     end
 end
-
-import OnlineStats: fit!# for method extension
-fit!(stat::T, obs, c) where T<:Group = fit!(stat, eachrow(obs(c)))
-fit!(stat::T, obs, c) where T<:OnlineStat = fit!(stat, obs(c))
