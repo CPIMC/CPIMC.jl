@@ -14,7 +14,7 @@ struct Ensemble
 end
 
 "representation of single particle state"
-struct Orbital{D}
+struct Orbital{D} <: Basis
     "D-dimensional excitation vector"
     vec :: StaticVector{D,Int}
     "spin"
@@ -27,11 +27,34 @@ function get_beta_internal(theta, N)
   return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*theta)
 end
 
-" single particle energy for momentum vector k "
+""" return the energy of a single diagonal single-particle matrix element
+    for a fully occupied orbital """
 function get_energy(o::Orbital)
     dot(o.vec,o.vec)
 end
 
+## method declarations for the off-diagonal energy given by kinks in the UEG
+# TODO: It may not be good style to use the same function name for the off-diagnoal energy as for the diagonal energy unless we dispatch at some point.
+#       On the other hand, this notation is semantically convenient since it is short and conceptually unambiguous (i.e. it is clear what is the difference between the energy of an orbital (diagonal) and the energy of a kink (off-diagonal)).
+
+""" return the energy of a single off-diagonal single-particle matrix element (a.k.a. kink)
+    for a two-particle excitation (i.e. T4)"""
+function get_energy(t4::T4)
+    @assert iszero(t4.i + t4.j + t4.k + t4.l) "Momentum conservation violated by kink $(t4[2]). All excitations must conserve the total momentum in the UEG."
+    @assert !iszero(t4.i - t4.k) "Divergence in off-diagonal single-particle matrix element. All excitations must conserve the total momentum in the UEG."
+    1.0 / abs( t4.i - t4.k)
+end
+
+""" return the energy of a single off-diagonal matrix element (a.k.a. kink)
+    for a one-particle excitation (i.e. T2)"""
+function get_energy(t2::T2)
+    throw(ErrorException("There are no T2-kinks in the UEG."))
+end
+
+
+""" return the energy of a configuration """
+function get_energy(c::Configuration)
+end
 
 function get_orbshell(o::Orbital{1};dw::Int=2)
     eq = get_energy(o)
