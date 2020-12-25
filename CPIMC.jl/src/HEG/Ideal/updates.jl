@@ -2,7 +2,7 @@ function move_particle!(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     x = rand(c.occupations)
     oe = setdiff!(get_sphere(x), c.occupations)
     if isempty(oe)
-        return 1, Step()
+        return 1.0, Step()
     else
         y = rand(oe)
         @assert x != y "same Configuration proposed."
@@ -13,7 +13,7 @@ function move_particle!(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
         # quotient of proposal probabilities
         δv = length(oe)/length(oe2)
 
-        return δv * weight(y, x, e), Step(y,x)
+        return δv * weight(y, x, e), Step(x,y)
     end
 end
 
