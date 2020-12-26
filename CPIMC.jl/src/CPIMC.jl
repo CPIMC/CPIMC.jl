@@ -2,7 +2,7 @@
 function propose_update!(c::Configuration, updates, e::Ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
-    c_old = Configuration(copy(c.occupations),copy(c.kinks))
+    c_old = Configuration(copy(c.occupations),copy(c.kinks),copy(c.sign))
     if rand() < up(c,e)
         return :accept
     else

@@ -257,14 +257,9 @@ function change_type_B(c::Configuration, e::Ensemble)
         return 1
     end
     #print(length(c.kinks),"\n")
-    Kink1 = rand(c.kinks)
-    τ_Kink2 = last(get_τ_borders(c, Set([last(Kink1).i, last(Kink1).j]),first(Kink1)))
-    Kink2 = τ_Kink2 => c.kinks[τ_Kink2]
-    #look if Kinks are type-b-connected
-    ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
-    if ijkl != Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
-        return(1)
-    end
+    τ1, τ2 = rand(get_right_type_B_pairs(c))
+    Kink1 = (τ1, c.kinks[τ1])
+    Kink2 = (τ2, c.kinks[τ2])
     occs = get_occupations_at(c, first(Kink1))
 
     opportunities = get_non_interacting_orbs_of_set_in_interval(

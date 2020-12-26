@@ -17,7 +17,7 @@ include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^6###############################################################
+    NMC = 10^5###############################################################
     cyc = 20
     NEquil = 10^5
     #auffälligerBalken um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen

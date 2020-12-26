@@ -28,13 +28,15 @@ const ImgTime = Fixed{Int64,60}
 mutable struct Configuration{T}
   " set of orbitals occupied at τ=0 "
   occupations :: Set{T}
-
   " excitations, using τ as an index "
   kinks :: SortedDict{ImgTime, Kink{T}}
 
+  sign :: Int8
+
   #constructor für eine Ideale konfiguration
-  Configuration(s::Set{T}) where {T} = new{T}(s,SortedDict{ImgTime,Kink}(Base.Forward))
-  Configuration(s::Set{T}, k::SortedDict{ImgTime, Kink{T}}) where {T} = new{T}(s,k)
+  Configuration(o::Set{T}) where {T} = new{T}(o,SortedDict{ImgTime,Kink}(Base.Forward),1)
+  Configuration(o::Set{T}, k::SortedDict{ImgTime, Kink{T}}) where {T} = new{T}(o,k,1)
+  Configuration(o::Set{T}, k::SortedDict{ImgTime, Kink{T}}, s::Int8) where {T} = new{T}(o,k,s)
 end
 
 abstract type Orbital end

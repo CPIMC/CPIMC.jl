@@ -91,6 +91,9 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100)
     end
     nk
 end
+function signum(e::Ensemble,  c::Configuration)
+    return (c.sign)
+end
 
 function particleNumber(c::Configuration)
   return length(c.occupations)

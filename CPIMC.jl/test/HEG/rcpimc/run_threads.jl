@@ -16,7 +16,7 @@ include("src/HEG/RCPIMC/updates.jl")
 include("src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 10^5
     cyc = 20
     NEquil = 10^5
 
