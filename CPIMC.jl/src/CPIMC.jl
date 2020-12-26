@@ -28,6 +28,11 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
             k+=1
         end
         propose_update!(c,updates,e)
+        """if length(c.kinks) >= 10
+            print("\n", "\n","\n","\n","\n","\n",)
+            print(c.kinks)
+            print("\n", "\n", get_right_type_B_pairs(c), "\n", "\n")
+        end"""
     end
     println("starting Simulation")
     i = 0
@@ -43,7 +48,7 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                if typeof(stat) == Group#####################Diese BEdingung ist anscheinend niemals erfüllt
+                if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
                     fit!(stat, eachrow(obs(e,c)))
                 else
                     fit!(stat, obs(e,c))

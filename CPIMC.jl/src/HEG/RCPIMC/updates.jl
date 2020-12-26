@@ -176,7 +176,7 @@ function add_type_B(c::Configuration, e::Ensemble)
     end
 
     # quotient of proposal probabilities
-    dv = (1/length(c.kinks))/prop_prob
+    dv = (1/length(get_right_type_B_pairs(c)))/prop_prob
 
     # weight factor
     dw = ((e.β)^2) *
@@ -188,70 +188,67 @@ function add_type_B(c::Configuration, e::Ensemble)
 end
 
 function remove_type_B(c::Configuration, e::Ensemble)
-
     if length(c.kinks) == 0
         return 1
     end
-    Kink1 = rand(c.kinks)
+    opportunities = get_right_type_B_pairs(c)
+    #If a kink1 is entangeld to the right with the nearest kink, that
+    # acts on one of his orbs, in a type-B-way that implies the vice versa case
+    # therefor there is no value in distingusihing between left and right entanglement
+    τ_Kink1, τ_Kink2 = rand(get_right_type_B_pairs(c))
+    Kink1 = (τ_Kink1, c.kinks[τ_Kink1])
+    Kink2 = (τ_Kink2, c.kinks[τ_Kink2])
     # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
     if dot(last(Kink1).i.vec-last(Kink1).k.vec, last(Kink1).i.vec-last(Kink1).k.vec) > ex_radius^2
         return 1
     end
-    prop_prob = 1/length(c.kinks)
-    τ_Kink2 = last(get_τ_borders(c, Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l]),first(Kink1)))
-    Kink2 = τ_Kink2 => c.kinks[τ_Kink2]
-    #look if Kinks are type-b-connected
-    ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
-
-    if ijkl == Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
-        delete!(c.kinks, first(Kink1))
-        delete!(c.kinks, first(Kink2))
-        #see if occupations at τ=0 are modified
-        if first(Kink1) > first(Kink2)
-            change_occupations(c.occupations, last(Kink2))
-            delta_τ = first(Kink2)-first(Kink1) + 1
-        else
-            delta_τ = first(Kink2)-first(Kink1)
-        end
-        @assert(delta_τ > 0)
-        @assert(delta_τ <= 1)
-        #calculate inverse prop_prob (see  add_type_B)
-        borders = get_τ_borders(c, ijkl ,first(Kink1))
-        possible_τ2_interval = borders[2]-borders[1]
-        if possible_τ2_interval < 0
-            possible_τ2_interval = 1 + possible_τ2_interval
-        end
-        occs_τ_kink1 = get_occupations_at(c, first(Kink1))
-        occs_τ_kink2 = get_occupations_at(c, first(Kink2))
-        orb_a = last(Kink1).i
-        orb_b = last(Kink1).j
-        orb_c = last(Kink1).k
-        orb_d = last(Kink1).l
-        #See how prop_prob changes in the function add_type_B to understand this expression
-        inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
-            (1/length(setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink1))
-                + 1/length(setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink2))) *
-             1.0/float(possible_τ2_interval) * (1/4)
-        if borders[2] == 1
-            inverse_prop_prob *= 0.5
-        end
-        # quotient of proposal probabilities
-        dv = inverse_prop_prob/prop_prob
-
-        #calculate change in diagonal interaction energy
-        delta_di = get_change_diagonal_interaction(c, e, last(Kink1), first(Kink1), first(Kink2))
-
-
-        # weight factor
-        dw = (1.0/(e.β)^2) *
-            (1.0/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
-                exp((delta_τ)*e.β * (get_energy(orb_a) +
-                     get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
-        @assert (dv*dw) >= 0
-        return (dv*dw)
+    prop_prob = 1/length(opportunities)
+    delete!(c.kinks, first(Kink1))
+    delete!(c.kinks, first(Kink2))
+    #see if occupations at τ=0 are modified
+    if first(Kink1) > first(Kink2)
+        change_occupations(c.occupations, last(Kink2))
+        delta_τ = first(Kink2)-first(Kink1) + 1
     else
-        return(1)
+        delta_τ = first(Kink2)-first(Kink1)
     end
+    @assert(delta_τ > 0)
+    @assert(delta_τ <= 1)
+    #calculate inverse prop_prob (see  add_type_B)
+    ijkl = Set([last(Kink1).i, last(Kink1).j, last(Kink1).k, last(Kink1).l])
+    borders = get_τ_borders(c, ijkl ,first(Kink1))
+    possible_τ2_interval = borders[2]-borders[1]
+    if possible_τ2_interval < 0
+        possible_τ2_interval = 1 + possible_τ2_interval
+    end
+    occs_τ_kink1 = get_occupations_at(c, first(Kink1))
+    occs_τ_kink2 = get_occupations_at(c, first(Kink2))
+    orb_a = last(Kink1).i
+    orb_b = last(Kink1).j
+    orb_c = last(Kink1).k
+    orb_d = last(Kink1).l
+    #See how prop_prob changes in the function add_type_B to understand this expression
+    inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
+        (1/length(setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink1))
+            + 1/length(setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink2))) *
+         1.0/float(possible_τ2_interval) * (1/4)
+    if borders[2] == 1
+        inverse_prop_prob *= 0.5
+    end
+    # quotient of proposal probabilities
+    dv = inverse_prop_prob/prop_prob
+
+    #calculate change in diagonal interaction energy
+    delta_di = get_change_diagonal_interaction(c, e, last(Kink1), first(Kink1), first(Kink2))
+
+
+    # weight factor
+    dw = (1.0/(e.β)^2) *
+        (1.0/(get_abs_offdiagonal_element(e,c,last(Kink1)))^2) *
+            exp((delta_τ)*e.β * (get_energy(orb_a) +
+                 get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
+    @assert (dv*dw) >= 0
+    return (dv*dw)
 end
 
 

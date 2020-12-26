@@ -28,10 +28,10 @@ function main()
     θ = 0.5
     rs = 10
 
-    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
 
     #4Particles
-    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
+    #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("θ: ", θ)
