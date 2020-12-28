@@ -272,7 +272,8 @@ end
 #"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 #other kink in the corresponding direktion are looked at.
 #The Tuples are always arranged in a way that the Kink who gets neighboured by
-#the opther stands first. (vice versa does not have to be the case)
+#the opther stands first. (for type-B-entanglement that always imples the
+#vice versa case)
 #The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the left of the first τ.
 function get_left_type_B_pairs(c::Configuration)
@@ -291,7 +292,8 @@ end
 #"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 #other kink in the corresponding direktion are looked at.
 #The Tuples are always arranged in a way that the Kink who gets neighboured by
-#the opther stands first. (vice versa does not have to be the case)
+#the opther stands first. (for type-B-entanglement that always imples the
+#vice versa case)
 #The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ.
 function get_right_type_B_pairs(c::Configuration)
@@ -300,6 +302,45 @@ function get_right_type_B_pairs(c::Configuration)
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
     τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
     if is_type_B(kink, c.kinks[τ_right])
+      push!(pairs_right, (τ, τ_right))
+    end
+  end
+  return pairs_right
+end
+
+#Return a two(a Tuple of) Sets of Tuples of "neighbouring" Kink that are Type-B-Entangeld.
+#"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+#other kink in the corresponding direktion are looked at.
+#The Tuples are always arranged in a way that the Kink who gets neighboured by
+#the opther stands first. (vice versa does not have to be the case)
+#The Set consists of the pairs where the Type-B-entanglement is oriented
+#to the left of the first τ.
+function get_left_type_C_pairs(c::Configuration)
+  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_C(c.kinks[τ_left], kink)
+      push!(pairs_left, (τ, τ_left))
+    end
+  end
+  return pairs_left
+end
+
+
+#Return a two(a Tuple of) Sets of Tuples of "neighbouring" Kink that are Type-B-Entangeld.
+#"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+#other kink in the corresponding direktion are looked at.
+#The Tuples are always arranged in a way that the Kink who gets neighboured by
+#the opther stands first. (vice versa does not have to be the case)
+#The Set consists of the pairs where the Type-B-entanglement is oriented
+#to the right of the first τ.
+function get_right_type_C_pairs(c::Configuration)
+  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_C(kink, c.kinks[τ_right])
       push!(pairs_right, (τ, τ_right))
     end
   end

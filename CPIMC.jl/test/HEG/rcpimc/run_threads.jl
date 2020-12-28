@@ -16,7 +16,7 @@ include("src/HEG/RCPIMC/updates.jl")
 include("src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10^5
+    NMC = 10^6
     cyc = 20
     NEquil = 10^5
 
@@ -36,10 +36,13 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
-    updates = [move_particle, add_type_B, remove_type_B, change_type_B, shuffle_indices]#
+
+
+    updates = [move_particle, add_type_B, remove_type_B, change_type_B,shuffle_indices, add_type_C, remove_type_C]
 
     measurements = Dict(
-      :Ekin => (Variance(), Ekin)
+      :sign => (Variance(), signum)
+    , :Ekin => (Variance(), Ekin)
     , :W_off_diag => (Variance(), W_off_diag)
     , :W_diag => (Variance(), W_diag)
     , :Epot => (Variance(), Epot)
@@ -49,7 +52,8 @@ function main()
     )
 
     measurements_Mean = Dict(
-      :Ekin => (Mean(), Ekin)
+      :sign => (Variance(), signum)
+    , :Ekin => (Mean(), Ekin)
     , :W_off_diag => (Mean(), W_off_diag)
     , :W_diag => (Mean(), W_diag)
     , :Epot => (Mean(), Epot)

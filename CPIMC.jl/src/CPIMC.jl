@@ -8,6 +8,7 @@ function propose_update!(c::Configuration, updates, e::Ensemble)
     else
         c.occupations = c_old.occupations
         c.kinks = c_old.kinks
+        c.sign = c_old.sign
         return :reject
     end
 end

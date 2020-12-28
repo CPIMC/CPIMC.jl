@@ -20,7 +20,7 @@ function main()
     NMC = 10^5###############################################################
     cyc = 20
     NEquil = 10^5
-    #auffälligerBalken um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
+    #auffälligerBalken um schwer übersehbaren unterschied im vergleich zu run_threads herzustellen
     """#####################################################################
     ########################################################################
     ####################################################################"""
@@ -41,10 +41,11 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
-    updates = [move_particle, add_type_B, remove_type_B, change_type_B,shuffle_indices]
+    updates = [move_particle, add_type_B, remove_type_B, change_type_B,shuffle_indices, add_type_C, remove_type_C]
 
     measurements = Dict(
-      :Ekin => (Variance(), Ekin)
+      :sign => (Variance(), signum)
+    , :Ekin => (Variance(), Ekin)
     , :W_off_diag => (Variance(), W_off_diag)
     , :W_diag => (Variance(), W_diag)
     , :Epot => (Variance(), Epot)
