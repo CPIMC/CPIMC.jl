@@ -74,7 +74,7 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
     for i in 1:throwAway
         if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
             print("eq: ",k,"/100","    ")
-            #println("K: ",length(c.kinks))
+            println("K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)
@@ -88,7 +88,7 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
         #print progress
         if (i%(steps/100) == 0) & (Threads.threadid() == 1)
             print(k,"/100","    ")
-            #println("K: ",length(c.kinks))
+            println("K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)

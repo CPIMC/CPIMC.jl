@@ -401,7 +401,7 @@ function add_type_C(c::Configuration, e::Ensemble)
         #calculate weight differance
         dw_off_diag = get_abs_offdiagonal_element(e,c,c.kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,c,c.kinks[first(old_kink)]) /
                                                 get_abs_offdiagonal_element(e,c,last(old_kink))
-        dw = dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_orb1) + get_energy(new_orb2) -
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_orb1) + get_energy(new_orb2) -
                                     get_energy(last(old_kink).k) - get_energy(last(old_kink).l)) + delta_di))
 
         inverse_prop_prob = 1/(2*length(get_right_type_C_pairs(c)))
@@ -461,7 +461,7 @@ function add_type_C(c::Configuration, e::Ensemble)
         dw_off_diag = get_abs_offdiagonal_element(e,c,c.kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,c,c.kinks[first(old_kink)]) /
                                                 get_abs_offdiagonal_element(e,c,last(old_kink))
 
-        dw = dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_orb1) + get_energy(new_orb2) -
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_orb1) + get_energy(new_orb2) -
                                     get_energy(last(old_kink).i) - get_energy(last(old_kink).j)) + delta_di))
 
         inverse_prop_prob = 1/(2*length(get_left_type_C_pairs(c)))
@@ -549,7 +549,7 @@ function remove_type_C(c::Configuration, e::Ensemble)
         if delta_τ < 0
             delta_τ +=1
         end
-        dw = (1/dw_off_diag) * exp(e.β * delta_τ * (get_energy(removed_orb1) + get_energy(removed_orb2) -
+        dw = (1/e.β)* (1/dw_off_diag) * exp(e.β * delta_τ * (get_energy(removed_orb1) + get_energy(removed_orb2) -
                                     get_energy(c.kinks[changed_kink_τ].k) - get_energy(c.kinks[changed_kink_τ].l)) + delta_di)
 
     else
@@ -610,7 +610,7 @@ function remove_type_C(c::Configuration, e::Ensemble)
         if delta_τ < 0
             delta_τ +=1
         end
-        dw = (1/dw_off_diag) * exp(e.β * delta_τ*(get_energy(removed_orb1) + get_energy(removed_orb2) -
+        dw = (1/e.β)*(1/dw_off_diag) * exp(e.β * delta_τ*(get_energy(removed_orb1) + get_energy(removed_orb2) -
                                     get_energy(c.kinks[changed_kink_τ].i) - get_energy(c.kinks[changed_kink_τ].j)) + delta_di)
 
     end

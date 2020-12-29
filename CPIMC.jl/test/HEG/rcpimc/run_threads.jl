@@ -16,13 +16,13 @@ include("src/HEG/RCPIMC/updates.jl")
 include("src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 4*10^5
     cyc = 20
     NEquil = 10^5
 
     # system parameters
     θ = 1.0
-    rs = 1.0
+    rs = 2.0
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
 
     #4Particles
