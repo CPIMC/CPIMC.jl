@@ -113,7 +113,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
   if length(Configuration.kinks) == 0
       return(ImgTime(0),ImgTime(1))
   end
-  #Initially we set τ right and τl left to the nearest Kinks left and right of τ.
+  #Initially we set τ right and τ left to the nearest Kinks left and right of τ.
   τ_left_semi_token  = searchsortedafter(Configuration.kinks, τ)
   τ_right_semi_token = searchsortedlast(Configuration.kinks, τ)
   if τ_left_semi_token == pastendsemitoken(Configuration.kinks)

@@ -21,12 +21,12 @@ function main()
     NEquil = 10^5
 
     # system parameters
-    θ = 1.0
-    rs = 2.0
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
+    θ = 0.05
+    rs = 10
+    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
 
-    #4Particles
-    #S = Set{Orbital{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
+    #2Particles
+    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1)])#, OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("#################################################")
     println("N: ", length(S))
@@ -37,8 +37,8 @@ function main()
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
 
-
-    updates = [move_particle, add_type_B, remove_type_B, change_type_B,shuffle_indices, add_type_C, remove_type_C]
+    #We do not need to have change_type_B if we have add_type_C and remove_type_C updates
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C] #, change_type_B
 
     measurements = Dict(
       :sign => (Variance(), signum)

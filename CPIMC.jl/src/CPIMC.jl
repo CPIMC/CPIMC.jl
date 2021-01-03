@@ -2,8 +2,10 @@
 function propose_update!(c::Configuration, updates, e::Ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
+
     c_old = Configuration(copy(c.occupations),copy(c.kinks),copy(c.sign))
-    if rand() < up(c,e)
+    acc_prob = up(c,e)  #Dies in Variable zu sspeichern nur sinnvoll fürs debuggen
+    if rand() < acc_prob
         return :accept
     else
         c.occupations = c_old.occupations
@@ -25,15 +27,10 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
     for i in 1:throwAway
         if i%(throwAway/100) == 0
             print("eq: ",k,"/100","    ")
-            #println("K: ",length(c.kinks))
+            println("K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)
-        """if length(c.kinks) >= 10
-            print("\n", "\n","\n","\n","\n","\n",)
-            print(c.kinks)
-            print("\n", "\n", get_right_type_B_pairs(c), "\n", "\n")
-        end"""
     end
     println("starting Simulation")
     i = 0
@@ -42,7 +39,7 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         #print progress
         if i%(steps/100) == 0
             print(k,"/100","    ")
-            #println("K: ",length(c.kinks))
+            println("K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)
