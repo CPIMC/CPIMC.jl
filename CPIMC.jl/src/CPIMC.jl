@@ -46,10 +46,15 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
-                    fit!(stat, eachrow(obs(e,c)))
-                else
+                if in(key,[:sign, :K])
                     fit!(stat, obs(e,c))
+                else
+                    if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
+                        println("Das wird nicht geprinted")
+                        fit!(stat, eachrow(obs(e,c)))
+                    else
+                        fit!(stat, obs(e,c)*c.sign)
+                    end
                 end
             end
         end
@@ -92,10 +97,15 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                if typeof(stat) == Group
-                        fit!(stat, eachrow(obs(e,c)))
+                if in(key,[:sign, :K])
+                    fit!(stat, obs(e,c))
                 else
-                        fit!(stat, obs(e,c))
+                    if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
+                        println("Das wird nicht geprinted")
+                        fit!(stat, eachrow(obs(e,c)))
+                    else
+                        fit!(stat, obs(e,c)*c.sign)
+                    end
                 end
             end
         end

@@ -1,3 +1,5 @@
+#include("../../../src/HEG/model.jl")
+
 function Ekin(e::Ensemble, c::Configuration)
     if length(c.kinks) == 0
         return(sum(get_energy(n) for n in c.occupations))
@@ -97,4 +99,32 @@ end
 
 function particleNumber(c::Configuration)
   return length(c.occupations)
+end
+
+
+
+
+#####################Calculationg observables after Simulation
+function abs_E_mad(N::Int, lam::Float64) #internal units
+    return 2.83729747948527 * pi/2.0 * N * (lam/2)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
+
+function E_Ry(E_internal::Float64, lam::Float64)
+    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
+
+function E_Ha(E_internal::Float64, lam::Float64)
+    return (E_internal * 16/((2*pi)^4 * (lam/2)^2) * 0.5)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
+
+function E_Ry(E_internal::Float64, e::Ensemble)
+    return (E_internal * 16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
+
+function Et_Ry(E_internal::Float64, e::Ensemble)
+    return (E_Ry(E_internal-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs)))
+end
+
+function W_off_diag(e::Ensemble, avg_K::Float64)
+    return (-(avg_K/e.β))
 end

@@ -45,11 +45,9 @@ function main()
     measurements = Dict(
       :sign => (Variance(), signum)
     , :Ekin => (Variance(), Ekin)
-    , :W_off_diag => (Variance(), W_off_diag)
     , :W_diag => (Variance(), W_diag)
-    , :Epot => (Variance(), Epot)
     , :K => (Variance(), K)
-    , :E => (Variance(), E)
+    , :K_fermion => (Variance(), K)
     , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
@@ -59,17 +57,38 @@ function main()
     println("measurements:")
     println("=============")
 
+    avg_sign = mean(first(measurements[:sign]))
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(NMC/cyc))
-            if  (k == :Epot) | (k == :E)
-                println(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
-            elseif (k == :Ekin)
-                println(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(NMC/cyc)/2)
+            if in(k,[:sign, :K])
+                println(k, "\t", mean(f), " +/- ", std(f)/sqrt(NMC/cyc))
+            else
+                println(k, "\t", mean(f)/avg_sign, " +/- ", std(f)/sqrt(NMC/cyc)/avg_sign)
             end
         end
     end
 
+    #print addidtional observables
+    μW_diag = mean(first(measurements[:W_diag]))/avg_sign
+    ΔW_diag = std(first(measurements[:W_diag]))/sqrt(Threads.nthreads()-1)/avg_sign
+    μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
+    ΔW_off_diag = W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(Threads.nthreads()-1)/avg_sign)
+    μT = mean(first(measurements[:Ekin]))/avg_sign
+    ΔT = std(first(measurements[:Ekin]))/sqrt(Threads.nthreads()-1)/avg_sign
+    μW = μW_diag + μW_off_diag
+    ΔW = ΔW_diag + ΔW_off_diag
+    μE = μW + μT
+    ΔE = ΔW + ΔT
+    μWt_Ry = Et_Ry(μW, e::Ensemble)
+    ΔWt_Ry = Et_Ry(ΔW, e::Ensemble)
+    μT_Ry = E_Ry(μT,lambda(e.N,e.rs))
+    ΔT_Ry = E_Ry(ΔT,lambda(e.N,e.rs))
+    println("W_diag", "\t", μW_diag, " +/- ", ΔW_diag)
+    println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
+    println("W", "\t", μW, " +/- ", ΔW)
+    println("E", "\t", μE, " +/- ", ΔE)
+    println("W_t_Ry", "\t", Et_Ry(μW,e), " +/- ", Et_Ry(ΔW,e))
+    println("T_Ry", "\t", E_Ry(μT,e), " +/- ", E_Ry(ΔT,e))
     println("")
 
     #occupations funktionieren noch nicht fürs WW-System
