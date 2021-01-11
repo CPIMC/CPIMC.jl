@@ -109,17 +109,30 @@ function abs_E_mad(N::Int, lam::Float64) #internal units
     return 2.83729747948527 * pi/2.0 * N * (lam/2)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
 end
 
+function E_int_from_Hartree(E_Ha::Float64, lam::Float64)
+    return (E_Ha /(16/((2*pi)^4 * (lam/2)^2) * 0.5))
+end
+
+function E_int_from_Hartree(E_Ha::Float64, e::Ensemble)
+    return (E_Ha /(16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2) * 0.5))
+end
+
 function E_Ry(E_internal::Float64, lam::Float64)
     return (E_internal * 16/((2*pi)^4 * (lam/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+end
+
+function E_Ry(E_internal::Float64, e::Ensemble)
+    return (E_internal * 16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
 end
 
 function E_Ha(E_internal::Float64, lam::Float64)
     return (E_internal * 16/((2*pi)^4 * (lam/2)^2) * 0.5)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
 end
 
-function E_Ry(E_internal::Float64, e::Ensemble)
-    return (E_internal * 16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+function E_Ha(E_internal::Float64, e::Ensemble)
+    return (E_internal * 16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2) * 0.5)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
 end
+
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
     return (E_Ry(E_internal-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs)))

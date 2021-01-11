@@ -9,24 +9,24 @@ include("../../../src/HEG/RCPIMC/estimators.jl")
 include("../../../src/CPIMC.jl")
 
 
-"""include("src/Configuration.jl")
-include("src/HEG/model.jl")
-include("src/CPIMC.jl")
-include("src/HEG/RCPIMC/updates.jl")
-include("src/HEG/RCPIMC/estimators.jl")"""
+"""include("CPIMC.jl/src/Configuration.jl")
+include("CPIMC.jl/src/HEG/model.jl")
+include("CPIMC.jl/src/CPIMC.jl")
+include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
+include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10^3
+    NMC = 10^6
     cyc = 20
-    NEquil = 10^3
+    NEquil = 10^5
 
     # system parameters
-    θ = 0.05
-    rs = 10
-    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
+    θ = 0.125
+    rs = 5
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1) #7 particles
 
-    #2Particles
-    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1)])#, OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
+    #4Particles
+    #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("#################################################")
     println("N: ", length(S))
@@ -38,7 +38,7 @@ function main()
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
 
     #We do not need to have change_type_B if we have add_type_C and remove_type_C updates
-    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C] #, change_type_B
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D]#, change_type_B]
 
     measurements = Dict(
       :sign => (Variance(), signum)
@@ -98,7 +98,7 @@ function main()
     μW_diag = mean(first(measurements[:W_diag]))/avg_sign
     ΔW_diag = std(first(measurements[:W_diag]))/sqrt(Threads.nthreads()-1)/avg_sign
     μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
-    ΔW_off_diag = W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(Threads.nthreads()-1)/avg_sign)
+    ΔW_off_diag = abs(W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(Threads.nthreads()-1)/avg_sign))
     μT = mean(first(measurements[:Ekin]))/avg_sign
     ΔT = std(first(measurements[:Ekin]))/sqrt(Threads.nthreads()-1)/avg_sign
     μW = μW_diag + μW_off_diag
@@ -106,15 +106,15 @@ function main()
     μE = μW + μT
     ΔE = ΔW + ΔT
     μWt_Ry = Et_Ry(μW, e::Ensemble)
-    ΔWt_Ry = Et_Ry(ΔW, e::Ensemble)
+    ΔWt_Ry = E_Ry(ΔW, e::Ensemble)
     μT_Ry = E_Ry(μT,lambda(e.N,e.rs))
     ΔT_Ry = E_Ry(ΔT,lambda(e.N,e.rs))
     #println("W_diag", "\t", μW_diag, " +/- ", ΔW_diag)
     println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
     println("W", "\t", μW, " +/- ", ΔW)
     println("E", "\t", μE, " +/- ", ΔE)
-    println("W_t_Ry", "\t", Et_Ry(μW,e), " +/- ", Et_Ry(ΔW,e))
-    println("T_Ry", "\t", E_Ry(μT,e), " +/- ", E_Ry(ΔT,e))
+    println("W_t_Ry", "\t", μWt_Ry, " +/- ", ΔWt_Ry)
+    println("T_Ry", "\t", μT_Ry, " +/- ", ΔT_Ry)
 
 
     println("")

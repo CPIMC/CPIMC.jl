@@ -182,6 +182,8 @@ function add_type_B(c::Configuration, e::Ensemble)
             exp(-((delta_τ)*e.β * (get_energy(orb_a) +
                  get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di))
     @assert (dv*dw) >= 0
+    @assert (dv*dw) != Inf
+    @assert !isnan(dv*dw)
     return(dv*dw)
 end
 
@@ -208,6 +210,7 @@ function remove_type_B(c::Configuration, e::Ensemble)
         return 1
     end
     prop_prob = 1/length(opportunities)
+    #change configuration
     delete!(c.kinks, first(kink1))
     delete!(c.kinks, first(kink2))
     #see if occupations at τ=0 are modified
@@ -253,6 +256,7 @@ function remove_type_B(c::Configuration, e::Ensemble)
             exp((delta_τ)*e.β * (get_energy(orb_a) +
                  get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
     @assert (dv*dw) >= 0
+    @assert (dv*dw) != Inf
     return (dv*dw)
 end
 
@@ -505,7 +509,7 @@ function add_type_C(c::Configuration, e::Ensemble)
 
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
-
+    #println("Add:   ", (inverse_prop_prob/prop_prob)*dw)
     return((inverse_prop_prob/prop_prob)*dw)
 end
 
@@ -664,10 +668,355 @@ function remove_type_C(c::Configuration, e::Ensemble)
 
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob) * dw))
-    #println("remove:  ", 1/((inverse_prop_prob/prop_prob)*dw))
+    #println("remove:  ", 1/((inverse_prop_prob/prop_prob) * dw))
 
     return((inverse_prop_prob/prop_prob) * dw)
 end
+
+
+
+
+########################################################
+
+
+function add_type_D(c::Configuration, e::Ensemble)
+    prop_prob = 1
+    if length(c.kinks) == 0
+        return 1
+    end
+    old_kink = rand(c.kinks)
+    prop_prob *= 1/length(c.kinks)
+    occs = get_occupations_at(c, first(old_kink))
+    prop_prob *= 0.5 #left or right
+    if rand() >= 0.5
+        #add kink left
+        opportunities_new_orb1 = intersect!(get_sphere_with_same_spin(last(old_kink).i, dk = ex_radius), occs)
+        delete!(opportunities_new_orb1, last(old_kink).i)
+        delete!(opportunities_new_orb1, last(old_kink).j)
+        if length(opportunities_new_orb1) == 0
+            return 1
+        end
+        new_orb1 = rand(opportunities_new_orb1)
+        prop_prob *= 1/length(opportunities_new_orb1)
+        new_orb2 = OrbitalHEG(last(old_kink).k.vec + (last(old_kink).l.vec - new_orb1.vec), last(old_kink).j.spin)
+        if !in(new_orb2, occs) | (new_orb1 == new_orb2)
+            return 1
+        end
+        τ_Intervall = first(old_kink) - first(get_τ_borders(c, Set([last(old_kink).i, last(old_kink).j, new_orb1, new_orb2]), first(old_kink)))
+
+        if τ_Intervall < 0
+            τ_Intervall +=1
+        end
+        τ_new_kink = first(old_kink) - ImgTime(rand()*τ_Intervall)
+        if τ_new_kink < 0
+            τ_new_kink += 1
+            delta_τ = Float64(first(old_kink) - τ_new_kink + 1)
+        else
+            delta_τ = Float64(first(old_kink) - τ_new_kink)
+        end
+        @assert τ_Intervall > 0
+        #no 2 kinks at same τ
+        while haskey(c.kinks, τ_new_kink)
+            τ_new_kink = first(old_kink) - ImgTime(rand()*τ_Intervall)
+            if τ_new_kink < 0
+                τ_new_kink += 1
+                delta_τ = Float64(first(old_kink) - τ_new_kink + 1)
+            else
+                delta_τ = Float64(first(old_kink) - τ_new_kink)
+            end
+        end
+
+        prop_prob *= 1/Float64(τ_Intervall)
+
+        delta_di = get_change_diagonal_interaction(c, e, T4(last(old_kink).i,last(old_kink).j, new_orb1, new_orb2), τ_new_kink, first(old_kink))
+
+        #change_Configuration
+        #see if c.occupations change
+        if τ_new_kink > first(old_kink)  #new kink was added left of old kink
+            change_occupations(c.occupations, T4(last(old_kink).i,last(old_kink).j, new_orb1, new_orb2))
+            """try
+                change_occupations(c.occupations, T4(new_orb1,new_orb2,last(old_kink).k,last(old_kink).l))
+            catch e
+                println("break")
+            end"""
+        end
+        c.kinks[τ_new_kink] = T4(last(old_kink).i, last(old_kink).j,new_orb1, new_orb2)
+        c.kinks[first(old_kink)] = T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
+
+        #calculate weight differance
+        dw_off_diag = get_abs_offdiagonal_element(e,c,c.kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,c,c.kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,c,last(old_kink))
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(last(old_kink).i) + get_energy(last(old_kink).j)-
+                                                         get_energy(new_orb1) - get_energy(new_orb2)) + delta_di))
+
+        inverse_prop_prob = (1/length(get_right_type_D_pairs(c))) * 0.5
+
+        #shuffle annihilators of the changed kink
+        if rand() < 0.5
+            c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].j, c.kinks[first(first(old_kink))].i,
+                                                       c.kinks[first(first(old_kink))].k, c.kinks[first(first(old_kink))].l)
+        else
+            "nix"
+        end
+        prop_prob *= 0.5
+    else
+        #add kink right
+        opportunities_new_orb1 = intersect!(get_sphere_with_same_spin(last(old_kink).k, dk = ex_radius), occs)
+        delete!(opportunities_new_orb1, last(old_kink).i)
+        delete!(opportunities_new_orb1, last(old_kink).j)
+        if length(opportunities_new_orb1) == 0
+            return 1
+        end
+        new_orb1 = rand(opportunities_new_orb1)
+        prop_prob *= 1/length(opportunities_new_orb1)
+        new_orb2 = OrbitalHEG(last(old_kink).i.vec + (last(old_kink).j.vec - new_orb1.vec), last(old_kink).l.spin)
+        if !in(new_orb2, occs) | (new_orb1 == new_orb2)
+            return 1
+        end
+        τ_Intervall = last(get_τ_borders(c, Set([
+                        last(old_kink).k, last(old_kink).l, new_orb1, new_orb2]),first(old_kink))) -
+                        first(old_kink)
+        if τ_Intervall < 0
+            τ_Intervall +=1
+        end
+        τ_new_kink = first(old_kink) + ImgTime(rand()*τ_Intervall)
+        if τ_new_kink > 1
+            τ_new_kink -= 1
+            delta_τ = Float64(τ_new_kink - first(old_kink) + 1)
+        else
+            delta_τ = Float64(τ_new_kink - first(old_kink))
+        end
+
+        #no 2 kinks at same τ
+        @assert τ_Intervall > 0
+        while haskey(c.kinks, τ_new_kink)
+            τ_new_kink = first(old_kink) + ImgTime(rand()*τ_Intervall)
+            if τ_new_kink > 1
+                τ_new_kink -= 1
+                delta_τ = Float64(τ_new_kink - first(old_kink) + 1)
+            else
+                delta_τ = Float64(τ_new_kink - first(old_kink))
+            end
+        end
+
+        prop_prob *= 1/Float64(τ_Intervall)
+
+        delta_di = get_change_diagonal_interaction(c, e, T4(last(old_kink).k, last(old_kink).l,new_orb1,new_orb2), first(old_kink), τ_new_kink)
+
+        #change_Configuration
+        #see if c.occupations change
+        if τ_new_kink < first(old_kink)  #new kink was added right of old kink
+            change_occupations(c.occupations, T4(last(old_kink).k, last(old_kink).l,new_orb1,new_orb2))
+        end
+        c.kinks[τ_new_kink] = T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
+        c.kinks[first(old_kink)] = T4(last(old_kink).i, last(old_kink).j, new_orb1, new_orb2)
+
+
+
+        dw_off_diag = get_abs_offdiagonal_element(e,c,c.kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,c,c.kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,c,last(old_kink))
+
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(last(old_kink).k) + get_energy(last(old_kink).l) -
+                                                         get_energy(new_orb1) - get_energy(new_orb2)) + delta_di))
+
+        inverse_prop_prob = (1/length(get_left_type_D_pairs(c))) * 0.5
+
+
+        #shuffle creators of the changed kink
+        if rand() < 0.5
+            c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].i, c.kinks[first(first(old_kink))].j,
+                                                        c.kinks[first(first(old_kink))].l, c.kinks[first(first(old_kink))].k)
+        else
+            "nix"
+        end
+        prop_prob *= 0.5
+    end
+
+
+    #check if sign was changend
+    signum = 1
+    if dot((last(old_kink).j.vec - new_orb1.vec),(last(old_kink).j.vec - new_orb1.vec)) >
+            dot((last(old_kink).i.vec - new_orb1.vec),(last(old_kink).i.vec - new_orb1.vec))
+        signum*= -1
+    end
+    if dot((last(old_kink).l.vec - new_orb1.vec),(last(old_kink).l.vec - new_orb1.vec)) >
+            dot((last(old_kink).k.vec - new_orb1.vec),(last(old_kink).k.vec - new_orb1.vec))
+        signum*= -1
+    end
+    if dot((last(old_kink).i.vec - last(old_kink).l.vec),(last(old_kink).i.vec - last(old_kink).l.vec)) >
+            dot((last(old_kink).i.vec - last(old_kink).k.vec),(last(old_kink).i.vec - last(old_kink).k.vec))
+        signum*= -1
+    end
+
+    c.sign *= signum
+
+
+    @assert(delta_τ > 0 )
+    @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
+    #println("Add:   ", (inverse_prop_prob/prop_prob)*dw)
+    return((inverse_prop_prob/prop_prob)*dw)
+end
+
+function remove_type_D(c::Configuration, e::Ensemble)
+    prop_prob = 0.5
+    if rand() > 0.5
+        #removed kink left of changed kink
+        opportunities = get_right_type_D_pairs(c)
+        if length(opportunities) == 0
+            return 1
+        end
+        removed_kink_τ, changed_kink_τ = rand(opportunities)
+        prop_prob *= 1/length(opportunities)
+
+        if c.kinks[removed_kink_τ].i.spin != c.kinks[removed_kink_τ].k.spin
+            @assert false
+            return 1
+        end
+        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
+        if dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,
+                    c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) > (ex_radius^2)
+            return 1
+        end
+
+
+        #safe thoose for later
+        removed_orb1 = c.kinks[removed_kink_τ].k
+        removed_orb2 = c.kinks[removed_kink_τ].l
+
+        #change configuration
+        c.kinks[changed_kink_τ] = T4(c.kinks[removed_kink_τ].i, c.kinks[removed_kink_τ].j, c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l)
+        @assert removed_orb1 != c.kinks[changed_kink_τ].k
+        #see if c.occupations change
+        if removed_kink_τ > changed_kink_τ
+            change_occupations(c.occupations, T4(removed_orb1,removed_orb2, c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j))
+        end
+
+        delete!(c.kinks, removed_kink_τ)
+
+        #calculate reverse_prop_prob
+        occs = get_occupations_at(c, changed_kink_τ)
+        opportunities_reverse_new_orb1 = intersect!(get_sphere_with_same_spin(c.kinks[changed_kink_τ].i, dk = ex_radius), occs)
+        delete!(opportunities_reverse_new_orb1, c.kinks[changed_kink_τ].i)
+        delete!(opportunities_reverse_new_orb1, c.kinks[changed_kink_τ].j)
+        @assert(in(removed_orb1,opportunities_reverse_new_orb1))
+        τ_Intervall = changed_kink_τ - first(get_τ_borders(c, Set([removed_orb1, removed_orb2,
+                         c.kinks[changed_kink_τ].i, c.kinks[changed_kink_τ].j]),changed_kink_τ))
+
+
+        if τ_Intervall < 0
+            τ_Intervall +=1
+        end
+
+        inverse_prop_prob = (0.5/length(c.kinks)) * (1/length(opportunities_reverse_new_orb1)) *
+                                 (1/Float64(τ_Intervall)) * (1/2)
+
+        #calculate weight change
+        delta_di = get_change_diagonal_interaction(c, e, T4(c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j, removed_orb1,removed_orb2), removed_kink_τ, changed_kink_τ)
+
+        dw_off_diag = get_abs_offdiagonal_element(e,c,T4(removed_orb1, removed_orb2,  c.kinks[changed_kink_τ].k, c.kinks[changed_kink_τ].l)) *
+                        get_abs_offdiagonal_element(e,c,T4(c.kinks[changed_kink_τ].i, c.kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
+                            get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ])
+
+        delta_τ = Float64(changed_kink_τ - removed_kink_τ)
+        if delta_τ < 0
+            delta_τ +=1
+        end
+        dw = (1/e.β)* (1/dw_off_diag) * exp(e.β * delta_τ * (get_energy(c.kinks[changed_kink_τ].i) + get_energy(c.kinks[changed_kink_τ].j) -
+                                                                    get_energy(removed_orb1) - get_energy(removed_orb2)) + delta_di)
+
+
+        """println("delta_τ:  ", delta_τ)
+        println("left_delta_di: ", delta_di)"""
+        #println("remove_left_prob_prop:   ", inverse_prop_prob)
+    else
+        #removed kink right of changed kink
+        opportunities = get_left_type_D_pairs(c)
+        if length(opportunities) == 0
+            return 1
+        end
+        removed_kink_τ, changed_kink_τ = rand(opportunities)
+        prop_prob *= 1/length(opportunities)
+
+        if c.kinks[removed_kink_τ].i.spin != c.kinks[removed_kink_τ].k.spin
+            return 1
+        end
+        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
+        if dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,
+                    c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) > (ex_radius^2)
+            return 1
+        end
+
+        #safe thoose for later
+        removed_orb1 = c.kinks[removed_kink_τ].i
+        removed_orb2 = c.kinks[removed_kink_τ].j
+        #change configuration
+        c.kinks[changed_kink_τ] = T4(c.kinks[changed_kink_τ].i, c.kinks[changed_kink_τ].j, c.kinks[removed_kink_τ].k,c.kinks[removed_kink_τ].l)
+
+        #see if c.occupations change
+        if removed_kink_τ < changed_kink_τ  #new kink was added right of old kink
+            change_occupations(c.occupations, T4(removed_orb1, removed_orb2, c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l))
+        end
+
+        delete!(c.kinks, removed_kink_τ)
+
+        #calculate reverse_prop_prob
+        occs = get_occupations_at(c, changed_kink_τ)
+        opportunities_reverse_new_orb1 = intersect!(get_sphere_with_same_spin(c.kinks[changed_kink_τ].k, dk = ex_radius), occs)
+        delete!(opportunities_reverse_new_orb1, c.kinks[changed_kink_τ].i)
+        delete!(opportunities_reverse_new_orb1, c.kinks[changed_kink_τ].j)
+        @assert(in(removed_orb1,opportunities_reverse_new_orb1))
+        τ_Intervall =  last(get_τ_borders(c, Set([c.kinks[changed_kink_τ].k, c.kinks[changed_kink_τ].l,
+                                                    removed_orb1, removed_orb2]),changed_kink_τ)) - changed_kink_τ
+
+        if τ_Intervall < 0
+            τ_Intervall +=1
+        end
+        inverse_prop_prob = (0.5/length(c.kinks)) * (1/length(opportunities_reverse_new_orb1)) *
+                                 (1/Float64(τ_Intervall)) * (1/2)
+
+        #calculate weight change
+        delta_di = get_change_diagonal_interaction(c, e, T4(c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l, removed_orb1,removed_orb2), changed_kink_τ, removed_kink_τ)
+
+        dw_off_diag = get_abs_offdiagonal_element(e,c,T4(removed_orb1, removed_orb2,  c.kinks[changed_kink_τ].k, c.kinks[changed_kink_τ].l)) *
+                        get_abs_offdiagonal_element(e,c,T4(c.kinks[changed_kink_τ].i, c.kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
+                            get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ])
+
+        delta_τ = Float64(removed_kink_τ - changed_kink_τ)
+        if delta_τ < 0
+            delta_τ +=1
+        end
+        dw = (1/e.β)*(1/dw_off_diag) * exp(e.β * delta_τ*(get_energy(c.kinks[changed_kink_τ].k) + get_energy(c.kinks[changed_kink_τ].l) -
+                                                            get_energy(removed_orb1) - get_energy(removed_orb2)) + delta_di)
+
+        """println("delta_τ:  ", delta_τ)
+        println("right_delta_di: ", delta_di)"""
+        #println("remove_right_prob_prop:  ", inverse_prop_prob)
+
+    end
+    #check if sign was changend
+    signum = 1
+    if dot((c.kinks[changed_kink_τ].j.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].j.vec - removed_orb1.vec)) >
+            dot((c.kinks[changed_kink_τ].i.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].i.vec - removed_orb1.vec))
+        signum*= -1
+    end
+    if dot((c.kinks[changed_kink_τ].l.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].l.vec - removed_orb1.vec)) >
+            dot((c.kinks[changed_kink_τ].k.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].k.vec - removed_orb1.vec))
+        signum*= -1
+    end
+    if dot((c.kinks[changed_kink_τ].i.vec -c.kinks[changed_kink_τ].l.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].l.vec)) >
+            dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec))
+        signum*= -1
+    end
+    c.sign *= signum
+
+    @assert(dw != Inf)
+    @assert(delta_τ > 0 )
+    @assert(!isnan((inverse_prop_prob/prop_prob) * dw))
+    #println("remove:  ", 1/((inverse_prop_prob/prop_prob) * dw))
+
+    return((inverse_prop_prob/prop_prob) * dw)
+end
+
 
 
 

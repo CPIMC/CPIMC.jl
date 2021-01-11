@@ -346,3 +346,29 @@ function get_right_type_C_pairs(c::Configuration)
   end
   return pairs_right
 end
+
+
+function get_left_type_D_pairs(c::Configuration)
+  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_D(c.kinks[τ_left], kink)
+      push!(pairs_left, (τ, τ_left))
+    end
+  end
+  return pairs_left
+end
+
+
+function get_right_type_D_pairs(c::Configuration)
+  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_D(kink, c.kinks[τ_right])
+      push!(pairs_right, (τ, τ_right))
+    end
+  end
+  return pairs_right
+end

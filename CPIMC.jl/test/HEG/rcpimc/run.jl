@@ -17,15 +17,15 @@ include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^6###############################################################
+    NMC = 2*10^6###############################################################
     cyc = 20
-    NEquil = 10^5
+    NEquil = 10^6
     #auffälligerBalken um schwer übersehbaren unterschied im vergleich zu run_threads herzustellen
     """#####################################################################
     ########################################################################
     ####################################################################"""
     # system parameters
-    θ = 0.05
+    θ = 5.0
     rs = 10
 
     #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
@@ -72,7 +72,7 @@ function main()
     μW_diag = mean(first(measurements[:W_diag]))/avg_sign
     ΔW_diag = std(first(measurements[:W_diag]))/sqrt(Threads.nthreads()-1)/avg_sign
     μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
-    ΔW_off_diag = W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(Threads.nthreads()-1)/avg_sign)
+    ΔW_off_diag = abs(W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(Threads.nthreads()-1)/avg_sign))
     μT = mean(first(measurements[:Ekin]))/avg_sign
     ΔT = std(first(measurements[:Ekin]))/sqrt(Threads.nthreads()-1)/avg_sign
     μW = μW_diag + μW_off_diag
