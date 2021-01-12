@@ -87,7 +87,7 @@ end
 
 
 # TODO replace by function kink(o::Set{T}, κ::T4{T}) where T
-#Execute a type-4 Kink on a set of occupationnumbers
+# Execute a type-4 Kink on a set of occupationnumbers
 function change_occupations(occs::Set, K::T4)
   #try
   @assert (in(K.k, occs) & in(K.l, occs))
@@ -102,7 +102,7 @@ function change_occupations(occs::Set, K::T4)
 end
 
 # TODO replace by function occupation(c::Configuration{T}, τ::ImgTime) :: Set{T} where T
-#Find occupation numbers at τ if there is a Kink at τ find occupations right from it
+# Find occupation numbers at τ if there is a Kink at τ find occupations right from it
 function get_occupations_at(conf::Configuration, τ::ImgTime)
   occupations = copy(conf.occupations)
   for (τ_kink,kink) in conf.kinks
@@ -135,7 +135,7 @@ function get_nearest_τ_affecting_orb(Configuration::Configuration, orbital::Orb
   if length(kinks_of_orb) == 0
       return("nix","nix")
   end
-  #TO DO: Binäre Suche benutzten?
+  # TODO: binary search
   for (τ_kink,kink) in kinks_of_orb
       if τ_kink > τ
         if current_τ == 0
@@ -144,7 +144,7 @@ function get_nearest_τ_affecting_orb(Configuration::Configuration, orbital::Orb
           return (current_τ,τ_kink)
         end
       else
-          #es soll nicht τ als Grenze zurückgegeben werden
+          # es soll nicht τ als Grenze zurückgegeben werden
           if τ_kink != τ
               current_τ = τ_kink
           end
@@ -159,7 +159,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
   if length(Configuration.kinks) == 0
       return(ImgTime(0),ImgTime(1))
   end
-  #Initially we set τ right and τl left to the nearest Kinks left and right of τ.
+  # Initially we set τ right and τl left to the nearest kinks left and right of τ.
   τ_left_semi_token  = searchsortedafter(Configuration.kinks, τ)
   τ_right_semi_token = searchsortedlast(Configuration.kinks, τ)
   if τ_left_semi_token == pastendsemitoken(Configuration.kinks)
@@ -180,7 +180,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
           end
       end
   end
-  #Now search for the nearst τs that do actually effect one of the Orbitals
+  # now search for the nearst τ's that do actually affect one of the orbitals
   non_interacting_orb_counter = 0
   for orb in orbitals
     @assert(τ_right != ImgTime(1))
@@ -188,7 +188,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
     if tupel[1] == "nix"
         non_interacting_orb_counter += 1
     else
-        #here we always have to check wether the given intervall extends over 1
+        # here we always have to check wether the given intervall extends over 1
         if τ_left < τ < tupel[1]
             "nix"
         elseif tupel[1] < τ < τ_left
@@ -261,8 +261,7 @@ end
 # TODO: rename get_non_interacting_orbs_in_interval
 " returns all orbs with no kinks between 2 τ's, ignoring Kinks at one of the τ's "
 function get_non_interacting_orbs_of_set_in_interval(Configuration::Configuration, os::Set{<:Orbital}, τ_first::ImgTime, τ_last::ImgTime )# :: Set{<:Orbital}
-  non_int_orbs = Set{basis(Configuration)}() #Set{<:Orbital}() funktioniert nicht, anscheineinend lassen
-  #sich Set-objekte nicht mit angabe eine abstarken types erstellen.
+  non_int_orbs = Set{basis(Configuration)}()
   for orb in os
     if is_non_interacting_in_interval(Configuration, orb, τ_first, τ_last)
       push!(non_int_orbs, orb)

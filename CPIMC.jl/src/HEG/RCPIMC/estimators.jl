@@ -4,8 +4,8 @@ function Ekin(e::Ensemble, c::Configuration)
     end
     occs = copy(c.occupations)
     E_kin = 0
-    #betrachte das komplette intervall zwischen letztem und erstem Kink als
-    #erstes intervall
+    # betrachte das komplette Intervall zwischen letztem und erstem Kink als
+    # erstes intervall
     old_τ = first(last(c.kinks)) - 1
     for (τ,kink) in c.kinks
         E_kin += sum(get_energy(n) for n in occs) * float(τ - old_τ)

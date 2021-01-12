@@ -10,40 +10,24 @@ include("../../../src/CPIMC.jl")
 include("../../../src/output.jl")
 
 
-
-"""include("CPIMC.jl/src/Configuration.jl")
-include("CPIMC.jl/src/HEG/model.jl")
-include("CPIMC.jl/src/CPIMC.jl")
-include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
-include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
-
 function main()
     # MC options
-    NMC = 10^5###############################################################
+    NMC = 10^5
     cyc = 20
     NEquil = 10^3
-    #auffälligerBalken um nicht übersehbaren unterschied im vergleich zu run_threads herzustellen
-    """#####################################################################
-    ########################################################################
-    ####################################################################"""
     # system parameters
     θ = 1.0
     rs = 0.5
 
-    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
-
-    #4Particles
-    # S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2) ### use 33 particles
-
-    println("Number of particles: ", length(S))
-    println("θ: ", θ)
-    println("rs: ", rs)
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),0),dk=2) ### use 33 particles
     N = length(S)
-    println("N: ", N)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
+    println("θ: ", θ)
+    println("rs: ", rs)
+    println("N: ", N)
+
+    e = Ensemble(rs, get_β_internal(θ,N), N)# get_β_internal only works for 3D
     updates = Update.([move_particle, add_type_B, remove_type_B, change_type_B, shuffle_indices],0,0)
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)

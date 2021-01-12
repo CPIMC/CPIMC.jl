@@ -88,8 +88,9 @@ end
 function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
 
     println("starting equilibration")
-    k = 1 #print prgoress
+    k = 1# progress counter
     for i in 1:throwAway
+        # print progress
         if i%(throwAway/100) == 0
             print("eq: ",k,"/100","    ")
             k+=1
@@ -99,7 +100,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
 
     println("starting Simulation")
     i = 0
-    k = 1#print progress
+    k = 1# progress counter
     while i < steps
 
         # print progress
@@ -127,15 +128,15 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
 end
 
 
-#Only use if all threads do not access any objekts in common
+# Only use if all threads do not access any objekts in common
 function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
     @assert(length(c.kinks) == 0)
-    c = Configuration(copy(c.occupations))  #c should be a different objekt for each thread
+    c = Configuration(copy(c.occupations))# c should be a different object for each thread
     " equilibration "
     if (Threads.threadid() == 1)
         println("\nstarting equilibration")
     end
-    k = 1 #print prgoress
+    k = 1# progress counter
     for i in 1:throwAway
         if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
             print("eq: ",k,"/100","    ")
@@ -147,12 +148,12 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         println("\nstarting Simulation")
     end
     i = 0
-    k = 1#print progress
+    k = 1# progress counter
     while i < steps
-        #print progress
+        # print progress
         if (i%(steps/100) == 0) & (Threads.threadid() == 1)
             print(k,"/100","    ")
-            #println("K: ",length(c.kinks))
+            #println("K: ",length(c.kinks))# debug information
             k+=1
         end
 

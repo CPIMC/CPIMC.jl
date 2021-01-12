@@ -24,20 +24,20 @@ OrbitalHEG(v::Tuple,s=0) = OrbitalHEG(SVector(v),s)
 
 
 function get_β_internal(θ::Float64, N::Int)
-  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*θ)   #if using unpolarized system need a factor 1/2 under the ^(2/3)
+  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*θ)# if using unpolarized system need a factor 1/2 under the ^(2/3)
 end
 
 function lambda(N::Int, rs::Float64)
-    #Warum Faktor 2 am ende?
+    # Warum Faktor 2 am Ende?
     return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
 end
 
 function E_Ry(E_internal::Float64, lam::Float64)
-    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))#if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
 end
 
-function abs_E_mad(N::Int, lam::Float64) #internal units
-    return 2.83729747948527 * pi/2.0 * N * (lam/2)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+function abs_E_mad(N::Int, lam::Float64)# internal units
+    return 2.83729747948527 * pi/2.0 * N * (lam/2)# if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
 end
 
 
@@ -55,8 +55,8 @@ function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,kink::T4{Orbit
     end
     #the factor lamda/2 is due to the use of internal units
     wijkl *= lambda(e.N,e.rs)/2
-    # We sample with the weight of antisymmetriesed matrixelement but we do not restrict
-    # the orders of indizies of our possible kinks. We therefor need an extrra factor 1/4 in the weight-funktion
+    # We sample with the weight of antisymmetrized matrix element but we do not restrict
+    # the order of indizies of our possible kinks. We therefor need an extra factor 1/4 in the weight-function
     return abs(wijkl) * 1/4# TODO absolute ?
 end
 
@@ -207,9 +207,10 @@ function get_orbs_with_spin(orbitals::Set{OrbitalHEG{3}},spin::Int)
 end
 
 
-# For add_type_B
-#calculates the change in the diagonal interaction when changing ocupation between τ1 and τ2 accoring to left_kink
-#already multiplied by e.β
+""" for add_type_B
+    calculates the change in the diagonal interaction
+    when changing the ocupations between τ1 and τ2 accoring to left_kink
+    already multiplied by e.β """
 function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kink::T4, τ1, τ2)
     orb_a = left_kink.i
     orb_b = left_kink.j
@@ -240,7 +241,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         kink_semi_token = startof(c.kinks)
     end
     τ_kink,kink = deref((c.kinks,kink_semi_token))
-    #The kink at τ1 is already considered in occs
+    # The kink at τ1 is already considered in occs.
     if τ_kink == τ1
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
@@ -286,7 +287,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
     return -delta_di * e.β
 end
 
-#This function assumes for now that all kinks in configuration.kinks are of type 4
+" This function assumes for now that all kinks in configuration.kinks are of type 4. "
 function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kink::T2, τ1, τ2)
     orb_a = left_kink.i
     orb_b = left_kink.j
@@ -314,7 +315,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         kink_semi_token = startof(c.kinks)
     end
     τ_kink,kink = deref((c.kinks,kink_semi_token))
-    #The kink at τ1 is already considered in occs
+    # The kink at τ1 is already considered in occs.
     if τ_kink == τ1
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
