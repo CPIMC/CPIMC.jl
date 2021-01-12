@@ -10,6 +10,9 @@ include("../../../src/HEG/Ideal/estimators.jl")
 
 include("../../../src/CPIMC.jl")
 
+include("../../../src/output.jl")
+
+
 
 """include("CPIMC.jl/src/Configuration.jl")
 include("CPIMC.jl/src/CPIMC.jl")
@@ -24,8 +27,8 @@ function main()
     NEquil = 10^4
 
     # system parameters
-    θ = 0.0625
-    rs = 1
+    θ = 1.0#0.0625
+    rs = 0.5#1
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2) ### use 33 particles
 
 
@@ -49,36 +52,19 @@ function main()
     , :occN => (Group([Variance() for i=1:200]), occVec)
     )"""
 
-    updates = [move_particle]
+    updates = Update.([move_particle],0,0)
 
     measurements = Dict(
-      :Ekin => (Variance(), Ekin)
-    , :occs => (Group([Variance() for i in 1:100]), occupations))
+      :Ekin => (Variance(UInt), Ekin)
+    , :occs => (Group([Variance(UInt) for i in 1:100]), occupations))
 
     println("Start MC process ... ")
-    runMC(NMC, cyc, NEquil, updates, measurements, e, c)
+    sweep!(NMC, cyc, NEquil, updates, measurements, e, c)
     println(" finished.")
-    println("measurements:")
-    println("=============")
 
-    for (k,(f,m)) in measurements
-        if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            println(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f))
-        end
-    end
+    print_results(measurements)
 
-    println("")
-
-    #occupations funktionieren noch nicht fürs WW-System
-    println("occupations:")
-    println("============")
-    println(mean.(measurements[:occs][1].stats))
-    println(std.(measurements[:occs][1].stats))
-
-    # Print to results file
-    open("CPIMC.jl/test/HEG/rcpimc/out/occNums_N$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => "")).dat", "w") do io
-           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)))
-       end
+    #save_results("out/", measurements, e)
 end
 
 #Juno.@run(main())

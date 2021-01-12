@@ -68,12 +68,12 @@ function K(e::Ensemble, c::Configuration)
     return(length(c.kinks))
 end
 
-function occupations(e::Ensemble, c::Configuration, emax::Int=100)
-    nk = zeros(emax)
+function occupations(e::Ensemble, c::Configuration, emax::Int=100) :: Array{Float64,1}
+    nk = zeros(Float64, emax)
     if isempty(c.kinks)
         for en in get_energy.(c.occupations)
             if en < emax
-                nk[en+1] = nk[en+1] + 1
+                nk[en+1] = nk[en+1] + 1.0
             end
         end
     else
@@ -82,7 +82,7 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100)
         for (tau,k) in c.kinks
             for en in get_energy.(occs)
                 if en < emax
-                    nk[en+1] = nk[en+1] + (tau - old_τ)
+                    nk[en+1] = nk[en+1] + float(tau - old_τ)
                 end
             end
             old_τ = tau

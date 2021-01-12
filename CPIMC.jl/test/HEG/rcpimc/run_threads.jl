@@ -22,7 +22,7 @@ function main()
 
     # system parameters
     θ = 1.0
-    rs = 1.0
+    rs = 0.5
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
 
     #4Particles
@@ -36,7 +36,7 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
-    updates = [move_particle, add_type_B, remove_type_B, change_type_B, shuffle_indices]#
+    updates = Update.([move_particle, add_type_B, remove_type_B, change_type_B, shuffle_indices],0,0)
 
     measurements = Dict(
       :Ekin => (Variance(), Ekin)
@@ -65,7 +65,7 @@ function main()
     for t in 1:Threads.nthreads()
         m = deepcopy(measurements_Mean)
         push!(Measurements_of_runs,m)
-        Marcov_Chain_builders[t] = Threads.@spawn(runMC_multithreaded(NMC, cyc, NEquil, updates, m, e, c))
+        Marcov_Chain_builders[t] = Threads.@spawn(sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c))
     end
     for mcb in Marcov_Chain_builders
         wait(mcb)

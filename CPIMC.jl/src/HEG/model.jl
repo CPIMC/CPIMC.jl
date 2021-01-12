@@ -2,6 +2,7 @@ using StaticArrays
 
 import LinearAlgebra: dot
 
+
 struct Ensemble
   "Brueckner parameter"
   rs :: Float64
@@ -19,7 +20,7 @@ struct OrbitalHEG{D} <: Orbital
     spin :: Int
 end
 
-OrbitalHEG(v::Tuple,s=1) = OrbitalHEG(SVector(v),s)
+OrbitalHEG(v::Tuple,s=0) = OrbitalHEG(SVector(v),s)
 
 
 function get_β_internal(θ::Float64, N::Int)
@@ -29,11 +30,6 @@ end
 function lambda(N::Int, rs::Float64)
     #Warum Faktor 2 am ende?
     return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
-end
-
-" single particle energy for momentum vector k "
-function get_energy(o::OrbitalHEG)
-    dot(o.vec,o.vec)
 end
 
 function E_Ry(E_internal::Float64, lam::Float64)
@@ -61,10 +57,47 @@ function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,kink::T4{Orbit
     wijkl *= lambda(e.N,e.rs)/2
     # We sample with the weight of antisymmetriesed matrixelement but we do not restrict
     # the orders of indizies of our possible kinks. We therefor need an extrra factor 1/4 in the weight-funktion
-    return abs(wijkl) * 1/4
+    return abs(wijkl) * 1/4# TODO absolute ?
 end
 
 
+" return the energy of a single diagonal single-particle matrix element "
+function get_energy(o::Orbital)
+    dot(o.vec,o.vec)
+end
+
+" coulomb kernel for 3D plane wavevectors "
+kernel(i::StaticVector{3,Int}, k::StaticVector{3,Int}) = 1.0 / ( dot(i - k) ^ 2 )
+
+" coulomb kernel in plane wave basis "
+kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
+
+## method declarations for the off-diagonal energy given by kinks in the UEG
+# TODO: It may not be good style to use the same function name for the off-diagnoal energy as for the diagonal energy unless we dispatch at some point.
+#       On the other hand, this notation is semantically convenient since it is short and conceptually unambiguous,
+#       i.e. it is clear what is the difference between the energy of an orbital (diagonal) and the energy of a kink (off-diagonal).
+
+""" return the energy of a single off-diagonal single-particle matrix element (a.k.a. kink)
+    for a two-particle excitation (i.e. T4)"""
+function get_energy(κ::T4)
+    @assert iszero(κ.i + κ.j + κ.k + κ.l) "Momentum conservation violated by kink $(κ.k),$(κ.l) → $(κ.i), $(κ.j). All excitations must conserve the total momentum in the UEG."
+    @assert !iszero(κ.i - κ.k) "Divergence in off-diagonal single-particle matrix element. All excitations must conserve the total momentum in the UEG."
+    if κ.i.spin == κ.j.spin
+        abs( kernel(κ.i, κ.k) - kernel(κ.i, κ.l) )# TODO absolute ?
+    elseif κ.i.spin == κ.k.spin
+        kernel(κ.i, κ.k)
+    elseif κ.i.spin == κ.l.spin
+        kernel(κ.i, κ.l)
+    else
+        @assert false "wrong spin combination in kink $(κ.k),$(κ.l) → $(κ.i), $(κ.j)."
+    end
+end
+
+""" return the energy of a single off-diagonal matrix element (a.k.a. kink)
+    for a one-particle excitation (i.e. T2)"""
+function get_energy(κ::T2)
+    throw(ErrorException("There are no T2-kinks in the UEG."))
+end
 
 function get_orbshell(o::OrbitalHEG{1};dw::Int=2)
     eq = get_energy(o)
@@ -160,6 +193,9 @@ function get_sphere_with_same_spin(o::OrbitalHEG{3}; dk::Number=2)
     os
 end
 
+" return two spheres of each spin with radius dk around the wavevector of the argument orbital o"
+get_sphere(o::OrbitalHEG; dk=2) = union(get_sphere_with_same_spin(o,dk=dk),get_sphere_with_same_spin(OrbitalHEG(o.vec,Int(iszero(o.spin))),dk=dk))
+
 function get_orbs_with_spin(orbitals::Set{OrbitalHEG{3}},spin::Int)
     orbs_s = Set{OrbitalHEG{3}}()
     for orb in orbitals
@@ -171,7 +207,7 @@ function get_orbs_with_spin(orbitals::Set{OrbitalHEG{3}},spin::Int)
 end
 
 
-
+# For add_type_B
 #calculates the change in the diagonal interaction when changing ocupation between τ1 and τ2 accoring to left_kink
 #already multiplied by e.β
 function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kink::T4, τ1, τ2)
