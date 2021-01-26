@@ -268,6 +268,30 @@ function is_type_E(left_kink::T4, right_kink::T4)
   end
 end
 
+
+#This funktion dies only look and thoose 2 Kinks and does not search imaginary time between the 2 kinks
+function is_type_E_and_removable_when_changing_the_right_kink(left_kink::T4, right_kink::T4)
+  if ((left_kink.k == right_kink.j) & (left_kink.j == right_kink.k) &
+    (length(Set([left_kink.i, left_kink.l, right_kink.i,right_kink.l])) == 4) &
+    (dot(left_kink.i.vec-left_kink.k.vec, left_kink.i.vec-left_kink.k.vec) <= ex_radius^2))
+    return(true)
+  else
+    return(false)
+  end
+end
+
+#This funktion dies only look and thoose 2 Kinks and does not search imaginary time between the 2 kinks
+function is_type_E_and_removable_when_changing_the_left_kink(left_kink::T4, right_kink::T4)
+  if ((left_kink.k == right_kink.j) & (left_kink.j == right_kink.k) &
+    (length(Set([left_kink.i, left_kink.l, right_kink.i,right_kink.l])) == 4) &
+    (dot(right_kink.i.vec-right_kink.k.vec, right_kink.i.vec-right_kink.k.vec) <= ex_radius^2))
+    return(true)
+  else
+    return(false)
+  end
+end
+
+
 #Return a two(a Tuple of) Sets of Tuples of "neighbouring" Kink that are Type-B-Entangeld.
 #"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 #other kink in the corresponding direktion are looked at.
@@ -371,4 +395,40 @@ function get_right_type_D_pairs(c::Configuration)
     end
   end
   return pairs_right
+end
+
+function get_left_type_E_pairs(c::Configuration)
+  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_E(c.kinks[τ_left], kink)
+      push!(pairs_left, (τ, τ_left))
+    end
+  end
+  return pairs_left
+end
+
+function get_right_type_E_removable_pairs(c::Configuration)
+  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_E_and_removable_when_changing_the_right_kink(kink, c.kinks[τ_right])
+      push!(pairs_right, (τ, τ_right))
+    end
+  end
+  return pairs_right
+end
+
+function get_left_type_E_removable_pairs(c::Configuration)
+  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_E_and_removable_when_changing_the_left_kink(c.kinks[τ_left], kink)
+      push!(pairs_left, (τ, τ_left))
+    end
+  end
+  return pairs_left
 end

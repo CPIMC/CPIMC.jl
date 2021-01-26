@@ -1,25 +1,27 @@
-#global add_c_counter = 0
-#global remove_c_counter = 0
+global add_E_counter = 0
+global remove_E_counter = 0
 
 " propose a random update and accept or reject it "
 function propose_update!(c::Configuration, updates, e::Ensemble)
     @assert !iszero(length(updates))
     up = rand(updates)
-
     c_old = Configuration(copy(c.occupations),copy(c.kinks),copy(c.sign))
-    acc_prob = up(c,e)  #Dies in Variable zu sspeichern nur sinnvoll fürs debuggen
+    acc_prob = up(c,e)  #Dies in Variable zu speichern ist im moment nur sinnvoll fürs debuggen
     if (rand() < acc_prob) #& (acc_prob != 1)
-        """if up == add_type_C
-            global add_c_counter += 1
+        """if up == add_type_E
+            println("ADDED TYPE E")
+            global add_E_counter += 1
+
         end
-        if up == remove_type_C
-            global remove_c_counter += 1
+        if up == remove_type_E
+            println("REMOVED TYPE E\n\n\n")
+            global remove_E_counter += 1
         end"""
         return :accept
     else
-        """if acc_prob == 1
+        if acc_prob == 1
             return :accept
-        end"""
+        end
         c.occupations = c_old.occupations
         c.kinks = c_old.kinks
         c.sign = c_old.sign
@@ -45,8 +47,8 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         propose_update!(c,updates,e)
     end
     println("starting Simulation")
-    global add_c_counter = 0
-    global remove_c_counter = 0
+    #global add_c_counter = 0
+    #global remove_c_counter = 0
     i = 0
     k = 1#print progress
     while i < steps
@@ -90,9 +92,8 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
     end
     k = 1 #print prgoress
     for i in 1:throwAway
-        if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
-            print("eq: ",k,"/100","    ")
-            println("K: ",length(c.kinks))
+        if (i%(throwAway/100) == 0) #& (Threads.threadid() == 1)
+            println("              "^Threads.threadid(),"T",Threads.threadid(), " eq: ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)
@@ -102,13 +103,13 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
     end
     i = 0
     k = 1#print progress
-    global add_c_counter = 0
-    global remove_c_counter = 0
+    #global add_E_counter = 0
+    #global remove_E_counter = 0
     while i < steps
         #print progress
-        if (i%(steps/100) == 0) & (Threads.threadid() == 1)
-            print(k,"/100","    ")
-            println("K: ",length(c.kinks))
+        if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
+            #print("     "^Threads.threadid(),"T",Threads.threadid(), " ",k,"/100"," ")
+            println("              "^Threads.threadid(),"T",Threads.threadid(), " ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
         propose_update!(c,updates,e)
@@ -130,8 +131,8 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
         i += 1
     end
     println("\nThread",Threads.threadid(),"finished")
-    #println(add_c_counter)
-    #println(remove_c_counter)
+    #println(add_E_counter)
+    #println(remove_E_counter)
 end
 
 function print_results(measurements)

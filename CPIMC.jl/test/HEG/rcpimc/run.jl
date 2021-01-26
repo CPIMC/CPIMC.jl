@@ -17,21 +17,21 @@ include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 2*10^6###############################################################
-    cyc = 20
-    NEquil = 10^6
+    NMC = 10^7###############################################################
+    cyc = 200
+    NEquil = 10^5
     #auffälligerBalken um schwer übersehbaren unterschied im vergleich zu run_threads herzustellen
     """#####################################################################
     ########################################################################
     ####################################################################"""
     # system parameters
-    θ = 5.0
-    rs = 10
+    θ = 0.125
+    rs = 2.5
 
-    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
 
     #2Particles
-    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1)])#, OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
+    #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
     println("Number of particles: ", length(S))
     println("θ: ", θ)
@@ -41,7 +41,8 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
-    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C] #, change_type_B
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E] #, change_type_B
+
     measurements = Dict(
       :sign => (Variance(), signum)
     , :Ekin => (Variance(), Ekin)
