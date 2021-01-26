@@ -39,9 +39,6 @@ mutable struct Configuration{T}
   " excitations, using τ as an index "
   kinks :: SortedDict{ImgTime, Kink{T}}
 
-  #constructor für eine Ideale konfiguration
-  # Configuration(s::Set{T}) where {T} = new{T}(s,SortedDict{ImgTime,Kink}(Base.Forward))
-  # Configuration(s::Set{T}, k::SortedDict{ImgTime, Kink{T}}) where {T} = new{T}(s,k)
 end
 
 " outer constructor method for a configuration with occupations given by o and kinks given by k. k can be anything from which a SortedDict can be constructed from. "
@@ -363,10 +360,10 @@ add!(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} =
 
 " add all Kinks given in a SortedDict "
 function add!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
-  for k in ck
-    add!(c, k...)
-  end
-  # merge!(c.kinks, ck)
+  # for k in ck
+  #   add!(c, k...)
+  # end
+  merge!(c.kinks, ck)
 end
 
 add(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = merge(ck, SortedDict(ps...))
@@ -375,8 +372,8 @@ add(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T} = add(c, c
 
 " add occupations and kinks given by second argument from first argument "
 function add!(c1::Configuration{T}, c2::Configuration{T}) where {T}
-  add!(c1, c2.occupations)# union!(c1.occupations, c2.occupations)
-  add!(c1, c2.kinks)# merge!(c1.kinks, c2.kinks)
+  add!(c1, c2.occupations)
+  add!(c1, c2.kinks)
 end
 
 add(c1::Configuration{T}, c2::Configuration{T}) where {T} = Configuration(add(c1.occupations, c2.occupations), merge(c1.kinks, c2.kinks))

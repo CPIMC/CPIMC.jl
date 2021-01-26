@@ -57,17 +57,10 @@ function step!(c::Configuration, e::Ensemble, updates::Array{Update,1})
     up = rand(updates)
     up.proposed += 1
     dv, Δ = up.update(c, e)
-    # println("update :$(up.update)")# debug information
-    # !isnothing(Δ.add) && print("proposed step : $(Δ.drop) → $(Δ.add)\nacceptance prob.: $(dv)")# debug information
-    # isnothing(Δ.add) && print("no step proposed: $(Δ.drop) → $(Δ.add)\nacceptance prob.: $(dv)")# debug information
     if rand() < dv
         promote!(c, Δ)
         up.accepted += 1
-        # print("   ✓ accepted.\n")# debug information
-    else
-        # print("   x denied.\n")# debug information
     end
-    # println("current configuration : $([o.vec for o in c.occupations])")# debug information, TODO: implement printing of configuration in UnicodePlots
 end
 
 " change configuration c as given by Δ "
@@ -115,11 +108,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                if typeof(stat) == Group#####################Diese BEdingung ist anscheinend niemals erfüllt
-                    fit!(stat, eachrow(obs(e,c)))
-                else
-                    fit!(stat, obs(e,c))
-                end
+                fit!(stat, obs(e,c))
             end
         end
 
@@ -153,7 +142,6 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         # print progress
         if (i%(steps/100) == 0) & (Threads.threadid() == 1)
             print(k,"/100","    ")
-            #println("K: ",length(c.kinks))# debug information
             k+=1
         end
 
