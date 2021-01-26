@@ -222,7 +222,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
     end
     delta_di = delta_τ12 * (lambda(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec)) -
                                         1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
-    occs = get_occupations_at(c, τ1)
+    occs = occupations(c, τ1)
     for occ in occs
         if ((occ == orb_c) | (occ == orb_d) | (occ == orb_a) | (occ == orb_b))
             "nix"
@@ -296,7 +296,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         delta_τ12 += 1
     end
     delta_di = 0
-    occs = get_occupations_at(c, τ1)
+    occs = occupations(c, τ1)
     @assert(!in(orb_a, occs))
     for occ in occs
         if ((occ == orb_b) | (occ == orb_a))

@@ -72,6 +72,16 @@ end
     this is useful for iteration of a SortedDict{ImgTime, T4{T}}"""
 kink(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = kink(o, κ[2])
 
+" apply a T4 kink in-place to a set of basis states "
+function kink!(occs::Set{T}, K::T4{T}) where T
+  @assert (in(K.k, occs) & in(K.l, occs))
+  @assert (!in(K.i, occs) & !in(K.j, occs))
+  delete!(occs, K.k)
+  delete!(occs, K.l)
+  push!(occs, K.i)
+  push!(occs, K.j)
+end
+
 " return the occupied orbitals after applying all kinks to initial occupation "
 function occupations(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
   reduce(kink, kinks; init=o)
@@ -79,39 +89,8 @@ end
 
 " return the occupied orbitals to the right of τ "
 function occupations(c::Configuration, τ::ImgTime)
-  occupations(c.occupations, filter(x -> x[1] <= τ, c.kinks))# TODO: use mapreduce() instead of reduce(filter())
+  occupations(c.occupations, filter(x -> x[1] <= τ, c.kinks)
 end
-
-
-# TODO replace by function kink(o::Set{T}, κ::T4{T}) where T
-# Execute a type-4 Kink on a set of occupationnumbers
-function change_occupations(occs::Set, K::T4)
-  #try
-  @assert (in(K.k, occs) & in(K.l, occs))
-  @assert (!in(K.i, occs) & !in(K.j, occs))
-  #catch ex
-  #    print("BREAK")
-  #end
-  delete!(occs, K.k)
-  delete!(occs, K.l)
-  push!(occs, K.i)
-  push!(occs, K.j)
-end
-
-# TODO replace by function occupation(c::Configuration{T}, τ::ImgTime) :: Set{T} where T
-# Find occupation numbers at τ if there is a Kink at τ find occupations right from it
-function get_occupations_at(conf::Configuration, τ::ImgTime)
-  occupations = copy(conf.occupations)
-  for (τ_kink,kink) in conf.kinks
-    if τ_kink <= τ
-      change_occupations(occupations, kink)
-    else
-      break
-    end
-  end
-  return occupations
-end
-
 
 " returns a list of all Kinks that affect the given orbital "
 function get_kinks_of_orb(c::Configuration, orbital::Orbital)

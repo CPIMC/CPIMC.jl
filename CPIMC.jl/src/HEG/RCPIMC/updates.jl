@@ -42,7 +42,7 @@ function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     while haskey(c.kinks, τ1)
         τ1 = ImgTime(rand())
     end
-    occs = get_occupations_at(c, τ1)
+    occs = occupations(c, τ1)
     orb_c = rand(occs)
     prop_prob *= 1/e.N
     orb_d = rand(occs)
@@ -133,7 +133,7 @@ function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     # update by choosing the imaginary times in a different order.
 
     # Therefore we modify the proposal probability in the following way.
-    occs_τ2 = get_occupations_at(c, τ2)
+    occs_τ2 = occupations(c, τ2)
     opportunities_orb_a_τ2 = setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ2)
     @assert length(opportunities_orb_a_τ2) != 0
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
@@ -224,8 +224,8 @@ function remove_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
         if possible_τ2_interval < 0
             possible_τ2_interval = 1 + possible_τ2_interval
         end
-        occs_τ_kink1 = get_occupations_at(promote(c,Δ), first(Kink1))
-        occs_τ_kink2 = get_occupations_at(promote(c,Δ), first(Kink2))
+        occs_τ_kink1 = occupations(promote(c,Δ), first(Kink1))
+        occs_τ_kink2 = occupations(promote(c,Δ), first(Kink2))
         orb_a = last(Kink1).i
         orb_b = last(Kink1).j
         orb_c = last(Kink1).k
@@ -269,7 +269,7 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     if ijkl != Set([last(Kink2).i, last(Kink2).j, last(Kink2).k, last(Kink2).l])
         return 1.0, Step()
     end
-    occs = get_occupations_at(c, first(Kink1))
+    occs = occupations(c, first(Kink1))
 
     opportunities = get_non_interacting_orbs_of_set_in_interval(
                         c,setdiff!(
@@ -326,7 +326,7 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         # calculate proposal probability
-        change_occupations(occs, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
+        kink!(occs, T4(new_orb_i, new_orb_j, last(Kink1).i, last(Kink1).j))
         opportunites_reverse = get_non_interacting_orbs_of_set_in_interval(
                                     promote(c,Δ),setdiff!(
                                         get_sphere_with_same_spin(new_orb_i, dk = ex_radius
