@@ -89,7 +89,7 @@ end
 
 " return the occupied orbitals to the right of τ "
 function occupations(c::Configuration, τ::ImgTime)
-  occupations(c.occupations, filter(x -> x[1] <= τ, c.kinks)
+  occupations(c.occupations, filter(x -> x[1] <= τ, c.kinks))
 end
 
 " returns a list of all Kinks that affect the given orbital "
