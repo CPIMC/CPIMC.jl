@@ -68,31 +68,31 @@ function kink(o::Set{T}, κ::T4{T}) where T
   union(setdiff(o, Set([κ.k,κ.l])), Set([κ.i, κ.j]))
 end
 
-""" apply a T4 kink to a set of basis states for a pair of a time and a T4-kink
-    this is useful for iteration of a SortedDict{ImgTime, T4{T}}"""
+""" Apply a T4 kink to a set of basis states for a pair of a time and a T4-kink.
+    This is useful for iteration of a SortedDict{ImgTime, T4{T}}."""
 kink(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = kink(o, κ[2])
 
-" apply a T4 kink in-place to a set of basis states "
-function kink!(occs::Set{T}, K::T4{T}) where T
-  @assert (in(K.k, occs) & in(K.l, occs))
-  @assert (!in(K.i, occs) & !in(K.j, occs))
-  delete!(occs, K.k)
-  delete!(occs, K.l)
-  push!(occs, K.i)
-  push!(occs, K.j)
+" Apply a T4 kink in-place to a set of basis states. "
+function kink!(o::Set{T}, κ::T4{T}) where T
+  @assert (in(κ.k, o) & in(κ.l, o)) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied. (Pauli-Principle)"
+  @assert (!in(κ.i, o) & !in(κ.j, o)) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the creators $(κ.i), $(κ.j) is already occupied. (Pauli-Principle)"
+  delete!(o, κ.k)
+  delete!(o, κ.l)
+  push!(o, κ.i)
+  push!(o, κ.j)
 end
 
-" return the occupied orbitals after applying all kinks to initial occupation "
+" Return the occupied orbitals after applying all kinks to initial occupation. "
 function occupations(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
   reduce(kink, kinks; init=o)
 end
 
-" return the occupied orbitals to the right of τ "
+" Return the occupied orbitals to the right of τ ."
 function occupations(c::Configuration, τ::ImgTime)
   occupations(c.occupations, filter(x -> x[1] <= τ, c.kinks))
 end
 
-" returns a list of all Kinks that affect the given orbital "
+" Return a list of all kinks that affect the given orbital. "
 function get_kinks_of_orb(c::Configuration, orbital::Orbital)
   kinks_of_orb = SortedDict{ImgTime, Kink{<:Orbital}}()
   for (τ_kink,kink) in c.kinks
@@ -103,13 +103,13 @@ function get_kinks_of_orb(c::Configuration, orbital::Orbital)
   return kinks_of_orb
 end
 
-""" Returns a tuple of the imaginary times between 0 and 1 of the nearest Kinks before τ and the nearest Kink after τ,
+""" Return a tuple of the imaginary times between 0 and 1 of the closest kink before τ and the closest kink after τ,
     which affect the given orbital. Has to be multiplied with β to get real imaginary times."""
 function get_nearest_τ_affecting_orb(Configuration::Configuration, orbital::Orbital,τ::ImgTime)
   current_τ = 0
   kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
   if length(kinks_of_orb) == 0
-      return("nix","nix")
+      return ("nix","nix")
   end
   # TODO: binary search
   for (τ_kink,kink) in kinks_of_orb
@@ -166,7 +166,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
     else
         # here we always have to check wether the given intervall extends over 1
         if τ_left < τ < tupel[1]
-            "nix"
+            # "nix"
         elseif tupel[1] < τ < τ_left
             τ_left = tupel[1]
         elseif τ_left < tupel[1]
@@ -174,7 +174,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
         end
 
         if tupel[2] < τ < τ_right
-            "nix"
+            # "nix"
         elseif τ_right < τ < tupel[2]
           τ_right = tupel[2]
         elseif tupel[2] < τ_right
@@ -183,47 +183,48 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
     end
   end
   if non_interacting_orb_counter == length(orbitals)
-      return return(ImgTime(0),ImgTime(1))
+      return (ImgTime(0),ImgTime(1))
   else
       return (τ_left,τ_right)
   end
 end
 
-" return if an orbital is not affected by any kinks "
+" Return if an orbital is not affected by any kink. "
 function is_non_interacting(Configuration::Configuration{T}, orbital::T) :: Bool where {T<:Orbital}
   for (τ_kink,kink) in Configuration.kinks
     if (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-      return(false)
+      return false
     end
   end
-  return(true)
+  return true
 end
 
-" return if an orb has no Kinks between two τ's (ignoring kinks at one of the τ's) "
+
+" Return if an orbital is not affected by any kink in the open interval (τ_first,τ_last). "
 function is_non_interacting_in_interval(Configuration::Configuration{T}, orbital::T, τ_first::ImgTime, τ_last::ImgTime) :: Bool where {T<:Orbital}
   @assert τ_first != τ_last
   if τ_first < τ_last
       for (τ_kink,kink) in Configuration.kinks
         if (τ_kink <= τ_first) | (τ_kink >= τ_last)
-            "nix"
+            # "nix"
         elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-              return(false)
+              return false
         end
       end
   else
       for (τ_kink,kink) in Configuration.kinks
         if ((τ_kink <= τ_first) & (τ_kink >= τ_last))
-            "nix"
+            # "nix"
         elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
-              return(false)
+              return false
         end
       end
   end
-  return(true)
+  return true
 end
 
 #TODO: rename get_non_interacting_orbs
-" returns all orbs with no kinks"
+" Return a set of all orbitals in os not affected by any kink. "
 function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{<:Orbital})
   non_int_orbs = Set{basis(Configuration)}()# use explicit constructor
   for orb in os
@@ -231,11 +232,11 @@ function get_non_interacting_orbs_of_set(Configuration::Configuration, os::Set{<
       push!(non_int_orbs, orb)
     end
   end
-  return(non_int_orbs)
+  return non_int_orbs
 end
 
 # TODO: rename get_non_interacting_orbs_in_interval
-" returns all orbs with no kinks between 2 τ's, ignoring Kinks at one of the τ's "
+" Return a set of all orbitals in os not affected by any kink in the open interval (τ_first,τ_last). "
 function get_non_interacting_orbs_of_set_in_interval(Configuration::Configuration, os::Set{<:Orbital}, τ_first::ImgTime, τ_last::ImgTime )# :: Set{<:Orbital}
   non_int_orbs = Set{basis(Configuration)}()
   for orb in os
@@ -243,101 +244,148 @@ function get_non_interacting_orbs_of_set_in_interval(Configuration::Configuratio
       push!(non_int_orbs, orb)
     end
   end
-  return(non_int_orbs)
+  return non_int_orbs
 end
 
-" drop nothing "
-function drop!(c::Configuration, n::Nothing)
-  nothing
-end
 
+## Method definitions for function add.
+# This function is mostly used for calculating the changes proposed by an update
+# in order to calculate proposal and/or acceptance probabilities.
+
+" Return the configuration c without dropping anything. "
 drop(c::Configuration, n::Nothing) = c
 
-" drop a single Orbital "
+" Drop a single orbital. "
 function drop!(c::Configuration{T}, o::T) where {T <: Orbital}
   delete!(c.occupations, o)
 end
 
+" Return a set with the orbital o dropped from oc. "
 drop(oc::Set{T}, o::T) where {T <: Orbital} = setdiff(oc, Set([o]))
+" Return a configuration with the orbital o dropped from c.occupations. "
 drop(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(drop(c.occupations, Set([o])),c.kinks)
 
-" drop all Orbitals given in a Set "
+" Return a set with the orbitals in oc2 dropped from oc1. "
+drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = setdiff(oc1, oc2)
+" Return a configuration with the orbitals in oc dropped from c.occupations. "
+drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(drop(c.occupations, oc), c.kinks)
+
+" Return a SortedDict{ImgTime,<:Kink{<:Orbital}} with the pairs in ck2 dropped from ck1. "
+drop(ck1::SortedDict{ImgTime,<:Kink{T}}, ck2::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = setdiff(ck1, ck2)
+" Return a configuration with the pairs in ck dropped from c.kinks. "
+drop(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ck))
+
+" Return a SortedDict{ImgTime,<:Kink{<:Orbital}} with the pairs ps... dropped from ck. "
+drop(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = setdiff(ck, SortedDict(ps...))
+" Return a configuration with the pairs ps... dropped from c.kinks. "
+drop(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ps...))
+
+" Return a configuration with occupations and kinks in c2 dropped from c1. "
+drop(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} = Configuration(drop(c1.occupations,c2.occupations), drop(c1.kinks,c2.kinks))
+
+
+## Method definitions for function drop!.
+# This function is mostly for applying the changes determined in an MC Step Δ
+# to the current configuration c in function promote!(c, Δ). cf. CPIMC.jl
+# These methods change the first argument in-place.
+
+" Drop nothing. "
+function drop!(c::Configuration, n::Nothing)
+  nothing
+end
+
+" Drop all orbitals given in a set oc from c.occupations. "
 function drop!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
   for o in oc
     drop!(c, o)
   end
 end
 
-drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = setdiff(oc1, oc2)
-drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(drop(c.occupations, oc), c.kinks)
-
-" drop a single kink at time τ "
+" Drop a single kink at time τ from c.kinks. "
 function drop!(c::Configuration, τ::ImgTime)
   delete!(c.kinks, τ)
 end
 
-" drop all kinks given in a SortedDict "# TODO not used
-function drop!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T}
+" Drop all kinks given in a SortedDict from c.kinks. "
+function drop!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
   for (τ, k) in ck
     drop!(c, τ)
   end
 end
 
-drop(ck1::SortedDict{ImgTime,<:Kink{T}}, ck2::SortedDict{ImgTime,<:Kink{T}}) where {T} = setdiff(ck1, ck2)
-drop(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T} = Configuration(c.occupations, setdiff(c.kinks, ck))
-
-drop(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = setdiff(ck, SortedDict(ps...))
-drop(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ps...))
-
-" drop all kinks given by Varargs{Pair{ImgTime,<:Kink{T}}}"
+" Drop all kinks given by Varargs{Pair{ImgTime,<:Kink{T}}} from c.kinks. "
 function drop!(c::Configuration{T}, pk::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
   for (τ, k) in pk
     drop!(c, τ)
   end
 end
 
-" drop occupations and kinks given by second argument from first argument "
-function drop!(c1::Configuration{T}, c2::Configuration{T}) where {T}
+" Drop occupations and kinks given by second argument c2 from first argument c1. "
+function drop!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
   drop!(c1, c2.occupations)
   drop!(c1, c2.kinks)
 end
 
-drop(c1::Configuration{T}, c2::Configuration{T}) where {T} = Configuration(drop(c1.occupations,c2.occupations), drop(c1.kinks,c2.kinks))
+
+## Method definitions for function add.
+# This function is mostly used for calculating the changes proposed by an update
+# in order to calculate proposal and/or acceptance probabilities.
+
+" Return the configuration c without adding anything. "
+add(c::Configuration, n::Nothing) = c
+
+" Return a set with the orbital o added to oc. "
+add(oc::Set{T}, o::T) where {T <: Orbital} = union(oc, Set([o]))
+" Return a configuration with the orbital o added to c.occupations. "
+add(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(add(c.occupations, o), c.kinks)
+
+" Return a set with the orbitals in oc2 added to oc1. "
+add(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = union(oc1, oc2)
+" Return a configuration with the orbitals in oc added to c.occupations. "
+add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(c.occupations, oc), c.kinks)
+
+" Return a SortedDict{ImgTime,<:Kink{<:Orbital}} with the pairs ps... added to ck. "
+add(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = merge(ck, SortedDict(ps...))
+" Return a configuration with the pairs ps... added to c.kinks. "
+add(c::Configuration{T}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, add(c.kinks, ps...))
+" Return a configuration with the pairs in ck added to c.kinks. "
+add(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = add(c, ck...)
+
+" Return a configuration with occupations and kinks in c2 dropped from c1. "
+add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} = Configuration(add(c1.occupations, c2.occupations), merge(c1.kinks, c2.kinks))
 
 
+## Method definitions for function add!.
+# This function is mostly for applying the changes determined in an MC Step Δ
+# to the current configuration c in function promote!(c, Δ). cf. CPIMC.jl
+# These methods change the first argument in-place.
 
-" add nothing "
+" Add nothing. "
 function add!(c::Configuration, n::Nothing)
   nothing
 end
 
-add(c::Configuration, n::Nothing) = c
-
-" add a single Orbital "
+" Add a single orbital. "
 function add!(c::Configuration{T}, o::T) where {T <: Orbital}
   push!(c.occupations, o)
 end
 
-add(oc::Set{T}, o::T) where {T <: Orbital} = union(oc, Set([o]))
-add(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(add(c.occupations, o), c.kinks)
-
-" add all Orbitals given in a Set "
+" Add all orbitals given in a set oc to c.occupations. "
 function add!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
   union!(c.occupations, oc)
 end
 
-add(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = union(oc1, oc2)
-add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(c.occupations, oc), c.kinks)
-
-" add kink k at some time τ "
+" Add a single kink at time τ to c.kinks. "
 function add!(c::Configuration{T}, τ::ImgTime, k::Kink{T}) where {T <: Orbital}
   insert!(c.kinks, τ, k)
 end
 
+" Add all kinks given by the pairs ps... to ck::SortedDict{ImgTime,<:Kink{<:Orbital}}. "
 add!(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = merge!(ck, SortedDict(ps...))
+" Add all kinks given by the pairs ps... to c.kinks. "
 add!(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = merge!(c.kinks, SortedDict(ps))
 
-" add all Kinks given in a SortedDict "
+" Add all kinks given in a SortedDict to c.kinks. "
 function add!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
   # for k in ck
   #   add!(c, k...)
@@ -345,14 +393,8 @@ function add!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <
   merge!(c.kinks, ck)
 end
 
-add(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = merge(ck, SortedDict(ps...))
-add(c::Configuration{T}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, add(c.kinks, ps...))
-add(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T} = add(c, ck...)
-
-" add occupations and kinks given by second argument from first argument "
-function add!(c1::Configuration{T}, c2::Configuration{T}) where {T}
+" Add occupations and kinks given by second argument c2 from first argument c1. "
+function add!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
   add!(c1, c2.occupations)
   add!(c1, c2.kinks)
 end
-
-add(c1::Configuration{T}, c2::Configuration{T}) where {T} = Configuration(add(c1.occupations, c2.occupations), merge(c1.kinks, c2.kinks))
