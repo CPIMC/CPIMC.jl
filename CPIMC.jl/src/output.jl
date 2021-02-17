@@ -1,3 +1,4 @@
+using DelimitedFiles
 
 function print_results(measurements)
     Nsamples = measurements[:Ekin][1].n
@@ -22,7 +23,7 @@ function save_results(path, measurements, ensemble; options...)
     Nsamples = measurements[:Ekin][1].n
 
     # thermodynamic observables (single observations)
-    fname = joinpath(path, "Obs_N$(ensemble.N)_th$(replace(string(get_beta_internal(ensemble.beta,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
+    fname = joinpath(path, "Obs_N$(ensemble.N)_th$(replace(string(get_β_internal(ensemble.β,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
     if !isfile(fname)
         print("Print single observables to file ... ")
         open(fname, "a") do io
@@ -40,7 +41,7 @@ function save_results(path, measurements, ensemble; options...)
     # structural quantities (group observations)
     for (k,(f,m)) in measurements
         if typeof(f).name == typeof(Group()).name
-            fname = joinpath(path, "$(k)_N$(ensemble.N)_th$(replace(string(get_beta_internal(ensemble.beta,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
+            fname = joinpath(path, "$(k)_N$(ensemble.N)_th$(replace(string(get_β_internal(ensemble.β,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
             if !isfile(fname)
                 print("Print $(k) to file ... ")
                 open(fname, "w") do io
