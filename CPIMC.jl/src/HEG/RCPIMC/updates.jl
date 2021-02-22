@@ -1,4 +1,10 @@
-const ex_radius = 2 #max Radius for exitation
+const ex_radius = 3 #max Radius for exitation
+
+#global leftprop = Variance()
+#global rightprop = Variance()
+#global leftcount = 0
+#global rightcount = 0
+
 function move_particle(c::Configuration, e::Ensemble)
     free_orbitals = get_non_interacting_orbs_of_set(c, c.occupations)
     if length(free_orbitals) == 0
@@ -1124,6 +1130,7 @@ function add_type_E(c::Configuration, e::Ensemble)
         end
         prop_prob *= 0.5"""
         @assert(inverse_prop_prob != Inf)
+        #fit!(leftprop, dw)#(inverse_prop_prob/prop_prob)*dw)
     else
         #add kink right
         #now choose orbitals of the old Kinks that shell also be part of the new Kink
@@ -1200,8 +1207,8 @@ function add_type_E(c::Configuration, e::Ensemble)
         dw_off_diag = get_abs_offdiagonal_element(e,c,c.kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,c,c.kinks[first(old_kink)]) /
                                                 get_abs_offdiagonal_element(e,c,last(old_kink))
 
-        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_kink_new_annihilator) + get_energy(new_kink_old_annihilator) -
-                                                         get_energy(new_kink_old_creator) - get_energy(new_kink_new_creator)) + delta_di))
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(c.kinks[τ_new_kink].k) + get_energy(c.kinks[τ_new_kink].l) -
+                                                         get_energy(c.kinks[τ_new_kink].i) - get_energy(c.kinks[τ_new_kink].j)) + delta_di))
 
         inverse_prop_prob = (1/length(get_left_type_E_removable_pairs(c))) * 0.5 * 0.25
 
@@ -1215,8 +1222,8 @@ function add_type_E(c::Configuration, e::Ensemble)
         end
         prop_prob *= 0.5"""
         @assert(inverse_prop_prob != Inf)
+        #fit!(rightprop, dw)#(inverse_prop_prob/prop_prob)*dw
     end
-
 
     #check if sign was changend
     signum = 1
@@ -1236,13 +1243,55 @@ function add_type_E(c::Configuration, e::Ensemble)
     c.sign *= signum
 
 
+    #shuffle Indices
+    #shuffle changed kink
+    if rand() < 0.5
+        if rand() < 0.5
+            c.kinks[first(old_kink)] = T4(c.kinks[first(old_kink)].j, c.kinks[first(old_kink)].i,
+                                                        c.kinks[first(old_kink)].l, c.kinks[first(old_kink)].k)
+        else
+            c.kinks[first(old_kink)] = T4(c.kinks[first(old_kink)].i, c.kinks[first(old_kink)].j,
+                                                        c.kinks[first(old_kink)].l, c.kinks[first(old_kink)].k)
+        end
+    else
+        if rand() < 0.5
+            c.kinks[first(old_kink)] = T4(c.kinks[first(old_kink)].j, c.kinks[first(old_kink)].i,
+                                                        c.kinks[first(old_kink)].k, c.kinks[first(old_kink)].l)
+        else
+            c.kinks[first(old_kink)] = T4(c.kinks[first(old_kink)].i, c.kinks[first(old_kink)].j,
+                                                        c.kinks[first(old_kink)].k, c.kinks[first(old_kink)].l)
+        end
+    end
+    #shuffle new Kink
+    if rand() < 0.5
+        if rand() < 0.5
+            c.kinks[τ_new_kink] = T4(c.kinks[τ_new_kink].j, c.kinks[τ_new_kink].i,
+                                                        c.kinks[τ_new_kink].l, c.kinks[τ_new_kink].k)
+        else
+            c.kinks[τ_new_kink] = T4(c.kinks[τ_new_kink].i, c.kinks[τ_new_kink].j,
+                                                        c.kinks[τ_new_kink].l, c.kinks[τ_new_kink].k)
+        end
+    else
+        if rand() < 0.5
+            c.kinks[τ_new_kink] = T4(c.kinks[τ_new_kink].j, c.kinks[τ_new_kink].i,
+                                                        c.kinks[τ_new_kink].k, c.kinks[τ_new_kink].l)
+        else
+            c.kinks[τ_new_kink] = T4(c.kinks[τ_new_kink].i, c.kinks[τ_new_kink].j,
+                                                        c.kinks[τ_new_kink].k, c.kinks[τ_new_kink].l)
+        end
+    end
+    @assert(is_type_E(c.kinks[τ_new_kink], c.kinks[first(old_kink)]) != false)
+    prop_prob *= 1/16
+
     @assert(delta_τ > 0 )
     @assert(dw != Inf)
     @assert(prop_prob != 0)
     @assert(inverse_prop_prob != Inf)
+    @assert(inverse_prop_prob != 0)
     @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
     #println("Add_E:   ", (inverse_prop_prob/prop_prob)*dw)
     #println("Add_D:   ", dw, "\n")
+
     return((inverse_prop_prob/prop_prob)*dw)
 end
 
@@ -1254,13 +1303,15 @@ function remove_type_E(c::Configuration, e::Ensemble)
         if length(opportunities) == 0
             return 1
         end
-        removed_kink_τ, changed_kink_τ = rand(opportunities)
+        removed_kink_tuple, changed_kink_tuple = rand(opportunities)
+        removed_kink_τ =  first(removed_kink_tuple)
+        changed_kink_τ =  first(changed_kink_tuple)
         prop_prob *= 1/length(opportunities)
         #safe thoose for later
-        removed_Kink = c.kinks[removed_kink_τ]
-        changed_Kink_old = c.kinks[changed_kink_τ]
+        removed_Kink = last(removed_kink_tuple)
+        changed_Kink_old = last(changed_kink_tuple)
         if removed_Kink.i.spin != removed_Kink.k.spin
-            @assert false #Remove this assertion if you want to use not spin-polarized system
+            @assert false
             return 1
         end
         # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
@@ -1274,7 +1325,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
 
 
         #change configuration
-        c.kinks[changed_kink_τ] = T4(removed_Kink.i, c.kinks[changed_kink_τ].i, removed_Kink.l,c.kinks[changed_kink_τ].l)
+        c.kinks[changed_kink_τ] = T4(removed_Kink.i, changed_Kink_old.i, removed_Kink.l,changed_Kink_old.l)
         #see if c.occupations change
         if removed_kink_τ > changed_kink_τ
             change_occupations(c.occupations, T4(removed_Kink.k,removed_Kink.l, removed_Kink.i,removed_Kink.j))
@@ -1287,7 +1338,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
         delete!(opportunities_occ_orb_E, c.kinks[changed_kink_τ].i)
         delete!(opportunities_occ_orb_E, c.kinks[changed_kink_τ].j)
         @assert(in(removed_Kink.k,opportunities_occ_orb_E))
-        τ_Intervall = changed_kink_τ - first(get_τ_borders(c, Set([removed_Kink.k, removed_Kink.k,
+        τ_Intervall = changed_kink_τ - first(get_τ_borders(c, Set([removed_Kink.k, removed_Kink.l,
                          removed_Kink.i, removed_Kink.j]),changed_kink_τ))
 
 
@@ -1296,7 +1347,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
         end
 
         inverse_prop_prob = (0.5/length(c.kinks)) * (1/length(opportunities_occ_orb_E)) *
-                                 (1/Float64(τ_Intervall)) * (1/4)
+                                 (1/Float64(τ_Intervall)) * (1/4) * (1/16)
 
         #calculate weight change
         delta_di = get_change_diagonal_interaction(c, e, removed_Kink, removed_kink_τ, changed_kink_τ)
@@ -1314,16 +1365,25 @@ function remove_type_E(c::Configuration, e::Ensemble)
 
 
         #println("remove_left_prob_prop:   ", inverse_prop_prob)
+
+                        #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ])
+        #fit!(leftprop, τ_Intervall)
+        #global leftcount += 1
+                        #get_abs_offdiagonal_element(e,c,removed_Kink) *
+                        #get_abs_offdiagonal_element(e,c,changed_Kink_old) /
+                            #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ]))#((inverse_prop_prob/prop_prob) * dw))
     else
         #removed kink right of changed kink
         opportunities = get_left_type_E_removable_pairs(c)
         if length(opportunities) == 0
             return 1
         end
-        removed_kink_τ, changed_kink_τ = rand(opportunities)
+        removed_kink_tuple, changed_kink_tuple = rand(opportunities)
+        removed_kink_τ = first(removed_kink_tuple)
+        changed_kink_τ = first(changed_kink_tuple)
         prop_prob *= 1/length(opportunities)
-        removed_Kink = c.kinks[removed_kink_τ]
-        changed_Kink_old = c.kinks[changed_kink_τ]
+        removed_Kink = last(removed_kink_tuple)
+        changed_Kink_old = last(changed_kink_tuple)
         if removed_Kink.i.spin != removed_Kink.k.spin
             return 1
         end
@@ -1336,7 +1396,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
 
 
         #change configuration
-        c.kinks[changed_kink_τ] = T4(removed_Kink.i, c.kinks[changed_kink_τ].i, removed_Kink.l,c.kinks[changed_kink_τ].l)
+        c.kinks[changed_kink_τ] = T4(removed_Kink.i, changed_Kink_old.i, removed_Kink.l, changed_Kink_old.l)
 
         #see if c.occupations change
         if removed_kink_τ < changed_kink_τ  #new kink was added right of old kink
@@ -1358,7 +1418,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
             τ_Intervall +=1
         end
         inverse_prop_prob = (0.5/length(c.kinks)) * (1/length(opportunities_unocc_orb_E)) *
-                                 (1/Float64(τ_Intervall)) * (1/4)
+                                 (1/Float64(τ_Intervall)) * (1/4) * (1/16)
 
         #calculate weight change
         delta_di = get_change_diagonal_interaction(c, e, T4(removed_Kink.k,removed_Kink.l, removed_Kink.i,removed_Kink.j), changed_kink_τ, removed_kink_τ)
@@ -1377,7 +1437,13 @@ function remove_type_E(c::Configuration, e::Ensemble)
         """println("delta_τ:  ", delta_τ)
         println("right_delta_di: ", delta_di)"""
         #println("remove_right_prob_prop:  ", inverse_prop_prob)
+        #fit!(rightprop, τ_Intervall)
+        #global rightcount += 1
+                        #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ])
 
+                        #get_abs_offdiagonal_element(e,c,removed_Kink) *
+                        #get_abs_offdiagonal_element(e,c,changed_Kink_old) /
+                            #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ]))#((inverse_prop_prob/prop_prob) * dw))
     end
 
     #check if sign was changend
@@ -1439,4 +1505,25 @@ function shuffle_indices(c::Configuration, e::Ensemble)
         c.kinks[first(kink)] = T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)
     end
     return(1)
+end
+
+
+function Add_remove_Kink_Chain(c::Configuration,e::Ensemble)
+    add_single_kinks = [add_type_C, add_type_D, add_type_E]
+    remove_single_kinks = [remove_type_C, remove_type_D, remove_type_E]
+    number_of_kinks = rand([1,2,3,4,5])
+    acc_prob = 1
+    for i in  1:number_of_kinks
+        acc_prob *= rand(add_single_kinks)(c,e)
+        if acc_prob == 0
+            return 0
+        end
+    end
+    for i in  1:number_of_kinks
+        acc_prob *= rand(remove_single_kinks)(c,e)
+        if acc_prob == 0
+            return 0
+        end
+    end
+    return(acc_prob)
 end

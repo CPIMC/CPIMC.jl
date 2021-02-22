@@ -17,16 +17,16 @@ include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
-    NMC = 10^7###############################################################
+    NMC = 10^5###############################################################
     cyc = 200
-    NEquil = 10^5
+    NEquil = 100*10^5
     #auffälligerBalken um schwer übersehbaren unterschied im vergleich zu run_threads herzustellen
     """#####################################################################
     ########################################################################
     ####################################################################"""
     # system parameters
-    θ = 0.125
-    rs = 2.5
+    θ = 5.0
+    rs = 5.0
 
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
 
@@ -41,7 +41,7 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
-    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E] #, change_type_B
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, Add_remove_Kink_Chain] #, change_type_B
 
     measurements = Dict(
       :sign => (Variance(), signum)
@@ -55,6 +55,10 @@ function main()
     println("Start MC process ... ")
     runMC(NMC, cyc, NEquil, updates, measurements, e, c)
     println(" finished.")
+    println("parameters:")
+    println("N: ", length(S))
+    println("θ: ", θ)
+    println("rs: ", rs)
     println("measurements:")
     println("=============")
 
