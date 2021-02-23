@@ -19,14 +19,14 @@ function main()
     # MC options
     NMC = 10^5###############################################################
     cyc = 200
-    NEquil = 100*10^5
+    NEquil = 10*10^5
     #auffälligerBalken um schwer übersehbaren unterschied im vergleich zu run_threads herzustellen
     """#####################################################################
     ########################################################################
     ####################################################################"""
     # system parameters
-    θ = 5.0
-    rs = 5.0
+    θ = 0.125
+    rs = 1.5
 
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
 

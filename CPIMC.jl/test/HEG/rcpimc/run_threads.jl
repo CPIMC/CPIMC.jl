@@ -16,14 +16,14 @@ include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
 include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 10*10^6
     cyc = 200
-    NEquil = 10^6
+    NEquil = 2*10^6
 
     # system parameters
-    θ = 0.125
-    rs = 1.75
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
+    θ = 1.0
+    rs = 0.6
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
 
     #4Particles
     #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
@@ -38,7 +38,7 @@ function main()
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
 
     #We do not need to have change_type_B if we have add_type_C and remove_type_C updates
-    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E , Add_remove_Kink_Chain]
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, Add_remove_Kink_Chain]
 
     measurements = Dict(
       :sign => (Variance(), signum)

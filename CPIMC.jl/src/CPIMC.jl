@@ -43,7 +43,7 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
             print("eq: ",k,"/100","    ")
             println("K: ",length(c.kinks))
 
-            #println("\nleft:  ",mean(leftprop), "\n", leftcount, "\nright:  ", mean(rightprop), "\n", rightcount)
+            #println("\nchain:  ",mean(chainprop), "\nadd:  ", mean(addprop))
 
             k+=1
         end

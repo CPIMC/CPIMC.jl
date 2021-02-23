@@ -1,8 +1,8 @@
 const ex_radius = 3 #max Radius for exitation
 
-#global leftprop = Variance()
-#global rightprop = Variance()
-#global leftcount = 0
+#global addprop = Variance()
+#global chainprop = Variance()
+#global addcount = 0
 #global rightcount = 0
 
 function move_particle(c::Configuration, e::Ensemble)
@@ -1291,7 +1291,9 @@ function add_type_E(c::Configuration, e::Ensemble)
     @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
     #println("Add_E:   ", (inverse_prop_prob/prop_prob)*dw)
     #println("Add_D:   ", dw, "\n")
-
+    #if chain != true
+    #    fit!(addprop, (inverse_prop_prob/prop_prob) * dw)
+    #end
     return((inverse_prop_prob/prop_prob)*dw)
 end
 
@@ -1509,9 +1511,13 @@ end
 
 
 function Add_remove_Kink_Chain(c::Configuration,e::Ensemble)
+    #global chain = true
+    if length(c.kinks) == 0
+        return(1)
+    end
     add_single_kinks = [add_type_C, add_type_D, add_type_E]
     remove_single_kinks = [remove_type_C, remove_type_D, remove_type_E]
-    number_of_kinks = rand([1,2,3,4,5])
+    number_of_kinks = rand([1,2,3,4,5,6,7,8,9])
     acc_prob = 1
     for i in  1:number_of_kinks
         acc_prob *= rand(add_single_kinks)(c,e)
@@ -1525,5 +1531,7 @@ function Add_remove_Kink_Chain(c::Configuration,e::Ensemble)
             return 0
         end
     end
+    #fit!(chainprop, acc_prob)
+    #global chain = false
     return(acc_prob)
 end
