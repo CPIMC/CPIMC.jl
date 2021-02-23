@@ -1,10 +1,5 @@
 const ex_radius = 3 #max Radius for exitation
 
-#global addprop = Variance()
-#global chainprop = Variance()
-#global addcount = 0
-#global rightcount = 0
-
 function move_particle(c::Configuration, e::Ensemble)
     free_orbitals = get_non_interacting_orbs_of_set(c, c.occupations)
     if length(free_orbitals) == 0
@@ -517,7 +512,6 @@ function add_type_C(c::Configuration, e::Ensemble)
 
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
-    #println("Add_C:   ", (inverse_prop_prob/prop_prob)*dw)
     return((inverse_prop_prob/prop_prob)*dw)
 end
 
@@ -588,10 +582,6 @@ function remove_type_C(c::Configuration, e::Ensemble)
         dw = (1/e.β)* (1/dw_off_diag) * exp(e.β * delta_τ * (get_energy(removed_orb1) + get_energy(removed_orb2) -
                                     get_energy(c.kinks[changed_kink_τ].k) - get_energy(c.kinks[changed_kink_τ].l)) + delta_di)
 
-
-        """println("delta_τ:  ", delta_τ)
-        println("left_delta_di: ", delta_di)"""
-        #println("remove_left_prob_prop:   ", inverse_prop_prob)
     else
         #removed kink right of changed kink
         opportunities = get_left_type_C_pairs(c)
@@ -652,10 +642,6 @@ function remove_type_C(c::Configuration, e::Ensemble)
         dw = (1/e.β)*(1/dw_off_diag) * exp(e.β * delta_τ*(get_energy(removed_orb1) + get_energy(removed_orb2) -
                                     get_energy(c.kinks[changed_kink_τ].i) - get_energy(c.kinks[changed_kink_τ].j)) + delta_di)
 
-        """println("delta_τ:  ", delta_τ)
-        println("right_delta_di: ", delta_di)"""
-        #println("remove_right_prob_prop:  ", inverse_prop_prob)
-
     end
     #check if sign was changend
     signum = 1
@@ -676,8 +662,6 @@ function remove_type_C(c::Configuration, e::Ensemble)
 
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob) * dw))
-    #println("remove:  ", 1/((inverse_prop_prob/prop_prob) * dw))
-
     return((inverse_prop_prob/prop_prob) * dw)
 end
 
@@ -859,8 +843,6 @@ function add_type_D(c::Configuration, e::Ensemble)
 
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
-    #println("Add_D:   ", (inverse_prop_prob/prop_prob)*dw)
-    #println("Add_D:   ", dw, "\n")
     return((inverse_prop_prob/prop_prob)*dw)
 end
 
@@ -931,10 +913,6 @@ function remove_type_D(c::Configuration, e::Ensemble)
         dw = (1/e.β)* (1/dw_off_diag) * exp(e.β * delta_τ * (get_energy(c.kinks[changed_kink_τ].i) + get_energy(c.kinks[changed_kink_τ].j) -
                                                                     get_energy(removed_orb1) - get_energy(removed_orb2)) + delta_di)
 
-
-        """println("delta_τ:  ", delta_τ)
-        println("left_delta_di: ", delta_di)"""
-        #println("remove_left_prob_prop:   ", inverse_prop_prob)
     else
         #removed kink right of changed kink
         opportunities = get_left_type_D_pairs(c)
@@ -995,10 +973,6 @@ function remove_type_D(c::Configuration, e::Ensemble)
         dw = (1/e.β)*(1/dw_off_diag) * exp(e.β * delta_τ*(get_energy(c.kinks[changed_kink_τ].k) + get_energy(c.kinks[changed_kink_τ].l) -
                                                             get_energy(removed_orb1) - get_energy(removed_orb2)) + delta_di)
 
-        """println("delta_τ:  ", delta_τ)
-        println("right_delta_di: ", delta_di)"""
-        #println("remove_right_prob_prop:  ", inverse_prop_prob)
-
     end
     #check if sign was changend
     signum = 1
@@ -1019,7 +993,6 @@ function remove_type_D(c::Configuration, e::Ensemble)
     @assert(dw != Inf)
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob) * dw))
-    #println("remove:  ", 1/((inverse_prop_prob/prop_prob) * dw))
 
     return((inverse_prop_prob/prop_prob) * dw)
 end
@@ -1130,7 +1103,6 @@ function add_type_E(c::Configuration, e::Ensemble)
         end
         prop_prob *= 0.5"""
         @assert(inverse_prop_prob != Inf)
-        #fit!(leftprop, dw)#(inverse_prop_prob/prop_prob)*dw)
     else
         #add kink right
         #now choose orbitals of the old Kinks that shell also be part of the new Kink
@@ -1222,7 +1194,6 @@ function add_type_E(c::Configuration, e::Ensemble)
         end
         prop_prob *= 0.5"""
         @assert(inverse_prop_prob != Inf)
-        #fit!(rightprop, dw)#(inverse_prop_prob/prop_prob)*dw
     end
 
     #check if sign was changend
@@ -1289,11 +1260,6 @@ function add_type_E(c::Configuration, e::Ensemble)
     @assert(inverse_prop_prob != Inf)
     @assert(inverse_prop_prob != 0)
     @assert(!isnan((inverse_prop_prob/prop_prob)*dw))
-    #println("Add_E:   ", (inverse_prop_prob/prop_prob)*dw)
-    #println("Add_D:   ", dw, "\n")
-    #if chain != true
-    #    fit!(addprop, (inverse_prop_prob/prop_prob) * dw)
-    #end
     return((inverse_prop_prob/prop_prob)*dw)
 end
 
@@ -1365,15 +1331,6 @@ function remove_type_E(c::Configuration, e::Ensemble)
         dw = (1/e.β)* (1/dw_off_diag) * exp(e.β * delta_τ * (get_energy(removed_Kink.i) + get_energy(removed_Kink.j) -
                                                                     get_energy(removed_Kink.k) - get_energy(removed_Kink.l)) + delta_di)
 
-
-        #println("remove_left_prob_prop:   ", inverse_prop_prob)
-
-                        #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ])
-        #fit!(leftprop, τ_Intervall)
-        #global leftcount += 1
-                        #get_abs_offdiagonal_element(e,c,removed_Kink) *
-                        #get_abs_offdiagonal_element(e,c,changed_Kink_old) /
-                            #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ]))#((inverse_prop_prob/prop_prob) * dw))
     else
         #removed kink right of changed kink
         opportunities = get_left_type_E_removable_pairs(c)
@@ -1436,16 +1393,6 @@ function remove_type_E(c::Configuration, e::Ensemble)
         dw = (1/e.β)*(1/dw_off_diag) * exp(e.β * delta_τ*(get_energy(removed_Kink.k) + get_energy(removed_Kink.l) -
                                                             get_energy(removed_Kink.i) - get_energy(removed_Kink.j)) + delta_di)
 
-        """println("delta_τ:  ", delta_τ)
-        println("right_delta_di: ", delta_di)"""
-        #println("remove_right_prob_prop:  ", inverse_prop_prob)
-        #fit!(rightprop, τ_Intervall)
-        #global rightcount += 1
-                        #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ])
-
-                        #get_abs_offdiagonal_element(e,c,removed_Kink) *
-                        #get_abs_offdiagonal_element(e,c,changed_Kink_old) /
-                            #get_abs_offdiagonal_element(e,c,c.kinks[changed_kink_τ]))#((inverse_prop_prob/prop_prob) * dw))
     end
 
     #check if sign was changend
@@ -1489,7 +1436,6 @@ function remove_type_E(c::Configuration, e::Ensemble)
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob) * dw))
 
-    #println("remove:  ", 1/((inverse_prop_prob/prop_prob) * dw))
     return((inverse_prop_prob/prop_prob) * dw)
 end
 
@@ -1511,7 +1457,6 @@ end
 
 
 function Add_remove_Kink_Chain(c::Configuration,e::Ensemble)
-    #global chain = true
     if length(c.kinks) == 0
         return(1)
     end
@@ -1531,7 +1476,5 @@ function Add_remove_Kink_Chain(c::Configuration,e::Ensemble)
             return 0
         end
     end
-    #fit!(chainprop, acc_prob)
-    #global chain = false
     return(acc_prob)
 end

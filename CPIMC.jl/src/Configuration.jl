@@ -256,17 +256,6 @@ function is_type_D(left_kink::T4, right_kink::T4)
   end
 end
 
-"""#Returns True if left_kink and right_kink are entangled in a Type-E way
-function is_type_E(left_kink::T4, right_kink::T4)
-  if (in(left_kink.i, Set([right_kink.k, right_kink.l])) ⊻
-                in(left_kink.j, Set([right_kink.k, right_kink.l]))) &
-       (in(left_kink.k, Set([right_kink.i, right_kink.j])) ⊻
-                   in(left_kink.l, Set([right_kink.i, right_kink.j])))
-    return(true)
-  else
-    return(false)
-  end
-end"""
 
 #If left kink and right_kin are type-e-entangled it returns a tuple of the two kinks whos orbs
 #are sorted in a way that k an j of both kinks are common orbitals
@@ -295,30 +284,6 @@ function is_type_E(left_kink::T4, right_kink::T4)
   end
 end
 
-
-"""#This funktion dies only look and thoose 2 Kinks and does not search imaginary time between the 2 kinks
-function is_type_E_and_removable_when_changing_the_right_kink(left_kink::T4, right_kink::T4)
-  if ((left_kink.k == right_kink.j) & (left_kink.j == right_kink.k) &
-    (length(Set([left_kink.i, left_kink.l, right_kink.i,right_kink.l])) == 4) &
-    (dot(left_kink.i.vec-left_kink.k.vec, left_kink.i.vec-left_kink.k.vec) <= ex_radius^2))
-    return(true)
-  else
-    return(false)
-  end
-end
-
-
-
-#This funktion dies only look and thoose 2 Kinks and does not search imaginary time between the 2 kinks
-function is_type_E_and_removable_when_changing_the_left_kink(left_kink::T4, right_kink::T4)
-  if ((left_kink.k == right_kink.j) & (left_kink.j == right_kink.k) &
-    (length(Set([left_kink.i, left_kink.l, right_kink.i,right_kink.l])) == 4) &
-    (dot(right_kink.i.vec-right_kink.k.vec, right_kink.i.vec-right_kink.k.vec) <= ex_radius^2))
-    return(true)
-  else
-    return(false)
-  end
-end"""
 
 
 #Return a two(a Tuple of) Sets of Tuples of "neighbouring" Kink that are Type-B-Entangeld.
@@ -366,7 +331,7 @@ end
 #other kink in the corresponding direktion are looked at.
 #The Tuples are always arranged in a way that the Kink who gets neighboured by
 #the opther stands first. (vice versa does not have to be the case)
-#The Set consists of the pairs where the Type-B-entanglement is oriented
+#The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the left of the first τ.
 function get_left_type_C_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
@@ -388,7 +353,7 @@ end
 #other kink in the corresponding direktion are looked at.
 #The Tuples are always arranged in a way that the Kink who gets neighboured by
 #the opther stands first. (vice versa does not have to be the case)
-#The Set consists of the pairs where the Type-B-entanglement is oriented
+#The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the right of the first τ.
 function get_right_type_C_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
@@ -434,18 +399,8 @@ function get_right_type_D_pairs(c::Configuration)
   return pairs_right
 end
 
-"""function get_left_type_E_pairs(c::Configuration)
-  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in c.kinks
-    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
-    if is_type_E(c.kinks[τ_left], kink)
-      push!(pairs_left, (τ, τ_left))
-    end
-  end
-  return pairs_left
-end"""
-
+#Get Kinks that are Type-E-removable and were the right kink is neighbouring the leftone
+#the first partt of the returned tupel corresponds to the left kink
 function get_right_type_E_removable_pairs(c::Configuration)
   pairs_right = Set{}()
   for (τ,kink) in c.kinks
@@ -468,6 +423,8 @@ function get_right_type_E_removable_pairs(c::Configuration)
   return pairs_right
 end
 
+#Get Kinks that are Type-E-removable and were the left kink is neighbouring the right one
+#the first partt of the returned tupel corresponds to the right kink
 function get_left_type_E_removable_pairs(c::Configuration)
   pairs_left = Set{}()
   for (τ,kink) in c.kinks

@@ -16,9 +16,9 @@ include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
 include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
-    NMC = 10*10^6
+    NMC = 5*10^5
     cyc = 200
-    NEquil = 2*10^6
+    NEquil = 5*10^5
 
     # system parameters
     θ = 1.0

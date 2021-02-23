@@ -42,9 +42,6 @@ function runMC(steps::Int, sampleEvery::Int, throwAway::Int, updates, measuremen
         if i%(throwAway/100) == 0
             print("eq: ",k,"/100","    ")
             println("K: ",length(c.kinks))
-
-            #println("\nchain:  ",mean(chainprop), "\nadd:  ", mean(addprop))
-
             k+=1
         end
         propose_update!(c,updates,e)
@@ -111,7 +108,6 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
     while i < steps
         #print progress
         if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
-            #print("     "^Threads.threadid(),"T",Threads.threadid(), " ",k,"/100"," ")
             println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
@@ -134,8 +130,6 @@ function runMC_multithreaded(steps::Int, sampleEvery::Int, throwAway::Int, updat
         i += 1
     end
     println("\nThread",Threads.threadid(),"finished")
-    #println(add_E_counter)
-    #println(remove_E_counter)
 end
 
 function print_results(measurements)
