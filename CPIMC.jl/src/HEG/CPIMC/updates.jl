@@ -391,11 +391,6 @@ function add_type_C(c::Configuration, e::Ensemble)
         #see if c.occupations change
         if τ_new_kink > first(old_kink)  #new kink was added left of old kink
             change_occupations(c.occupations, T4(new_orb1,new_orb2,last(old_kink).k,last(old_kink).l))
-            """try
-                change_occupations(c.occupations, T4(new_orb1,new_orb2,last(old_kink).k,last(old_kink).l))
-            catch e
-                println("break")
-            end"""
         end
         c.kinks[τ_new_kink] = T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
         c.kinks[first(old_kink)] = T4(last(old_kink).i, last(old_kink).j, new_orb1, new_orb2)
@@ -413,7 +408,7 @@ function add_type_C(c::Configuration, e::Ensemble)
             c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].i, c.kinks[first(first(old_kink))].j,
                                                        c.kinks[first(first(old_kink))].l, c.kinks[first(first(old_kink))].k)
         else
-            "nix"
+            nothing
         end
         prop_prob *= 0.5
     else
@@ -484,7 +479,7 @@ function add_type_C(c::Configuration, e::Ensemble)
             c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].j, c.kinks[first(first(old_kink))].i,
                                                         c.kinks[first(first(old_kink))].k, c.kinks[first(first(old_kink))].l)
         else
-            "nix"
+            nothing
         end
         prop_prob *= 0.5
     end
@@ -724,11 +719,6 @@ function add_type_D(c::Configuration, e::Ensemble)
         #see if c.occupations change
         if τ_new_kink > first(old_kink)  #new kink was added left of old kink
             change_occupations(c.occupations, T4(last(old_kink).i,last(old_kink).j, new_orb1, new_orb2))
-            """try
-                change_occupations(c.occupations, T4(new_orb1,new_orb2,last(old_kink).k,last(old_kink).l))
-            catch e
-                println("break")
-            end"""
         end
         c.kinks[τ_new_kink] = T4(last(old_kink).i, last(old_kink).j,new_orb1, new_orb2)
         c.kinks[first(old_kink)] = T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
@@ -746,7 +736,7 @@ function add_type_D(c::Configuration, e::Ensemble)
             c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].j, c.kinks[first(first(old_kink))].i,
                                                        c.kinks[first(first(old_kink))].k, c.kinks[first(first(old_kink))].l)
         else
-            "nix"
+            nothing
         end
         prop_prob *= 0.5
     else
@@ -817,7 +807,7 @@ function add_type_D(c::Configuration, e::Ensemble)
             c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].i, c.kinks[first(first(old_kink))].j,
                                                         c.kinks[first(first(old_kink))].l, c.kinks[first(first(old_kink))].k)
         else
-            "nix"
+            nothing
         end
         prop_prob *= 0.5
     end
@@ -1077,11 +1067,6 @@ function add_type_E(c::Configuration, e::Ensemble)
         if τ_new_kink > first(old_kink)  #consider that new kink was added left of old kink
             @assert (!in(new_kink_new_creator, c.occupations))
             change_occupations(c.occupations, T4(new_kink_old_creator,new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator))
-            """try
-                change_occupations(c.occupations, T4(new_orb1,new_orb2,last(old_kink).k,last(old_kink).l))
-            catch e
-                println("break")
-            end"""
         end
         c.kinks[τ_new_kink] = T4(new_kink_old_creator,new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator)
         c.kinks[first(old_kink)] = T4(changed_kink_old_creator, new_kink_new_annihilator, new_kink_new_creator, changed_kink_old_annihilator)
@@ -1094,14 +1079,6 @@ function add_type_E(c::Configuration, e::Ensemble)
 
         inverse_prop_prob = (1/length(get_right_type_E_removable_pairs(c))) * 0.5 * 0.25
 
-        """#shuffle annihilators of the changed kink
-        if rand() < 0.5
-            c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].j, c.kinks[first(first(old_kink))].i,
-                                                       c.kinks[first(first(old_kink))].k, c.kinks[first(first(old_kink))].l)
-        else
-            "nix"
-        end
-        prop_prob *= 0.5"""
         @assert(inverse_prop_prob != Inf)
     else
         #add kink right
@@ -1185,14 +1162,6 @@ function add_type_E(c::Configuration, e::Ensemble)
         inverse_prop_prob = (1/length(get_left_type_E_removable_pairs(c))) * 0.5 * 0.25
 
 
-        """#shuffle creators of the changed kink
-        if rand() < 0.5
-            c.kinks[first(first(old_kink))] = T4(c.kinks[first(first(old_kink))].i, c.kinks[first(first(old_kink))].j,
-                                                        c.kinks[first(first(old_kink))].l, c.kinks[first(first(old_kink))].k)
-        else
-            "nix"
-        end
-        prop_prob *= 0.5"""
         @assert(inverse_prop_prob != Inf)
     end
 
@@ -1456,7 +1425,7 @@ function shuffle_indices(c::Configuration, e::Ensemble)
 end
 
 
-function Add_remove_Kink_Chain(c::Configuration,e::Ensemble)
+function add_remove_kink_chain(c::Configuration,e::Ensemble)
     if length(c.kinks) == 0
         return(1)
     end

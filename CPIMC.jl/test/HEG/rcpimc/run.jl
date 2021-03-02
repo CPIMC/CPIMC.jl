@@ -4,22 +4,16 @@ using DelimitedFiles
 
 include("../../../src/Configuration.jl")
 include("../../../src/HEG/model.jl")
-include("../../../src/HEG/RCPIMC/updates.jl")
-include("../../../src/HEG/RCPIMC/estimators.jl")
+include("../../../src/HEG/CPIMC/updates.jl")
+include("../../../src/HEG/CPIMC/estimators.jl")
 include("../../../src/CPIMC.jl")
 
-
-"""include("CPIMC.jl/src/Configuration.jl")
-include("CPIMC.jl/src/HEG/model.jl")
-include("CPIMC.jl/src/CPIMC.jl")
-include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
-include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 
 function main()
     # MC options
     NMC = 10^5###############################################################
     cyc = 200
-    NEquil = 10*10^5
+    NEquil = 10^5
     #auffälligerBalken um schwer übersehbaren unterschied im vergleich zu run_threads herzustellen
     """#####################################################################
     ########################################################################
@@ -41,7 +35,7 @@ function main()
     c = Configuration(S)
 
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
-    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, Add_remove_Kink_Chain] #, change_type_B
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain] #, change_type_B
 
     measurements = Dict(
       :sign => (Variance(), signum)

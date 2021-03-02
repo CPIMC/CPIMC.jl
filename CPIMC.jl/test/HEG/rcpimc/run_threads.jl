@@ -4,16 +4,10 @@ using DelimitedFiles
 
 include("../../../src/Configuration.jl")
 include("../../../src/HEG/model.jl")
-include("../../../src/HEG/RCPIMC/updates.jl")
-include("../../../src/HEG/RCPIMC/estimators.jl")
+include("../../../src/HEG/CPIMC/updates.jl")
+include("../../../src/HEG/CPIMC/estimators.jl")
 include("../../../src/CPIMC.jl")
 
-
-"""include("CPIMC.jl/src/Configuration.jl")
-include("CPIMC.jl/src/HEG/model.jl")
-include("CPIMC.jl/src/CPIMC.jl")
-include("CPIMC.jl/src/HEG/RCPIMC/updates.jl")
-include("CPIMC.jl/src/HEG/RCPIMC/estimators.jl")"""
 function main()
     # MC options
     NMC = 5*10^5
@@ -38,7 +32,7 @@ function main()
     e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
 
     #We do not need to have change_type_B if we have add_type_C and remove_type_C updates
-    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, Add_remove_Kink_Chain]
+    updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain]
 
     measurements = Dict(
       :sign => (Variance(), signum)

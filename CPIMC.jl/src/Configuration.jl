@@ -87,7 +87,7 @@ function get_nearest_τ_affecting_orb(Configuration::Configuration, orbital::Orb
   current_τ = 0
   kinks_of_orb = get_kinks_of_orb(Configuration, orbital)
   if length(kinks_of_orb) == 0
-      return("nix","nix")
+      return(nothing,nothing)
   end
   #TO DO: Binäre Suche benutzten?
   for (τ_kink,kink) in kinks_of_orb
@@ -139,12 +139,12 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
   for orb in orbitals
     @assert(τ_right != ImgTime(1))
     tupel = get_nearest_τ_affecting_orb(Configuration, orb, τ)
-    if tupel[1] == "nix"
+    if tupel[1] == nothing
         non_interacting_orb_counter += 1
     else
         #here we always have to check wether the given intervall extends over 1
         if τ_left < τ < tupel[1]
-            "nix"
+            nothing
         elseif tupel[1] < τ < τ_left
             τ_left = tupel[1]
         elseif τ_left < tupel[1]
@@ -152,7 +152,7 @@ function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},�
         end
 
         if tupel[2] < τ < τ_right
-            "nix"
+            nothing
         elseif τ_right < τ < tupel[2]
           τ_right = tupel[2]
         elseif tupel[2] < τ_right
@@ -185,7 +185,7 @@ function is_non_interacting_in_interval(Configuration::Configuration, orbital::O
   if τ_first < τ_last
       for (τ_kink,kink) in Configuration.kinks
         if (τ_kink <= τ_first) | (τ_kink >= τ_last)
-            "nix"
+            nothing
         elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
               return(false)
         end
@@ -193,7 +193,7 @@ function is_non_interacting_in_interval(Configuration::Configuration, orbital::O
   else
       for (τ_kink,kink) in Configuration.kinks
         if ((τ_kink <= τ_first) & (τ_kink >= τ_last))
-            "nix"
+            nothing
         elseif (kink.i == orbital) | (kink.j == orbital) | (kink.k == orbital) | (kink.l == orbital)
               return(false)
         end

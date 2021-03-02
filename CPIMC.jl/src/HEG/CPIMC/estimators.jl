@@ -101,7 +101,9 @@ function particleNumber(c::Configuration)
   return length(c.occupations)
 end
 
-
+function W_off_diag(e::Ensemble, avg_K::Float64)
+    return (-(avg_K/e.β))
+end
 
 
 #####################Calculationg observables after Simulation
@@ -136,8 +138,4 @@ end
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
     return (E_Ry(E_internal-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs)))
-end
-
-function W_off_diag(e::Ensemble, avg_K::Float64)
-    return (-(avg_K/e.β))
 end
