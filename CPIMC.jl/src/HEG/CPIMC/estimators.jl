@@ -27,7 +27,7 @@ function W_diag(e::Ensemble, c::Configuration)
         for occ1 in c.occupations
             redundant = true
             for occ2 in c.occupations
-                if !redundant
+                if (!redundant & (occ1.spin == occ2.spin))
                     W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
                 end
                 if occ1 == occ2
@@ -42,7 +42,7 @@ function W_diag(e::Ensemble, c::Configuration)
             for occ1 in occs
                 redundant = true
                 for occ2 in occs
-                    if !redundant
+                    if (!redundant & (occ1.spin == occ2.spin))
                         W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (τ-old_τ)
                     end
                     if occ1 == occ2

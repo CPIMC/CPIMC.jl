@@ -30,7 +30,6 @@ function move_particle(c::Configuration, e::Ensemble)
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
-    @assert delta_di != Inf
     @assert (dv*dw) >= 0
     return (dv*dw)
 end
@@ -486,10 +485,35 @@ function add_type_C(c::Configuration, e::Ensemble)
 
 
     #check if sign was changend
-    #to calculate the sign change use only orbitals old kink and the new orbs,
+    #to calculate the sign change use only the orbitals of the old kink objekt and the new orbs,
     #so swaping of ij or kl in one of the kinks does not effect the signchange
     signum = 1
-    if dot((last(old_kink).j.vec - new_orb1.vec),(last(old_kink).j.vec - new_orb1.vec)) >
+    if new_orb1.spin != last(old_kink).j.spin
+        signum*= -1
+    elseif new_orb1.spin != last(old_kink).i.spin
+        signum*= 1
+    elseif dot((last(old_kink).j.vec - new_orb1.vec),(last(old_kink).j.vec - new_orb1.vec)) >
+            dot((last(old_kink).i.vec - new_orb1.vec),(last(old_kink).i.vec - new_orb1.vec))
+        signum*= -1
+    end
+    if new_orb1.spin != last(old_kink).l.spin
+        signum*= -1
+    elseif new_orb1.spin != last(old_kink).k.spin
+        signum*= 1
+    elseif dot((last(old_kink).l.vec - new_orb1.vec),(last(old_kink).l.vec - new_orb1.vec)) >
+            dot((last(old_kink).k.vec - new_orb1.vec),(last(old_kink).k.vec - new_orb1.vec))
+        signum*= -1
+    end
+    if last(old_kink).i.spin != last(old_kink).l.spin
+        signum*= -1
+    elseif last(old_kink).i.spin != last(old_kink).k.spin
+        signum*= 1
+    elseif dot((last(old_kink).i.vec - last(old_kink).l.vec),(last(old_kink).i.vec - last(old_kink).l.vec)) >
+            dot((last(old_kink).i.vec - last(old_kink).k.vec),(last(old_kink).i.vec - last(old_kink).k.vec))
+        signum*= -1
+    end
+
+    """if dot((last(old_kink).j.vec - new_orb1.vec),(last(old_kink).j.vec - new_orb1.vec)) >
             dot((last(old_kink).i.vec - new_orb1.vec),(last(old_kink).i.vec - new_orb1.vec))
         signum*= -1
     end
@@ -500,7 +524,8 @@ function add_type_C(c::Configuration, e::Ensemble)
     if dot((last(old_kink).i.vec - last(old_kink).l.vec),(last(old_kink).i.vec - last(old_kink).l.vec)) >
             dot((last(old_kink).i.vec - last(old_kink).k.vec),(last(old_kink).i.vec - last(old_kink).k.vec))
         signum*= -1
-    end
+    end"""
+
 
     c.sign *= signum
 
@@ -522,7 +547,6 @@ function remove_type_C(c::Configuration, e::Ensemble)
         prop_prob *= 1/length(opportunities)
 
         if c.kinks[removed_kink_τ].i.spin != c.kinks[removed_kink_τ].k.spin
-            @assert false
             return 1
         end
         # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
@@ -639,7 +663,7 @@ function remove_type_C(c::Configuration, e::Ensemble)
 
     end
     #check if sign was changend
-    signum = 1
+    """signum = 1
     if dot((c.kinks[changed_kink_τ].j.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].j.vec - removed_orb1.vec)) >
             dot((c.kinks[changed_kink_τ].i.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].i.vec - removed_orb1.vec))
         signum*= -1
@@ -652,9 +676,34 @@ function remove_type_C(c::Configuration, e::Ensemble)
             dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec))
         signum*= -1
     end
+    """
+
+    signum = 1
+    if removed_orb1.spin != c.kinks[changed_kink_τ].j.spin
+        signum*= -1
+    elseif removed_orb1.spin != c.kinks[changed_kink_τ].i.spin
+        signum*= 1
+    elseif dot((c.kinks[changed_kink_τ].j.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].j.vec - removed_orb1.vec)) >
+            dot((c.kinks[changed_kink_τ].i.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].i.vec - removed_orb1.vec))
+        signum*= -1
+    end
+    if removed_orb1.spin != c.kinks[changed_kink_τ].l.spin
+        signum*= -1
+    elseif removed_orb1.spin != c.kinks[changed_kink_τ].k.spin
+        signum*= 1
+    elseif dot((c.kinks[changed_kink_τ].l.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].l.vec - removed_orb1.vec)) >
+            dot((c.kinks[changed_kink_τ].k.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].k.vec - removed_orb1.vec))
+        signum*= -1
+    end
+    if c.kinks[changed_kink_τ].i.spin != c.kinks[changed_kink_τ].l.spin
+        signum*= -1
+    elseif c.kinks[changed_kink_τ].i.spin != c.kinks[changed_kink_τ].k.spin
+        signum*= 1
+    elseif dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].l.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].l.vec)) >
+            dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec))
+        signum*= -1
+    end
     c.sign *= signum
-
-
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob) * dw))
     return((inverse_prop_prob/prop_prob) * dw)
@@ -815,15 +864,27 @@ function add_type_D(c::Configuration, e::Ensemble)
 
     #check if sign was changend
     signum = 1
-    if dot((last(old_kink).j.vec - new_orb1.vec),(last(old_kink).j.vec - new_orb1.vec)) >
+    if new_orb1.spin != last(old_kink).j.spin
+        signum*= -1
+    elseif new_orb1.spin != last(old_kink).i.spin
+        signum*= 1
+    elseif dot((last(old_kink).j.vec - new_orb1.vec),(last(old_kink).j.vec - new_orb1.vec)) >
             dot((last(old_kink).i.vec - new_orb1.vec),(last(old_kink).i.vec - new_orb1.vec))
         signum*= -1
     end
-    if dot((last(old_kink).l.vec - new_orb1.vec),(last(old_kink).l.vec - new_orb1.vec)) >
+    if new_orb1.spin != last(old_kink).l.spin
+        signum*= -1
+    elseif new_orb1.spin != last(old_kink).k.spin
+        signum*= 1
+    elseif dot((last(old_kink).l.vec - new_orb1.vec),(last(old_kink).l.vec - new_orb1.vec)) >
             dot((last(old_kink).k.vec - new_orb1.vec),(last(old_kink).k.vec - new_orb1.vec))
         signum*= -1
     end
-    if dot((last(old_kink).i.vec - last(old_kink).l.vec),(last(old_kink).i.vec - last(old_kink).l.vec)) >
+    if last(old_kink).i.spin != last(old_kink).l.spin
+        signum*= -1
+    elseif last(old_kink).i.spin != last(old_kink).k.spin
+        signum*= 1
+    elseif dot((last(old_kink).i.vec - last(old_kink).l.vec),(last(old_kink).i.vec - last(old_kink).l.vec)) >
             dot((last(old_kink).i.vec - last(old_kink).k.vec),(last(old_kink).i.vec - last(old_kink).k.vec))
         signum*= -1
     end
@@ -848,7 +909,6 @@ function remove_type_D(c::Configuration, e::Ensemble)
         prop_prob *= 1/length(opportunities)
 
         if c.kinks[removed_kink_τ].i.spin != c.kinks[removed_kink_τ].k.spin
-            @assert false
             return 1
         end
         # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
@@ -965,7 +1025,7 @@ function remove_type_D(c::Configuration, e::Ensemble)
 
     end
     #check if sign was changend
-    signum = 1
+    """signum = 1
     if dot((c.kinks[changed_kink_τ].j.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].j.vec - removed_orb1.vec)) >
             dot((c.kinks[changed_kink_τ].i.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].i.vec - removed_orb1.vec))
         signum*= -1
@@ -975,6 +1035,32 @@ function remove_type_D(c::Configuration, e::Ensemble)
         signum*= -1
     end
     if dot((c.kinks[changed_kink_τ].i.vec -c.kinks[changed_kink_τ].l.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].l.vec)) >
+            dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec))
+        signum*= -1
+    end"""
+
+    signum = 1
+    if removed_orb1.spin != c.kinks[changed_kink_τ].j.spin
+        signum*= -1
+    elseif removed_orb1.spin != c.kinks[changed_kink_τ].i.spin
+        signum*= 1
+    elseif dot((c.kinks[changed_kink_τ].j.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].j.vec - removed_orb1.vec)) >
+            dot((c.kinks[changed_kink_τ].i.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].i.vec - removed_orb1.vec))
+        signum*= -1
+    end
+    if removed_orb1.spin != c.kinks[changed_kink_τ].l.spin
+        signum*= -1
+    elseif removed_orb1.spin != c.kinks[changed_kink_τ].k.spin
+        signum*= 1
+    elseif dot((c.kinks[changed_kink_τ].l.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].l.vec - removed_orb1.vec)) >
+            dot((c.kinks[changed_kink_τ].k.vec - removed_orb1.vec),(c.kinks[changed_kink_τ].k.vec - removed_orb1.vec))
+        signum*= -1
+    end
+    if c.kinks[changed_kink_τ].i.spin != c.kinks[changed_kink_τ].l.spin
+        signum*= -1
+    elseif c.kinks[changed_kink_τ].i.spin != c.kinks[changed_kink_τ].k.spin
+        signum*= 1
+    elseif dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].l.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].l.vec)) >
             dot((c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec),(c.kinks[changed_kink_τ].i.vec - c.kinks[changed_kink_τ].k.vec))
         signum*= -1
     end
@@ -1020,7 +1106,8 @@ function add_type_E(c::Configuration, e::Ensemble)
             changed_kink_old_annihilator = last(old_kink).k
         end
         #find occupied orb for creation of Type_E
-        opportunities_new_kink_new_annihilator = intersect!(get_sphere_with_same_spin(new_kink_old_creator, dk = ex_radius), occs)
+        opportunities_new_kink_new_annihilator = intersect!(union!(get_sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
+                                                                        get_sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, -new_kink_old_annihilator.spin), dk = ex_radius)), occs)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).i)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).j)
         if length(opportunities_new_kink_new_annihilator) == 0
@@ -1029,7 +1116,11 @@ function add_type_E(c::Configuration, e::Ensemble)
         new_kink_new_annihilator = rand(opportunities_new_kink_new_annihilator)
         prop_prob *= 1/length(opportunities_new_kink_new_annihilator)
         #calculate new creator
-        new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_annihilator.spin)
+        if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
+            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
+        else
+            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), -1 * new_kink_old_creator.spin)
+        end
         if (in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).k) | (new_kink_new_creator == last(old_kink).l))
             return 1
         end
@@ -1100,7 +1191,8 @@ function add_type_E(c::Configuration, e::Ensemble)
             changed_kink_old_annihilator = last(old_kink).k
         end
         #find occupied orb for creation of Type_E
-        opportunities_new_kink_new_annihilator = setdiff!(get_sphere_with_same_spin(new_kink_old_creator, dk = ex_radius), occs)
+        opportunities_new_kink_new_annihilator = setdiff!(union!(get_sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
+                                                                        get_sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, -new_kink_old_annihilator.spin), dk = ex_radius)), occs)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).k)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).l)
         if length(opportunities_new_kink_new_annihilator) == 0
@@ -1108,7 +1200,13 @@ function add_type_E(c::Configuration, e::Ensemble)
         end
         new_kink_new_annihilator = rand(opportunities_new_kink_new_annihilator)
         prop_prob *= 1/length(opportunities_new_kink_new_annihilator)
-        new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_annihilator.spin)
+
+        if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
+            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
+        else
+            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), -1 * new_kink_old_creator.spin)
+        end
+
         if (!in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).i) | (new_kink_new_creator == last(old_kink).j))
             return 1
         end
@@ -1167,15 +1265,27 @@ function add_type_E(c::Configuration, e::Ensemble)
 
     #check if sign was changend
     signum = 1
-    if dot((new_kink_old_creator.vec - new_kink_new_annihilator.vec),(new_kink_old_creator.vec - new_kink_new_annihilator.vec)) >
+    if new_kink_old_creator.spin != new_kink_new_annihilator.spin
+        signum*= -1
+    elseif new_kink_old_creator.spin != new_kink_old_annihilator.spin
+        signum*= 1
+    elseif dot((new_kink_old_creator.vec - new_kink_new_annihilator.vec),(new_kink_old_creator.vec - new_kink_new_annihilator.vec)) >
             dot((new_kink_old_creator.vec - new_kink_old_annihilator.vec),(new_kink_old_creator.vec - new_kink_old_annihilator.vec))
         signum*= -1
     end
-    if dot((changed_kink_old_creator.vec - new_kink_new_creator.vec),(changed_kink_old_creator.vec - new_kink_new_creator.vec)) >
+    if changed_kink_old_creator.spin != new_kink_new_creator.spin
+        signum*= -1
+    elseif changed_kink_old_creator.spin != changed_kink_old_annihilator.spin
+        signum*= 1
+    elseif dot((changed_kink_old_creator.vec - new_kink_new_creator.vec),(changed_kink_old_creator.vec - new_kink_new_creator.vec)) >
             dot((changed_kink_old_creator.vec - changed_kink_old_annihilator.vec),(changed_kink_old_creator.vec - changed_kink_old_annihilator.vec))
         signum*= -1
     end
-    if dot((new_kink_old_creator.vec - changed_kink_old_annihilator.vec),(new_kink_old_creator.vec - changed_kink_old_annihilator.vec)) >
+    if new_kink_old_creator.spin != changed_kink_old_annihilator.spin
+        signum*= -1
+    elseif new_kink_old_creator.spin != new_kink_old_annihilator.spin
+        signum*= 1
+    elseif dot((new_kink_old_creator.vec - changed_kink_old_annihilator.vec),(new_kink_old_creator.vec - changed_kink_old_annihilator.vec)) >
             dot((new_kink_old_creator.vec - new_kink_old_annihilator.vec),(new_kink_old_creator.vec - new_kink_old_annihilator.vec))
         signum*= -1
     end
@@ -1247,10 +1357,6 @@ function remove_type_E(c::Configuration, e::Ensemble)
         #safe thoose for later
         removed_Kink = last(removed_kink_tuple)
         changed_Kink_old = last(changed_kink_tuple)
-        if removed_Kink.i.spin != removed_Kink.k.spin
-            @assert false
-            return 1
-        end
         # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
         if dot(removed_Kink.i.vec-removed_Kink.k.vec,
                     removed_Kink.i.vec-removed_Kink.k.vec) > (ex_radius^2)
@@ -1271,7 +1377,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
 
         #calculate reverse_prop_prob
         occs = get_occupations_at(c, changed_kink_τ)
-        opportunities_occ_orb_E = intersect!(get_sphere_with_same_spin(removed_Kink.i, dk = ex_radius), occs)
+        opportunities_occ_orb_E = intersect!(union!(get_sphere_with_same_spin(OrbitalHEG(removed_Kink.i.vec, 1), dk = ex_radius), get_sphere_with_same_spin(OrbitalHEG(removed_Kink.i.vec, -1), dk = ex_radius)), occs)
         delete!(opportunities_occ_orb_E, c.kinks[changed_kink_τ].i)
         delete!(opportunities_occ_orb_E, c.kinks[changed_kink_τ].j)
         @assert(in(removed_Kink.k,opportunities_occ_orb_E))
@@ -1335,7 +1441,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
 
         #calculate reverse_prop_prob
         occs = get_occupations_at(c, changed_kink_τ)
-        opportunities_unocc_orb_E = setdiff!(get_sphere_with_same_spin(removed_Kink.i, dk = ex_radius), occs)
+        opportunities_unocc_orb_E = setdiff!(union!(get_sphere_with_same_spin(OrbitalHEG(removed_Kink.i.vec, 1), dk = ex_radius), get_sphere_with_same_spin(OrbitalHEG(removed_Kink.i.vec, -1), dk = ex_radius)), occs)
         delete!(opportunities_unocc_orb_E, c.kinks[changed_kink_τ].k)
         delete!(opportunities_unocc_orb_E, c.kinks[changed_kink_τ].l)
         @assert(in(removed_Kink.k,opportunities_unocc_orb_E))
@@ -1366,7 +1472,32 @@ function remove_type_E(c::Configuration, e::Ensemble)
 
     #check if sign was changend
     signum = 1
-    if dot((changed_Kink_old.i.vec - changed_Kink_old.k.vec),(changed_Kink_old.i.vec - changed_Kink_old.k.vec)) >
+    if changed_Kink_old.i.spin != changed_Kink_old.k.spin
+        signum*= -1
+    elseif changed_Kink_old.i.spin != changed_Kink_old.l.spin
+        signum*= 1
+    elseif dot((changed_Kink_old.i.vec - changed_Kink_old.k.vec),(changed_Kink_old.i.vec - changed_Kink_old.k.vec)) >
+            dot((changed_Kink_old.i.vec - changed_Kink_old.l.vec),(changed_Kink_old.i.vec - changed_Kink_old.l.vec))
+        signum*= -1
+    end
+    if removed_Kink.i.spin != removed_Kink.k.spin
+        signum*= -1
+    elseif removed_Kink.i.spin != removed_Kink.l.spin
+        signum*= 1
+    elseif dot((removed_Kink.i.vec - removed_Kink.k.vec),(removed_Kink.i.vec - removed_Kink.k.vec)) >
+            dot((removed_Kink.i.vec - removed_Kink.l.vec),(removed_Kink.i.vec - removed_Kink.l.vec))
+        signum*= -1
+    end
+    if changed_Kink_old.i.spin != removed_Kink.l.spin
+        signum*= -1
+    elseif changed_Kink_old.i.spin != changed_Kink_old.l.spin
+        signum*= 1
+    elseif dot((changed_Kink_old.i.vec - removed_Kink.l.vec),(changed_Kink_old.i.vec - removed_Kink.l.vec)) >
+            dot((changed_Kink_old.i.vec - changed_Kink_old.l.vec),(changed_Kink_old.i.vec - changed_Kink_old.l.vec))
+        signum*= -1
+    end
+
+    """if dot((changed_Kink_old.i.vec - changed_Kink_old.k.vec),(changed_Kink_old.i.vec - changed_Kink_old.k.vec)) >
             dot((changed_Kink_old.i.vec - changed_Kink_old.l.vec),(changed_Kink_old.i.vec - changed_Kink_old.l.vec))
         signum*= -1
     end
@@ -1377,7 +1508,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
     if dot((changed_Kink_old.i.vec - removed_Kink.l.vec),(changed_Kink_old.i.vec - removed_Kink.l.vec)) >
             dot((changed_Kink_old.i.vec - changed_Kink_old.l.vec),(changed_Kink_old.i.vec - changed_Kink_old.l.vec))
         signum*= -1
-    end
+    end"""
     c.sign *= signum
 
     #shuffle Indices

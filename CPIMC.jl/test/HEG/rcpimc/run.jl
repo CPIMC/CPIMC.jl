@@ -20,10 +20,10 @@ function main()
     ####################################################################"""
     # system parameters
     θ = 0.125
-    rs = 1.5
+    rs = 1.75
 
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
-
+    #S = union(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1),get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1))
     #2Particles
     #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
 
@@ -34,7 +34,7 @@ function main()
     println("N: ", N)
     c = Configuration(S)
 
-    e = Ensemble(rs, get_β_internal(θ,N), N) # get_β_internal only works for 3D
+    e = Ensemble(rs, get_β_internal(θ,N,c), N) # get_β_internal only works for 3D
     updates = [move_particle, add_type_B, remove_type_B ,shuffle_indices, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain] #, change_type_B
 
     measurements = Dict(
