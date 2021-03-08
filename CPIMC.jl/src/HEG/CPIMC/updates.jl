@@ -2,7 +2,7 @@ const ex_radius = 3 #max Radius for exitation
 
 function move_particle(c::Configuration, e::Ensemble)
     free_orbitals = get_non_interacting_orbs_of_set(c, c.occupations)
-    if length(free_orbitals) == 0
+    if isempty(free_orbitals)
         return 1
     else
         x = rand(get_non_interacting_orbs_of_set(c, c.occupations))
@@ -10,7 +10,7 @@ function move_particle(c::Configuration, e::Ensemble)
     oe = get_non_interacting_orbs_of_set(c,setdiff!(get_sphere_with_same_spin(x, dk = ex_radius), c.occupations))
 
     #if there are no empty non interacting orbitals in neighbourhood make no change
-    if length(oe) == 0
+    if isempty(oe)
         return(1)
     end
     y = rand(oe)
@@ -53,7 +53,7 @@ function add_type_B(c::Configuration, e::Ensemble)
     prop_prob *= 1/(e.N-1)
     opportunities_orb_a = setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs)
     opportunities_orb_b = setdiff!(get_sphere_with_same_spin(orb_d, dk = ex_radius), occs)
-    if (length(opportunities_orb_a) == 0) | (length(opportunities_orb_b) == 0)
+    if isempty(opportunities_orb_a) | isempty(opportunities_orb_b)
         return 1
     end
     orb_a = rand(opportunities_orb_a)
@@ -136,7 +136,7 @@ function add_type_B(c::Configuration, e::Ensemble)
     #Therefore we modify the proposal_probability in the following way
     occs_τ2 = get_occupations_at(c, τ2)
     opportunities_orb_a_τ2 = setdiff!(get_sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ2)
-    @assert length(opportunities_orb_a_τ2) != 0
+    @assert !isempty(opportunities_orb_a_τ2)
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
 
 
@@ -188,11 +188,11 @@ function add_type_B(c::Configuration, e::Ensemble)
 end
 
 function remove_type_B(c::Configuration, e::Ensemble)
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return 1
     end
     opportunities = get_right_type_B_pairs(c)
-    if length(opportunities) == 0
+    if isempty(opportunities)
         return(1)
     end
     #If a kink1 is entangeld to the right with the nearest kink, that
@@ -262,12 +262,12 @@ end
 
 
 function change_type_B(c::Configuration, e::Ensemble) #This update is redundant wif we have add- and remove-Type-C-Updates
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return 1
     end
 
     kink_opportunities = get_right_type_B_pairs(c)
-    if length(kink_opportunities) == 0
+    if isempty(kink_opportunities)
         return(1)
     end
     τ1, τ2 = rand(kink_opportunities)
@@ -283,7 +283,7 @@ function change_type_B(c::Configuration, e::Ensemble) #This update is redundant 
                     )
     delete!(opportunities, last(kink1).k)
     delete!(opportunities, last(kink1).l)
-    if length(opportunities) == 0
+    if isempty(opportunities)
         return 1
     end
     new_orb_i = rand(opportunities)
@@ -337,7 +337,7 @@ end
 
 function add_type_C(c::Configuration, e::Ensemble)
     prop_prob = 1
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return 1
     end
     old_kink = rand(c.kinks)
@@ -349,7 +349,7 @@ function add_type_C(c::Configuration, e::Ensemble)
         opportunities_new_orb1 = setdiff!(get_sphere_with_same_spin(last(old_kink).k, dk = ex_radius), occs)
         delete!(opportunities_new_orb1, last(old_kink).k)
         delete!(opportunities_new_orb1, last(old_kink).l)
-        if length(opportunities_new_orb1) == 0
+        if isempty(opportunities_new_orb1)
             return 1
         end
         new_orb1 = rand(opportunities_new_orb1)
@@ -415,7 +415,7 @@ function add_type_C(c::Configuration, e::Ensemble)
         opportunities_new_orb1 = setdiff!(get_sphere_with_same_spin(last(old_kink).i, dk = ex_radius), occs)
         delete!(opportunities_new_orb1, last(old_kink).k)
         delete!(opportunities_new_orb1, last(old_kink).l)
-        if length(opportunities_new_orb1) == 0
+        if isempty(opportunities_new_orb1)
             return 1
         end
         new_orb1 = rand(opportunities_new_orb1)
@@ -540,7 +540,7 @@ function remove_type_C(c::Configuration, e::Ensemble)
     if rand() > 0.5
         #removed kink left of changed kink
         opportunities = get_right_type_C_pairs(c)
-        if length(opportunities) == 0
+        if isempty(opportunities)
             return 1
         end
         removed_kink_τ, changed_kink_τ = rand(opportunities)
@@ -604,7 +604,7 @@ function remove_type_C(c::Configuration, e::Ensemble)
     else
         #removed kink right of changed kink
         opportunities = get_left_type_C_pairs(c)
-        if length(opportunities) == 0
+        if isempty(opportunities)
             return 1
         end
         removed_kink_τ, changed_kink_τ = rand(opportunities)
@@ -715,7 +715,7 @@ end
 
 function add_type_D(c::Configuration, e::Ensemble)
     prop_prob = 1
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return 1
     end
     old_kink = rand(c.kinks)
@@ -727,7 +727,7 @@ function add_type_D(c::Configuration, e::Ensemble)
         opportunities_new_orb1 = intersect!(get_sphere_with_same_spin(last(old_kink).i, dk = ex_radius), occs)
         delete!(opportunities_new_orb1, last(old_kink).i)
         delete!(opportunities_new_orb1, last(old_kink).j)
-        if length(opportunities_new_orb1) == 0
+        if isempty(opportunities_new_orb1)
             return 1
         end
         new_orb1 = rand(opportunities_new_orb1)
@@ -793,7 +793,7 @@ function add_type_D(c::Configuration, e::Ensemble)
         opportunities_new_orb1 = intersect!(get_sphere_with_same_spin(last(old_kink).k, dk = ex_radius), occs)
         delete!(opportunities_new_orb1, last(old_kink).i)
         delete!(opportunities_new_orb1, last(old_kink).j)
-        if length(opportunities_new_orb1) == 0
+        if isempty(opportunities_new_orb1)
             return 1
         end
         new_orb1 = rand(opportunities_new_orb1)
@@ -902,7 +902,7 @@ function remove_type_D(c::Configuration, e::Ensemble)
     if rand() > 0.5
         #removed kink left of changed kink
         opportunities = get_right_type_D_pairs(c)
-        if length(opportunities) == 0
+        if isempty(opportunities)
             return 1
         end
         removed_kink_τ, changed_kink_τ = rand(opportunities)
@@ -966,7 +966,7 @@ function remove_type_D(c::Configuration, e::Ensemble)
     else
         #removed kink right of changed kink
         opportunities = get_left_type_D_pairs(c)
-        if length(opportunities) == 0
+        if isempty(opportunities)
             return 1
         end
         removed_kink_τ, changed_kink_τ = rand(opportunities)
@@ -1078,7 +1078,7 @@ end
 function add_type_E(c::Configuration, e::Ensemble)
     #After the updates the i and l komponents of both kinks will contain the old kink, wile the j and k components contain the old orbitals
     prop_prob = 1
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return 1
     end
     old_kink = rand(c.kinks)
@@ -1110,7 +1110,7 @@ function add_type_E(c::Configuration, e::Ensemble)
                                                                         get_sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, -new_kink_old_annihilator.spin), dk = ex_radius)), occs)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).i)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).j)
-        if length(opportunities_new_kink_new_annihilator) == 0
+        if isempty(opportunities_new_kink_new_annihilator)
             return 1
         end
         new_kink_new_annihilator = rand(opportunities_new_kink_new_annihilator)
@@ -1195,7 +1195,7 @@ function add_type_E(c::Configuration, e::Ensemble)
                                                                         get_sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, -new_kink_old_annihilator.spin), dk = ex_radius)), occs)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).k)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).l)
-        if length(opportunities_new_kink_new_annihilator) == 0
+        if isempty(opportunities_new_kink_new_annihilator)
             return 1
         end
         new_kink_new_annihilator = rand(opportunities_new_kink_new_annihilator)
@@ -1347,7 +1347,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
     if rand() > 0.5
         #removed kink left of changed kink
         opportunities = get_right_type_E_removable_pairs(c)
-        if length(opportunities) == 0
+        if isempty(opportunities)
             return 1
         end
         removed_kink_tuple, changed_kink_tuple = rand(opportunities)
@@ -1409,7 +1409,7 @@ function remove_type_E(c::Configuration, e::Ensemble)
     else
         #removed kink right of changed kink
         opportunities = get_left_type_E_removable_pairs(c)
-        if length(opportunities) == 0
+        if isempty(opportunities)
             return 1
         end
         removed_kink_tuple, changed_kink_tuple = rand(opportunities)
@@ -1543,7 +1543,7 @@ end
 
 
 function shuffle_indices(c::Configuration, e::Ensemble)
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return(1)
     end
     kink = rand(c.kinks)
@@ -1557,7 +1557,7 @@ end
 
 
 function add_remove_kink_chain(c::Configuration,e::Ensemble)
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return(1)
     end
     add_single_kinks = [add_type_C, add_type_D, add_type_E]
