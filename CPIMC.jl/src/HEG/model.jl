@@ -22,24 +22,38 @@ end
 
 OrbitalHEG(v::Tuple,s=0) = OrbitalHEG(SVector(v),s)
 
+#Returns a Tupple of particle number with spinup and Particle number with spin down
+function get_spin_up_down_count(c::Configuration)
+    up = 0
+    down = 0
+    for orb in c.occupations
+        if orb.spin == 1
+            up += 1
+        elseif orb.spin == -1
+            down += 1
+        else
+            @assert(false)#Spin is not 1 or -1
+        end
+    end
+    return (up,down)
+end
 
-function get_β_internal(θ::Float64, N::Int)
-  return ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*θ)# if using unpolarized system need a factor 1/2 under the ^(2/3)
+function get_β_internal(θ::Float64, N::Int, c::Configuration = Configuration(Set{OrbitalHEG{1}}()) )
+    #assuming that θ is defined with the Fermi Energy korresponidg to the Particle number of the stronger occupied spin state
+    #This is trivially the Case if the system is fully spinpolarized or if the System contains particles of both spins in
+    #equal numbers
+    if length(c.occupations) == 0 #no Configuration provided
+        Spin_Faktor = 1
+    else
+        Spin_Faktor = max(get_spin_up_down_count(c)...)/N
+    end
+  return ((2*pi)^2)/(((6*(pi^2)*N*Spin_Faktor)^(2/3))*θ)   #if using unpolarized system need a factor 1/2 under the ^(2/3)
 end
 
 function lambda(N::Int, rs::Float64)
     # Warum Faktor 2 am Ende?
     return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
 end
-
-function E_Ry(E_internal::Float64, lam::Float64)
-    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))#if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
-end
-
-function abs_E_mad(N::Int, lam::Float64)# internal units
-    return 2.83729747948527 * pi/2.0 * N * (lam/2)# if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
-end
-
 
 function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,kink::T4{OrbitalHEG{3}})
     wijkl = 0
@@ -62,12 +76,12 @@ end
 
 
 " return the energy of a single diagonal single-particle matrix element "
-function get_energy(o::Orbital)
+function get_energy(o::OrbitalHEG)
     dot(o.vec,o.vec)
 end
 
 " coulomb kernel for 3D plane wavevectors "
-kernel(i::StaticVector{3,Int}, k::StaticVector{3,Int}) = 1.0 / ( dot(i - k) ^ 2 )
+kernel(i::StaticVector{N,Int}, k::StaticVector{N,Int}) where {N} = 1.0 / dot( i-k, i-k )
 
 " coulomb kernel in plane wave basis "
 kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
@@ -220,18 +234,29 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
     if delta_τ12 < 0
         delta_τ12 += 1
     end
-    delta_di = delta_τ12 * (lambda(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec)) -
-                                        1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
+    if orb_a.spin == orb_b.spin
+        delta_di = delta_τ12 * (lambda(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec)) -
+                                            1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
+    else
+        delta_di = 0
+    end
     occs = occupations(c, τ1)
     for occ in occs
-        if ((occ == orb_c) | (occ == orb_d) | (occ == orb_a) | (occ == orb_b))
-            "nix"
+        if ((occ.vec == orb_c.vec) | (occ.vec == orb_d.vec) | (occ.vec == orb_a.vec) | (occ.vec == orb_b.vec))
+            nothing
         else
-            delta_di += delta_τ12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
-                                                + 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
-                                                - 1/dot((occ.vec-orb_c.vec),(occ.vec-orb_c.vec))
-                                                - 1/dot((occ.vec-orb_d.vec),(occ.vec-orb_d.vec)))
+            for orb in [orb_a, orb_b]
+                if occ.spin == orb.spin
+                    delta_di += delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb.vec),(occ.vec-orb.vec))
+                end
+            end
+            for orb in [orb_c, orb_d]
+                if occ.spin == orb.spin
+                    delta_di -= delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb.vec),(occ.vec-orb.vec))
+                end
+            end
         end
+        @assert(abs(delta_di) != Inf)
     end
     if length(c.kinks) == 0
         return -delta_di * e.β
@@ -250,33 +275,45 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         τ_kink,kink = deref((c.kinks,kink_semi_token))
     end
     loop_counter = 0
+    @assert(abs(delta_di) != Inf)
     while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
         delta_τ = τ2 - τ_kink
         if delta_τ < 0
             delta_τ += 1
         end
-
-        delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.i.vec-orb_a.vec),(kink.i.vec-orb_a.vec))
-                                    + 1/dot((kink.i.vec-orb_b.vec),(kink.i.vec-orb_b.vec))
-                                    - 1/dot((kink.i.vec-orb_c.vec),(kink.i.vec-orb_c.vec))
-                                    - 1/dot((kink.i.vec-orb_d.vec),(kink.i.vec-orb_d.vec)))
-        delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.j.vec-orb_a.vec),(kink.j.vec-orb_a.vec))
-                                    + 1/dot((kink.j.vec-orb_b.vec),(kink.j.vec-orb_b.vec))
-                                    - 1/dot((kink.j.vec-orb_c.vec),(kink.j.vec-orb_c.vec))
-                                    - 1/dot((kink.j.vec-orb_d.vec),(kink.j.vec-orb_d.vec)))
-        delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.k.vec-orb_a.vec),(kink.k.vec-orb_a.vec))
-                                    + 1/dot((kink.k.vec-orb_b.vec),(kink.k.vec-orb_b.vec))
-                                    - 1/dot((kink.k.vec-orb_c.vec),(kink.k.vec-orb_c.vec))
-                                    - 1/dot((kink.k.vec-orb_d.vec),(kink.k.vec-orb_d.vec)))
-        delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.l.vec-orb_a.vec),(kink.l.vec-orb_a.vec))
-                                    + 1/dot((kink.l.vec-orb_b.vec),(kink.l.vec-orb_b.vec))
-                                    - 1/dot((kink.l.vec-orb_c.vec),(kink.l.vec-orb_c.vec))
-                                    - 1/dot((kink.l.vec-orb_d.vec),(kink.l.vec-orb_d.vec)))
-
+        for occ in [kink.i, kink.j]
+            for orb in [orb_a, orb_b]
+                if occ.spin == orb.spin
+                    delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                                            (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
+                end
+            end
+        end
+        for occ in [kink.k, kink.l]
+            for orb in [orb_c, orb_d]
+                if occ.spin == orb.spin
+                    delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                                            (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
+                end
+            end
+        end
+        for occ in [kink.i, kink.j]
+            for orb in [orb_c, orb_d]
+                if occ.spin == orb.spin
+                    delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                                            (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
+                end
+            end
+        end
+        for occ in [kink.k, kink.l]
+            for orb in [orb_a, orb_b]
+                if occ.spin == orb.spin
+                    delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                                            (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
+                end
+            end
+        end
+        @assert(abs(delta_di) != Inf)
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
             kink_semi_token = startof(c.kinks)
@@ -299,12 +336,15 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
     occs = occupations(c, τ1)
     @assert(!in(orb_a, occs))
     for occ in occs
-        if ((occ == orb_b) | (occ == orb_a))
-            "nix"
+        if ((occ.vec == orb_b.vec) | (occ.vec == orb_a.vec))
+            nothing
         else
-            delta_di += delta_τ12 * (lambda(e.N,e.rs)/2) * (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
-                                                - 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)))
-
+            if occ.spin == orb_a.spin
+                delta_di += delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
+            end
+            if occ.spin == orb_b.spin
+                delta_di -= delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
+            end
         end
     end
     if length(c.kinks) == 0
@@ -330,18 +370,31 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
             delta_τ += 1
         end
 
-        delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.i.vec-orb_a.vec),(kink.i.vec-orb_a.vec))
-                                    - 1/dot((kink.i.vec-orb_b.vec),(kink.i.vec-orb_b.vec)))
-        delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.j.vec-orb_a.vec),(kink.j.vec-orb_a.vec))
-                                    - 1/dot((kink.j.vec-orb_b.vec),(kink.j.vec-orb_b.vec)))
-        delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.k.vec-orb_a.vec),(kink.k.vec-orb_a.vec))
-                                    - 1/dot((kink.k.vec-orb_b.vec),(kink.k.vec-orb_b.vec)))
-        delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
-                                (1/dot((kink.l.vec-orb_a.vec),(kink.l.vec-orb_a.vec))
-                                    - 1/dot((kink.l.vec-orb_b.vec),(kink.l.vec-orb_b.vec)))
+        for occ in [kink.i, kink.j]
+            if occ.spin == orb_a.spin
+                delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                                        (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec)))
+            end
+        end
+        for occ in [kink.k, kink.l]
+            if occ.spin == orb_b.spin
+                delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                                        (1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)))
+            end
+        end
+        for occ in [kink.i, kink.j]
+            if occ.spin == orb_b.spin
+                delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                                        (1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)))
+            end
+        end
+        for occ in [kink.k, kink.l]
+            if occ.spin == orb_a.spin
+                delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                                        (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec)))
+            end
+        end
+
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
             kink_semi_token = startof(c.kinks)

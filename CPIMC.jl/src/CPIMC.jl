@@ -29,7 +29,7 @@ Step(drop::Set{T}, add::Set{T}) where {T <: Orbital} = Step(Configuration(drop),
 function step!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_length)
     @assert !isempty(updates)
 
-    Δ = Step{basis(c)}()
+    Δ = Step()
     p = 1
 
     chain = zeros(UInt, chain_length)
@@ -70,8 +70,18 @@ function promote!(c::Configuration, Δ::Step)
     nothing
 end
 
+" change configuration c as given by a list of subsequent Steps "
+function promote!(c::Configuration, Δ::Array{Step,1})
+    for δ in Δ
+        promote!(c, δ)
+    end
+end
+
 " return configuration Δ(c) "
 promote(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
+
+" change configuration c as given by a list of subsequent Steps "
+promote(c::Configuration, Δ::Array{Step,1}) = reduce(promote, Δ, init=c)
 
 " empty Step: do nothing "
 function promote!(c::Configuration, Δ::Step{Nothing,Nothing})
@@ -92,6 +102,8 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
     end
 
     println("starting Simulation")
+    #global add_c_counter = 0
+    #global remove_c_counter = 0
     i = 0
     k = 1# progress counter
     while i < steps
@@ -108,12 +120,18 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                fit!(stat, obs(e,c))
+                if in(key,[:sign, :K])
+                    fit!(stat, obs(e,c))
+                else
+                    fit!(stat, obs(e,c)*signum(e,c))
+                end
             end
         end
 
         i += 1
     end
+    #println(add_c_counter)
+    #println(remove_c_counter)
 end
 
 
@@ -127,8 +145,8 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
     end
     k = 1# progress counter
     for i in 1:throwAway
-        if (i%(throwAway/100) == 0) & (Threads.threadid() == 1)
-            print("eq: ",k,"/100","    ")
+        if (i%(throwAway/100) == 0) #& (Threads.threadid() == 1)
+            println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
         step!(c, e, updates; kwargs...)
@@ -137,11 +155,13 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         println("\nstarting Simulation")
     end
     i = 0
-    k = 1# progress counter
+    k = 1#print progress
+    #global add_E_counter = 0
+    #global remove_E_counter = 0
     while i < steps
-        # print progress
-        if (i%(steps/100) == 0) & (Threads.threadid() == 1)
-            print(k,"/100","    ")
+        #print progress
+        if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
+            println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
 
@@ -152,10 +172,15 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         if i % sampleEvery == 0
             " calculate observables "
             for (key,(stat,obs)) in measurements
-                if typeof(stat) == Group
-                        fit!(stat, eachrow(obs(e,c)))
+                if in(key,[:sign, :K])
+                    fit!(stat, obs(e,c))
                 else
-                        fit!(stat, obs(e,c))
+                    if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
+                        println("Das wird nicht geprinted")
+                        fit!(stat, eachrow(obs(e,c)))
+                    else
+                        fit!(stat, obs(e,c)*signum(e,c))
+                    end
                 end
             end
         end
