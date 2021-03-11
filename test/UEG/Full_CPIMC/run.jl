@@ -3,18 +3,23 @@ using DelimitedFiles
 
 
 include("../../../src/Configuration.jl")
-include("../../../src/HEG/model.jl")
-include("../../../src/HEG/CPIMC/updates.jl")
-include("../../../src/HEG/CPIMC/estimators.jl")
+include("../../../src/UEG/model.jl")
+include("../../../src/Updates/Ideal-Updates.jl")
+include("../../../src/Updates/Other-Updates.jl")
+include("../../../src/Updates/Type-A-Updates.jl")
+include("../../../src/Updates/Type-B-Updates.jl")
+include("../../../src/Updates/Type-C-Updates.jl")
+include("../../../src/Updates/Type-D-Updates.jl")
+include("../../../src/Updates/Type-E-Updates.jl")
+include("../../../src/UEG/estimators.jl")
 include("../../../src/CPIMC.jl")
 include("../../../src/output.jl")
-
-
+const ex_radius = 3 #max Radius for exitation
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 2*10^5
     cyc = 50
-    NEquil = 2 * 10^4
+    NEquil = 10^5
     # system parameters
     θ = 0.125
     rs = 1.0

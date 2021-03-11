@@ -18,9 +18,3 @@ function move_particle(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
 
     δv * dw, Step(x,y)
 end
-
-function add_particle!()
-end
-
-function remove_particle!()
-end

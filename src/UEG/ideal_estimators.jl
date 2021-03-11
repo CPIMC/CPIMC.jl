@@ -1,3 +1,4 @@
+#TODO Delete this File?
 function Ekin(e::Ensemble, c::Configuration) :: UInt
     sum(get_energy(n) for n in c.occupations)
 end

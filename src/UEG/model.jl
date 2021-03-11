@@ -55,7 +55,7 @@ function lambda(N::Int, rs::Float64)
     return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
 end
 
-function get_abs_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
+function get_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
     wijkl = 0
     if kink.i.spin == kink.j.spin
         wijkl +=  1/dot((kink.i.vec-kink.k.vec), (kink.i.vec-kink.k.vec)) -
@@ -71,7 +71,11 @@ function get_abs_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
     wijkl *= lambda(e.N,e.rs)/2
     # We sample with the weight of antisymmetrized matrix element but we do not restrict
     # the order of indizies of our possible kinks. We therefor need an extra factor 1/4 in the weight-function
-    return abs(wijkl) * 1/4# TODO absolute ?
+    return wijkl * 1/4
+end
+
+function get_abs_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
+    return abs(get_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}}))
 end
 
 
@@ -403,4 +407,12 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         loop_counter += 1
     end
     return -delta_di * e.β
+end
+
+function get_sign_offdiagonal_product(e,c)
+    sign_ofd_prod = 1
+    for (_,kink) in c.kinks
+        sign_ofd_prod *= sign(get_offdiagonal_element(e,kink))
+    end
+    return(sign_ofd_prod)
 end

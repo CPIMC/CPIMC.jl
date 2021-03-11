@@ -3,19 +3,26 @@ using DelimitedFiles
 
 
 include("../../../src/Configuration.jl")
-include("../../../src/HEG/model.jl")
-include("../../../src/HEG/CPIMC/updates.jl")
-include("../../../src/HEG/CPIMC/estimators.jl")
+include("../../../src/UEG/model.jl")
+include("../../../src/Updates/Ideal-Updates.jl")
+include("../../../src/Updates/Other-Updates.jl")
+include("../../../src/Updates/Type-A-Updates.jl")
+include("../../../src/Updates/Type-B-Updates.jl")
+include("../../../src/Updates/Type-C-Updates.jl")
+include("../../../src/Updates/Type-D-Updates.jl")
+include("../../../src/Updates/Type-E-Updates.jl")
+include("../../../src/UEG/estimators.jl")
 include("../../../src/CPIMC.jl")
-
+Threads.nthreads() = 13
+const ex_radius = 3 #max Radius for exitation
 function main()
     # MC options
-    NMC = 10^5
+    NMC = 2*10^5
     cyc = 100
     NEquil = 10^5
     # system parameters
     θ = 0.125
-    rs = 2
+    rs = 1.75
 
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
     N = length(S)
@@ -121,13 +128,11 @@ function main()
     println(std.(measurements[:occs][1].stats))
 
     # create occnumsfile
-    #open("test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-    open("CPIMC.jl/test/HEG/rcpimc/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
     end
     #create resultsfile
-    #open("test/HEG/rcpimc/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-    open("CPIMC.jl/test/HEG/rcpimc/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("test/UEG/Full_CPIMC/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
         for (k,(f,m)) in measurements
             if typeof(f) == Variance{Float64,Float64,EqualWeight}
                 write(io, string(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1),"\n"))
