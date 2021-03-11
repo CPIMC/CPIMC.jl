@@ -1375,7 +1375,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
             add_orbs = Set{basis(c)}()
         end
 
-        # c.kinks[τ_new_kink] = T4(new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator)
+        # c.kinks[τ_new_kink] = T4(new_kink_old_creator,new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator)
         # c.kinks[first(old_kink)] = T4(changed_kink_old_creator, new_kink_new_annihilator, new_kink_new_creator, changed_kink_old_annihilator)
 
         #shuffle Indices TODO: is this necessary for ergodicy ?
@@ -1411,7 +1411,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
             else
                 # shuffle annihilator
                 # c.kinks[τ_new_kink] = T4(c.kinks[τ_new_kink].i, c.kinks[τ_new_kink].j,c.kinks[τ_new_kink].l, c.kinks[τ_new_kink].k)
-                add_kink2 = τ_new_kink => T4(new_kink_old_creator, new_kink_new_creator, new_kink_old_annihilator, new_kink_new_annihilator)
+                add_kink2 = τ_new_kink => T4(new_kink_old_creator,new_kink_new_creator, new_kink_old_annihilator, new_kink_new_annihilator)
             end
         else
             if rand() < 0.5
