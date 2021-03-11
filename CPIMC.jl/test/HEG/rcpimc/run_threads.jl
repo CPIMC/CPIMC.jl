@@ -10,12 +10,12 @@ include("../../../src/CPIMC.jl")
 
 function main()
     # MC options
-    NMC = 10^7
-    cyc = 50
-    NEquil = 2 * 10^4
+    NMC = 10^5
+    cyc = 100
+    NEquil = 10^5
     # system parameters
     θ = 0.125
-    rs = 1.75
+    rs = 2
 
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
     N = length(S)
@@ -26,7 +26,7 @@ function main()
     println("N: ", N)
 
     e = Ensemble(rs, get_β_internal(θ,N,c), N) # get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E],0,0)#, change_type_B
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, shuffle_indices, add_remove_kink_chain],0,0)#, change_type_B
 
 
     measurements = Dict(
@@ -88,7 +88,7 @@ function main()
             end
         end
     end
-    
+
     #print addidtional observables
     μW_diag = mean(first(measurements[:W_diag]))/avg_sign
     ΔW_diag = std(first(measurements[:W_diag]))/sqrt(Threads.nthreads()-1)/avg_sign

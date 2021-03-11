@@ -186,7 +186,7 @@ function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
 
     # weight factor
     dw = ((e.β)^2) *
-            get_abs_offdiagonal_element(e,promote(c,Δ),T4(orb_a,orb_b,orb_c,orb_d))^2 *
+            get_abs_offdiagonal_element(e,T4(orb_a,orb_b,orb_c,orb_d))^2 *
             exp(-((delta_τ)*e.β * (get_energy(orb_a) + get_energy(orb_b) -
                 get_energy(orb_c) - get_energy(orb_d)) + delta_di))
 
@@ -274,7 +274,7 @@ function remove_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
 
     # weight factor
     dw = (1.0/(e.β)^2) *
-        (1.0/(get_abs_offdiagonal_element(e,promote(c,Δ),last(kink1)))^2) *
+        (1.0/(get_abs_offdiagonal_element(e,last(kink1)))^2) *
             exp((delta_τ)*e.β * (get_energy(orb_a) +
                  get_energy(orb_b) - get_energy(orb_c) - get_energy(orb_d)) + delta_di)
 
@@ -338,8 +338,8 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
 
         dw = exp(-(e.β*delta_τ*(get_energy(new_orb_i) + get_energy(new_orb_j) -
                                     get_energy(last(kink1).i) - get_energy(last(kink1).j)) + delta_di)) *
-            (get_abs_offdiagonal_element(e,c,T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/
-                        get_abs_offdiagonal_element(e,c,last(kink1)))^2
+            (get_abs_offdiagonal_element(e,T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/
+                        get_abs_offdiagonal_element(e,last(kink1)))^2
 
         #change kinks
         # c.kinks[first(kink1)] = T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l)
@@ -464,8 +464,8 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         #calculate weight differance
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[first(old_kink)]) /
-                                                get_abs_offdiagonal_element(e,promote(c,Δ),last(old_kink))
+        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ).kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,last(old_kink))
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_orb1) + get_energy(new_orb2) -
                                     get_energy(last(old_kink).k) - get_energy(last(old_kink).l)) + delta_di))
 
@@ -562,8 +562,8 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
 
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[first(old_kink)]) /
-                                                get_abs_offdiagonal_element(e,promote(c,Δ),last(old_kink))
+        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ).kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,last(old_kink))
 
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(new_orb1) + get_energy(new_orb2) -
                                     get_energy(last(old_kink).i) - get_energy(last(old_kink).j)) + delta_di))
@@ -706,9 +706,9 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #calculate weight change
         delta_di = get_change_diagonal_interaction(promote(c,Δ), e, T4(removed_orb1,removed_orb2, promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l), removed_kink_τ, changed_kink_τ)
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),T4(removed_orb1, removed_orb2,  promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
-                        get_abs_offdiagonal_element(e,promote(c,Δ),T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
-                            get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[changed_kink_τ])
+        dw_off_diag = get_abs_offdiagonal_element(e,T4(removed_orb1, removed_orb2,  promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
+                        get_abs_offdiagonal_element(e,T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
+                            get_abs_offdiagonal_element(e,promote(c,Δ).kinks[changed_kink_τ])
 
         delta_τ = Float64(changed_kink_τ - removed_kink_τ)
         if delta_τ < 0
@@ -778,16 +778,16 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #calculate weight change
         delta_di = get_change_diagonal_interaction(promote(c,Δ), e, T4(removed_orb1,removed_orb2, promote(c,Δ).kinks[changed_kink_τ].i,promote(c,Δ).kinks[changed_kink_τ].j), changed_kink_τ, removed_kink_τ)
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),T4(removed_orb1, removed_orb2,  promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
-                        get_abs_offdiagonal_element(e,promote(c,Δ),T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
-                            get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[changed_kink_τ])
+        dw_off_diag = get_abs_offdiagonal_element(e,T4(removed_orb1, removed_orb2,  promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
+                        get_abs_offdiagonal_element(e,T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
+                            get_abs_offdiagonal_element(e,promote(c,Δ).kinks[changed_kink_τ])
 
         delta_τ = Float64(removed_kink_τ - changed_kink_τ)
         if delta_τ < 0
             delta_τ +=1
         end
         dw = (1.0/e.β)*(1.0/dw_off_diag) * exp(e.β * delta_τ*(get_energy(removed_orb1) + get_energy(removed_orb2) -
-                                    get_energy(c.kinks[changed_kink_τ].i) - get_energy(c.kinks[changed_kink_τ].j)) + delta_di)
+                                    get_energy(promote(c,Δ).kinks[changed_kink_τ].i) - get_energy(promote(c,Δ).kinks[changed_kink_τ].j)) + delta_di)
 
     end
     #check if sign was changend
@@ -923,14 +923,15 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                         first(old_kink) => T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
                         )
         end
+        @assert(is_type_D(last(first(add_kinks)), last(last(add_kinks))))
         drop_kinks = (old_kink,)
 
         # MC Step generated by this update
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         #calculate weight differance
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[first(old_kink)]) /
-                                                get_abs_offdiagonal_element(e,promote(c,Δ),last(old_kink))
+        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ).kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,last(old_kink))
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(last(old_kink).i) + get_energy(last(old_kink).j)-
                                                          get_energy(new_orb1) - get_energy(new_orb2)) + delta_di))
 
@@ -1018,12 +1019,12 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                         )
         end
         drop_kinks = (old_kink,)
-
+        @assert(is_type_D(last(last(add_kinks)), last(first(add_kinks))))
         # MC Step generated by this update
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[first(old_kink)]) /
-                                                get_abs_offdiagonal_element(e,promote(c,Δ),last(old_kink))
+        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ).kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,last(old_kink))
 
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(last(old_kink).k) + get_energy(last(old_kink).l) -
                                                          get_energy(new_orb1) - get_energy(new_orb2)) + delta_di))
@@ -1147,9 +1148,9 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #calculate weight change
         delta_di = get_change_diagonal_interaction(promote(c,Δ), e, T4(promote(c,Δ).kinks[changed_kink_τ].i,promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1,removed_orb2), removed_kink_τ, changed_kink_τ)
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),T4(removed_orb1, removed_orb2, promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
-                        get_abs_offdiagonal_element(e,promote(c,Δ),T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
-                            get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[changed_kink_τ])
+        dw_off_diag = get_abs_offdiagonal_element(e,T4(removed_orb1, removed_orb2, promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
+                        get_abs_offdiagonal_element(e,T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
+                            get_abs_offdiagonal_element(e,promote(c,Δ).kinks[changed_kink_τ])
 
         delta_τ = Float64(changed_kink_τ - removed_kink_τ)
         if delta_τ < 0
@@ -1219,9 +1220,9 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #calculate weight change
         delta_di = get_change_diagonal_interaction(promote(c,Δ), e, T4(promote(c,Δ).kinks[changed_kink_τ].k,promote(c,Δ).kinks[changed_kink_τ].l, removed_orb1,removed_orb2), changed_kink_τ, removed_kink_τ)
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),T4(removed_orb1, removed_orb2,  promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
-                        get_abs_offdiagonal_element(e,promote(c,Δ),T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
-                            get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[changed_kink_τ])
+        dw_off_diag = get_abs_offdiagonal_element(e,T4(removed_orb1, removed_orb2,  promote(c,Δ).kinks[changed_kink_τ].k, promote(c,Δ).kinks[changed_kink_τ].l)) *
+                        get_abs_offdiagonal_element(e,T4(promote(c,Δ).kinks[changed_kink_τ].i, promote(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2)) /
+                            get_abs_offdiagonal_element(e,promote(c,Δ).kinks[changed_kink_τ])
 
         delta_τ = Float64(removed_kink_τ - changed_kink_τ)
         if delta_τ < 0
@@ -1425,16 +1426,16 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
             end
         end
 
-        drop_kinks = (old_kink,)
+        drop_kinks = old_kink
 
         # MC Step generated by this update
-        Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kink1, add_kink2))
+        Δ = Step(Configuration(drop_orbs, drop_kinks), Configuration(add_orbs, add_kink1, add_kink2))
 
         @assert(is_type_E(promote(c,Δ).kinks[τ_new_kink], promote(c,Δ).kinks[first(old_kink)]) != false)# TODO: @assert(is_type_E(c.kinks[τ_new_kink], c.kinks[first(old_kink)]))
 
         #calculate weight differance
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[first(old_kink)]) /
-                                                get_abs_offdiagonal_element(e,promote(c,Δ),last(old_kink))
+        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ).kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,last(old_kink))
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(promote(c,Δ).kinks[τ_new_kink].i) + get_energy(promote(c,Δ).kinks[τ_new_kink].j)-
                                                          get_energy(promote(c,Δ).kinks[τ_new_kink].k) - get_energy(promote(c,Δ).kinks[τ_new_kink].l)) + delta_di))
 
@@ -1571,13 +1572,13 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
             end
         end
 
-        drop_kinks = (old_kink,)
+        drop_kinks = old_kink
 
         # MC Step generated by this update
-        Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kink1, add_kink2))
+        Δ = Step(Configuration(drop_orbs, drop_kinks), Configuration(add_orbs, add_kink1, add_kink2))
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[first(old_kink)]) /
-                                                get_abs_offdiagonal_element(e,promote(c,Δ),last(old_kink))
+        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ).kinks[τ_new_kink]) * get_abs_offdiagonal_element(e,promote(c,Δ).kinks[first(old_kink)]) /
+                                                get_abs_offdiagonal_element(e,last(old_kink))
 
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(promote(c,Δ).kinks[τ_new_kink].k) + get_energy(promote(c,Δ).kinks[τ_new_kink].l) -
                                                          get_energy(promote(c,Δ).kinks[τ_new_kink].i) - get_energy(promote(c,Δ).kinks[τ_new_kink].j)) + delta_di))
@@ -1757,9 +1758,9 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #calculate weight change
         delta_di = get_change_diagonal_interaction(promote(c,Δ), e, removed_kink, removed_kink_τ, changed_kink_τ)
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),removed_kink) *
-                        get_abs_offdiagonal_element(e,promote(c,Δ),changed_kink_old) /
-                            get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[changed_kink_τ])
+        dw_off_diag = get_abs_offdiagonal_element(e,removed_kink) *
+                        get_abs_offdiagonal_element(e,changed_kink_old) /
+                            get_abs_offdiagonal_element(e,promote(c,Δ).kinks[changed_kink_τ])
 
         delta_τ = Float64(changed_kink_τ - removed_kink_τ)
         if delta_τ < 0
@@ -1852,9 +1853,9 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #calculate weight change
         delta_di = get_change_diagonal_interaction(promote(c,Δ), e, T4(removed_kink.k,removed_kink.l, removed_kink.i,removed_kink.j), changed_kink_τ, removed_kink_τ)
 
-        dw_off_diag = get_abs_offdiagonal_element(e,promote(c,Δ),removed_kink) *
-                        get_abs_offdiagonal_element(e,promote(c,Δ),changed_kink_old) /
-                            get_abs_offdiagonal_element(e,promote(c,Δ),promote(c,Δ).kinks[changed_kink_τ])
+        dw_off_diag = get_abs_offdiagonal_element(e,removed_kink) *
+                        get_abs_offdiagonal_element(e,changed_kink_old) /
+                            get_abs_offdiagonal_element(e,promote(c,Δ).kinks[changed_kink_τ])
 
         delta_τ = Float64(removed_kink_τ - changed_kink_τ)
         if delta_τ < 0
@@ -1954,7 +1955,7 @@ function shuffle_indices(c::Configuration, e::Ensemble)
         c.kinks[first(kink)] = T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)
         Δ = Step(Configuration(kink), Configuration(first(kink) => T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)))
     end
-    return 1.0, Step()
+    return 1.0, Δ
 end
 
 """ perform a number of subsequent updates

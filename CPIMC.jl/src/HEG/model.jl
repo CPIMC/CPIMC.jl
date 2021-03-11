@@ -55,7 +55,7 @@ function lambda(N::Int, rs::Float64)
     return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
 end
 
-function get_abs_offdiagonal_element(e::Ensemble,c::Configuration,kink::T4{OrbitalHEG{3}})
+function get_abs_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
     wijkl = 0
     if kink.i.spin == kink.j.spin
         wijkl +=  1/dot((kink.i.vec-kink.k.vec), (kink.i.vec-kink.k.vec)) -
