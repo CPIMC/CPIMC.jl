@@ -176,13 +176,9 @@ function remove_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     kink1 = τ_kink1 => c.kinks[τ_kink1]
     kink2 = τ_kink2 => c.kinks[τ_kink2]
 
-    if last(kink1).i.spin != last(kink1).k.spin
-        return 1.0, Step()
-    end
-    # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
-    if dot(last(kink1).i.vec-last(kink1).k.vec, last(kink1).i.vec-last(kink1).k.vec) > ex_radius^2
-        return 1.0, Step()
-    end
+    @assert (last(kink1).i.spin == last(kink1).k.spin)
+    @assert ( dot(last(kink1).i.vec-last(kink1).k.vec, last(kink1).i.vec-last(kink1).k.vec) <= ex_radius^2 ) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
+
     prop_prob = 1.0/length(opportunities)
 
     #change configuration

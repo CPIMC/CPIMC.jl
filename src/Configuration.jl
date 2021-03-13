@@ -414,6 +414,7 @@ end
 
 
 """Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld.
+This function has no use in the current update set removability will therefore not be considered here.
 "neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -434,7 +435,7 @@ function get_left_type_B_pairs(c::Configuration)
 end
 
 
-"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld .
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld AND removable.
 "neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -448,7 +449,11 @@ function get_right_type_B_pairs(c::Configuration)
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
     τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
     if is_type_B(kink, c.kinks[τ_right])
-      push!(pairs_right, (τ, τ_right))
+      if dot(kink.i.vec-kink.k.vec, kink.i.vec-kink.k.vec) <= ex_radius^2
+        if kink.i.spin == kink.k.spin
+          push!(pairs_right, (τ, τ_right))
+        end
+      end
     end
   end
   return pairs_right
@@ -480,7 +485,9 @@ function get_left_type_C_pairs(c::Configuration)
     τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
     if is_type_C(c.kinks[τ_left], kink)
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
-        push!(pairs_left, (τ, τ_left))
+        if kink.i.spin == kink.k.spin
+          push!(pairs_left, (τ, τ_left))
+        end
       end
     end
   end
@@ -502,7 +509,9 @@ function get_right_type_C_pairs(c::Configuration)
     τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
     if is_type_C(kink, c.kinks[τ_right])
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
-        push!(pairs_right, (τ, τ_right))
+        if kink.i.spin == kink.k.spin
+          push!(pairs_right, (τ, τ_right))
+        end
       end
     end
   end
@@ -535,7 +544,9 @@ function get_left_type_D_pairs(c::Configuration)
     τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
     if is_type_D(c.kinks[τ_left], kink)
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
-        push!(pairs_left, (τ, τ_left))
+        if kink.i.spin == kink.k.spin
+          push!(pairs_left, (τ, τ_left))
+        end
       end
     end
   end
@@ -556,7 +567,9 @@ function get_right_type_D_pairs(c::Configuration)
     τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
     if is_type_D(kink, c.kinks[τ_right])
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
-        push!(pairs_right, (τ, τ_right))
+        if kink.i.spin == kink.k.spin
+          push!(pairs_right, (τ, τ_right))
+        end
       end
     end
   end

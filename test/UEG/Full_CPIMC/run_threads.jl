@@ -13,18 +13,24 @@ include("../../../src/Updates/Type-D-Updates.jl")
 include("../../../src/Updates/Type-E-Updates.jl")
 include("../../../src/UEG/estimators.jl")
 include("../../../src/CPIMC.jl")
-Threads.nthreads() = 13
+#Threads.nthreads() = 13
 const ex_radius = 3 #max Radius for exitation
 function main()
     # MC options
-    NMC = 2*10^5
+    NMC = 10^6
     cyc = 100
-    NEquil = 10^5
+    NEquil = 5*10^4
     # system parameters
-    θ = 0.125
-    rs = 1.75
+    θ = 5.0
+    rs = 20.0
 
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
+    #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1.6), get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1.6))
+    #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1), Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),-1), OrbitalHEG((1,0,0),-1),
+    #                    OrbitalHEG((0,1,0),-1), OrbitalHEG((0,0,1),-1), OrbitalHEG((-1,0,0),-1), OrbitalHEG((0,-1,0),-1), OrbitalHEG((0,0,-1),-1)]))
+    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
+
+    #4Particles
+    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
     N = length(S)
     c = Configuration(S)
 
@@ -128,11 +134,11 @@ function main()
     println(std.(measurements[:occs][1].stats))
 
     # create occnumsfile
-    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
     end
     #create resultsfile
-    open("test/UEG/Full_CPIMC/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Samples$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("test/UEG/Full_CPIMC/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
         for (k,(f,m)) in measurements
             if typeof(f) == Variance{Float64,Float64,EqualWeight}
                 write(io, string(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1),"\n"))

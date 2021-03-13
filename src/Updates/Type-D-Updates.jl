@@ -194,12 +194,8 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         removed_kink_τ, changed_kink_τ = rand(opportunities)
         prop_prob *= 1.0/length(opportunities)
 
-        if c.kinks[removed_kink_τ].i.spin != c.kinks[removed_kink_τ].k.spin
-            return 1.0, Step()
-        end
-        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
-        @assert (dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,
-                    c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2))
+        @assert (c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin)
+        @assert (dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2)) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
 
 
@@ -270,12 +266,10 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         removed_kink_τ, changed_kink_τ = rand(opportunities)
         prop_prob *= 1.0/length(opportunities)
 
-        if c.kinks[removed_kink_τ].i.spin != c.kinks[removed_kink_τ].k.spin
-            return 1.0, Step()
-        end
-        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
+
+        @assert (c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin)
         @assert (dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,
-                    c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2))
+                    c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2)) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
 
         #safe thoose for later

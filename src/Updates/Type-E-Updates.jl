@@ -385,14 +385,9 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         prop_prob *= 1.0/length(opportunities)
         removed_kink = last(removed_kink_tuple)
         changed_kink_old = last(changed_kink_tuple)
-        if removed_kink.i.spin != removed_kink.k.spin
-            return 1.0, Step()
-        end
         # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
         @assert(dot(removed_kink.i.vec-removed_kink.k.vec,
                     removed_kink.i.vec-removed_kink.k.vec) <= (ex_radius^2))
-
-
 
         #shuffle Indices TODO: is this necessary for ergodicy ?
         prop_prob *= 0.25

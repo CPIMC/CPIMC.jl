@@ -24,6 +24,7 @@ function main()
     θ = 0.125
     rs = 1.0
 
+    #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1), get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1))
     S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
     N = length(S)
     c = Configuration(S)
@@ -95,6 +96,5 @@ function main()
     #save_results("out/", measurements, e)
 end
 
-# Juno.@run(main())
-
+#Juno.@run(main())
 main()
