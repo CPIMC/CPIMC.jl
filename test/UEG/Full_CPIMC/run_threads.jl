@@ -1,6 +1,7 @@
 using OnlineStats
 using DelimitedFiles
-
+using DataFrames
+using CSV
 
 include("../../../src/Configuration.jl")
 include("../../../src/UEG/model.jl")
@@ -17,20 +18,24 @@ include("../../../src/CPIMC.jl")
 const ex_radius = 3 #max Radius for exitation
 function main()
     # MC options
-    NMC = 10^6
+    NMC = 10^3
     cyc = 100
-    NEquil = 5*10^4
+    NEquil = 10^3
     # system parameters
-    θ = 5.0
-    rs = 20.0
+    θ = 0.5
+    rs = 0.5
 
+    #unpolarized Systems
     #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1.6), get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1.6))
     #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1), Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),-1), OrbitalHEG((1,0,0),-1),
     #                    OrbitalHEG((0,1,0),-1), OrbitalHEG((0,0,1),-1), OrbitalHEG((-1,0,0),-1), OrbitalHEG((0,-1,0),-1), OrbitalHEG((0,0,-1),-1)]))
-    #S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
+
+    #33 Particles
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
 
     #4Particles
-    S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
+    #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
+
     N = length(S)
     c = Configuration(S)
 
@@ -117,6 +122,8 @@ function main()
     ΔWt_Ry = E_Ry(ΔW, e::Ensemble)
     μT_Ry = E_Ry(μT,lambda(e.N,e.rs))
     ΔT_Ry = E_Ry(ΔT,lambda(e.N,e.rs))
+    μE_Ry = μT_Ry + μWt_Ry
+    ΔE_Ry = ΔT_Ry + ΔWt_Ry
     #println("W_diag", "\t", μW_diag, " +/- ", ΔW_diag)
     println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
     println("W", "\t", μW, " +/- ", ΔW)
@@ -138,18 +145,27 @@ function main()
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
     end
     #create resultsfile
-    open("test/UEG/Full_CPIMC/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-        for (k,(f,m)) in measurements
-            if typeof(f) == Variance{Float64,Float64,EqualWeight}
-                write(io, string(typeof(m).name.mt.name, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1),"\n"))
-                if  (k == :Epot) | (k == :E)
-                    write(io, string(typeof(m).name.mt.name,"_t_Ha", "\t", E_Ry(mean(f)-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs))/2, " +/- ", (E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2),"\n"))
-                elseif (k == :Ekin)
-                    write(io,string(typeof(m).name.mt.name,"_Ha", "\t", E_Ry(mean(f),lambda(e.N,e.rs))/2, " +/- ", E_Ry(std(f),lambda(e.N,e.rs))/sqrt(Threads.nthreads()-1)/2,"\n"))
-                end
-            end
+    #add measurements to File
+    df = DataFrame(sign = 1)
+    for (k,(f,m)) in measurements
+        if typeof(f) == Variance{Float64,Float64,EqualWeight}
+            df[!,k] .= mean(f)
+            df[!,Symbol(k,"_err")] .= std(f)
         end
     end
+    #add additional Variables to File
+    df[!,:W] .= μW
+    df[!,:ΔW] .= ΔW
+    df[!,:E] .= μE
+    df[!,:ΔE] .= ΔE
+    df[!,:Wt_Ry] .= μWt_Ry
+    df[!,:ΔWt_Ry] .= ΔWt_Ry
+    df[!,:T_Ry] .= μT_Ry
+    df[!,:ΔT_Ry] .= ΔT_Ry
+    df[!,:E_Ry] .= μE_Ry
+    df[!,:ΔE_Ry] .= ΔE_Ry
+
+    CSV.write("test/UEG/Full_CPIMC/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).csv",df)
 end
 
 #Juno.@run(main())
