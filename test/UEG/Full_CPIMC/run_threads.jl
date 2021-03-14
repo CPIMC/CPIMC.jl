@@ -18,12 +18,12 @@ include("../../../src/CPIMC.jl")
 const ex_radius = 3 #max Radius for exitation
 function main()
     # MC options
-    NMC = 10^3
+    NMC = 4 * 10^6
     cyc = 100
-    NEquil = 10^3
+    NEquil =10^5
     # system parameters
     θ = 0.5
-    rs = 0.5
+    rs = 0.6
 
     #unpolarized Systems
     #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1.6), get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1.6))
@@ -141,7 +141,7 @@ function main()
     println(std.(measurements[:occs][1].stats))
 
     # create occnumsfile
-    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
            writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
     end
     #create resultsfile
@@ -165,7 +165,8 @@ function main()
     df[!,:E_Ry] .= μE_Ry
     df[!,:ΔE_Ry] .= ΔE_Ry
 
-    CSV.write("test/UEG/Full_CPIMC/out/results_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).csv",df)
+    #CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).csv",df)
+    CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*Threads.nthreads()/cyc)).csv",df)
 end
 
 #Juno.@run(main())

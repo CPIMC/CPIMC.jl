@@ -1,4 +1,5 @@
-**/out
-/out/**
+**/Plot
+**/Plot/**
+**/out/**
 *.pdf
 *.mem
