@@ -176,8 +176,6 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         inverse_prop_prob = (1.0/length(get_left_type_D_pairs(promote(c,Δ)))) * 0.5
     end
 
-    occupations(promote(c,Δ).occupations, promote(c,Δ).kinks)
-
     @assert(delta_τ > 0 )
     @assert(!isinf((inverse_prop_prob/prop_prob)*dw))
     return ((inverse_prop_prob/prop_prob)*dw), Δ
@@ -332,8 +330,6 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     @assert(dw != Inf)
     @assert(delta_τ > 0 )
     @assert(!isinf((inverse_prop_prob/prop_prob) * dw))
-
-    occupations(promote(c,Δ).occupations, promote(c,Δ).kinks)
 
     return ((inverse_prop_prob/prop_prob) * dw), Δ
 end

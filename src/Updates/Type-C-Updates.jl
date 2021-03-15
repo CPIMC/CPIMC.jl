@@ -177,8 +177,6 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         @assert !isinf(inverse_prop_prob) "change kink right: inverse_prop_prob = Inf"
     end
 
-    occupations(promote(c,Δ).occupations, promote(c,Δ).kinks)
-
     @assert(!iszero(prop_prob))
     @assert(!isinf(dw))
 
@@ -325,8 +323,6 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                                     get_energy(promote(c,Δ).kinks[changed_kink_τ].i) - get_energy(promote(c,Δ).kinks[changed_kink_τ].j)) + delta_di)
 
     end
-
-    occupations(promote(c,Δ).occupations, promote(c,Δ).kinks)
 
     @assert(delta_τ > 0 )
     @assert(!isnan((inverse_prop_prob/prop_prob) * dw))

@@ -278,7 +278,6 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         @assert(inverse_prop_prob != Inf)
     end
 
-    occupations(promote(c,Δ).occupations, promote(c,Δ).kinks)
 
     @assert(delta_τ > 0 )
     @assert(dw != Inf)
@@ -452,9 +451,6 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                                                             get_energy(removed_kink.i) - get_energy(removed_kink.j)) + delta_di)
 
     end
-
-    occupations(promote(c,Δ).occupations, promote(c,Δ).kinks)
-
 
     @assert(dw != Inf)
     @assert(delta_τ > 0 )

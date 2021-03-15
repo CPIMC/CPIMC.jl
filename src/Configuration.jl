@@ -435,6 +435,27 @@ function get_left_type_B_pairs(c::Configuration)
 end
 
 
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld. Removablility will
+no be looked at. "neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+other kink in the corresponding direktion are looked at.
+The Tuples are always arranged in a way that the Kink who gets neighboured by
+the opther stands first. (for type-B-entanglement that always imples the
+vice versa case)
+The Set consists of the pairs where the Type-B-entanglement is oriented
+#to the right of the first τ."""
+function get_right_type_B_pairs(c::Configuration)
+  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    if is_type_B(kink, c.kinks[τ_right])
+        push!(pairs_right, (τ, τ_right))
+    end
+  end
+  return pairs_right
+end
+
+
 """Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld AND removable.
 "neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
@@ -443,7 +464,7 @@ the opther stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_B_pairs(c::Configuration)
+function get_right_type_B_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
