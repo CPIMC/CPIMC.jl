@@ -89,7 +89,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(last(old_kink).i) + get_energy(last(old_kink).j)-
                                                          get_energy(new_orb1) - get_energy(new_orb2)) + delta_di))
 
-        inverse_prop_prob = (1.0/length(get_right_type_D_pairs(promote(c,Δ)))) * 0.5
+        inverse_prop_prob = (1.0/length(get_right_type_D_removable_pairs(promote(c,Δ)))) * 0.5
     else
         #add kink right
         opportunities_new_orb1 = intersect!(get_sphere_with_same_spin(last(old_kink).k, dk = ex_radius), occs)
@@ -173,7 +173,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(get_energy(last(old_kink).k) + get_energy(last(old_kink).l) -
                                                          get_energy(new_orb1) - get_energy(new_orb2)) + delta_di))
 
-        inverse_prop_prob = (1.0/length(get_left_type_D_pairs(promote(c,Δ)))) * 0.5
+        inverse_prop_prob = (1.0/length(get_left_type_D_removable_pairs(promote(c,Δ)))) * 0.5
     end
 
     @assert(delta_τ > 0 )
@@ -185,7 +185,7 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob = 0.5
     if rand() > 0.5
         #removed kink left of changed kink
-        opportunities = get_right_type_D_pairs(c)
+        opportunities = get_right_type_D_removable_pairs(c)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -257,7 +257,7 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
     else
         #removed kink right of changed kink
-        opportunities = get_left_type_D_pairs(c)
+        opportunities = get_left_type_D_removable_pairs(c)
         if isempty(opportunities)
             return 1.0, Step()
         end

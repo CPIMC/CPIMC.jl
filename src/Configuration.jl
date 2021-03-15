@@ -499,7 +499,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the left of the first τ."""
-function get_left_type_C_pairs(c::Configuration)
+function get_left_type_C_removable_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -523,7 +523,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_C_pairs(c::Configuration)
+function get_right_type_C_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -558,7 +558,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-D-entanglement is oriented
 #to the left of the first τ."""
-function get_left_type_D_pairs(c::Configuration)
+function get_left_type_D_removable_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -581,7 +581,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-D-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_D_pairs(c::Configuration)
+function get_right_type_D_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
