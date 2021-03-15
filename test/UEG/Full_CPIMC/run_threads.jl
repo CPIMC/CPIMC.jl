@@ -18,12 +18,12 @@ include("../../../src/CPIMC.jl")
 const ex_radius = 3 #max Radius for exitation
 function main()
     # MC options
-    NMC = 4 * 10^6
+    NMC = 10^6
     cyc = 100
     NEquil =10^5
     # system parameters
-    θ = 0.5
-    rs = 0.6
+    θ = 0.3
+    rs = 2
 
     #unpolarized Systems
     #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1.6), get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1.6))
@@ -44,7 +44,7 @@ function main()
     println("N: ", N)
 
     e = Ensemble(rs, get_β_internal(θ,N,c), N) # get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, shuffle_indices, add_remove_kink_chain],0,0)#, change_type_B
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, shuffle_indices],0,0)#, change_type_B  , add_type_E, remove_type_E, add_remove_kink_chain
 
 
     measurements = Dict(
@@ -150,7 +150,7 @@ function main()
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
             df[!,k] .= mean(f)
-            df[!,Symbol(k,"_err")] .= std(f)
+            df[!,Symbol(:Δ, k)] .= std(f)
         end
     end
     #add additional Variables to File
