@@ -22,7 +22,7 @@ end
 
 OrbitalHEG(v::Tuple,s=0) = OrbitalHEG(SVector(v),s)
 
-#Returns a Tupple of particle number with spinup and Particle number with spin down
+" returns a tuple of number of particles with spin up and number of particles with spin down "
 function get_spin_up_down_count(c::Configuration)
     up = 0
     down = 0
@@ -38,20 +38,19 @@ function get_spin_up_down_count(c::Configuration)
     return (up,down)
 end
 
-function get_β_internal(θ::Float64, N::Int, c::Configuration = Configuration(Set{OrbitalHEG{1}}()) )
-    #assuming that θ is defined with the Fermi Energy korresponidg to the Particle number of the stronger occupied spin state
-    #This is trivially the Case if the system is fully spinpolarized or if the System contains particles of both spins in
-    #equal numbers
-    if length(c.occupations) == 0 #no Configuration provided
+function get_β_internal(θ::Float64, N::Int, c::Union{Nothing,Configuration} = nothing )
+    # assuming that θ is defined with the Fermi energy corresponding to the particle number of the stronger occupied spin state
+    # This is the case if the system is either fully spin-polarized or unpolarized
+    if isnothing(c) # no configuration provided
         Spin_Faktor = 1
     else
         Spin_Faktor = max(get_spin_up_down_count(c)...)/N
     end
-  return ((2*pi)^2)/(((6*(pi^2)*N*Spin_Faktor)^(2/3))*θ)   #if using unpolarized system need a factor 1/2 under the ^(2/3)
+    return ((2*pi)^2)/(((6*(pi^2)*N*Spin_Faktor)^(2/3))*θ)
 end
 
-function lambda(N::Int, rs::Float64)
-    # Warum Faktor 2 am Ende?
+function λ(N::Int, rs::Float64)
+    # TODO: why factor 2
     return (4/((2*pi)^3)) * (((4*pi)/3)^(1/3)) * rs * N^(1/3) * 2
 end
 
@@ -67,8 +66,8 @@ function get_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
     else
         @assert false
     end
-    #the factor lamda/2 is due to the use of internal units
-    wijkl *= lambda(e.N,e.rs)/2
+    # the factor λ/2 is due to the use of internal units
+    wijkl *= λ(e.N,e.rs)/2
     # We sample with the weight of antisymmetrized matrix element but we do not restrict
     # the order of indizies of our possible kinks. We therefor need an extra factor 1/4 in the weight-function
     return wijkl * 1/4
@@ -77,7 +76,6 @@ end
 function get_abs_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}})
     return abs(get_offdiagonal_element(e::Ensemble,kink::T4{OrbitalHEG{3}}))
 end
-
 
 " return the energy of a single diagonal single-particle matrix element "
 function get_energy(o::OrbitalHEG)
@@ -225,8 +223,7 @@ function get_orbs_with_spin(orbitals::Set{OrbitalHEG{3}},spin::Int)
 end
 
 
-""" for add_type_B
-    calculates the change in the diagonal interaction
+""" calculates the change in the diagonal interaction
     when changing the ocupations between τ1 and τ2 accoring to left_kink
     already multiplied by e.β """
 function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kink::T4, τ1, τ2)
@@ -239,7 +236,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         delta_τ12 += 1
     end
     if orb_a.spin == orb_b.spin
-        delta_di = delta_τ12 * (lambda(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec)) -
+        delta_di = delta_τ12 * (λ(e.N,e.rs)/2) * (1/dot((orb_a.vec-orb_b.vec),(orb_a.vec-orb_b.vec)) -
                                             1/dot((orb_c.vec-orb_d.vec),(orb_c.vec-orb_d.vec)))
     else
         delta_di = 0
@@ -251,12 +248,12 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         else
             for orb in [orb_a, orb_b]
                 if occ.spin == orb.spin
-                    delta_di += delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb.vec),(occ.vec-orb.vec))
+                    delta_di += delta_τ12 * (λ(e.N,e.rs)/2) * 1/dot((occ.vec-orb.vec),(occ.vec-orb.vec))
                 end
             end
             for orb in [orb_c, orb_d]
                 if occ.spin == orb.spin
-                    delta_di -= delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb.vec),(occ.vec-orb.vec))
+                    delta_di -= delta_τ12 * (λ(e.N,e.rs)/2) * 1/dot((occ.vec-orb.vec),(occ.vec-orb.vec))
                 end
             end
         end
@@ -270,7 +267,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         kink_semi_token = startof(c.kinks)
     end
     τ_kink,kink = deref((c.kinks,kink_semi_token))
-    # The kink at τ1 is already considered in occs.
+    # the kink at τ1 is already considered in occs
     if τ_kink == τ1
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
@@ -288,7 +285,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         for occ in [kink.i, kink.j]
             for orb in [orb_a, orb_b]
                 if occ.spin == orb.spin
-                    delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                    delta_di += delta_τ * (λ(e.N,e.rs)/2) *
                                             (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
                 end
             end
@@ -296,7 +293,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         for occ in [kink.k, kink.l]
             for orb in [orb_c, orb_d]
                 if occ.spin == orb.spin
-                    delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                    delta_di += delta_τ * (λ(e.N,e.rs)/2) *
                                             (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
                 end
             end
@@ -304,7 +301,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         for occ in [kink.i, kink.j]
             for orb in [orb_c, orb_d]
                 if occ.spin == orb.spin
-                    delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                    delta_di -= delta_τ * (λ(e.N,e.rs)/2) *
                                             (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
                 end
             end
@@ -312,7 +309,7 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
         for occ in [kink.k, kink.l]
             for orb in [orb_a, orb_b]
                 if occ.spin == orb.spin
-                    delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                    delta_di -= delta_τ * (λ(e.N,e.rs)/2) *
                                             (1/dot((occ.vec-orb.vec),(occ.vec-orb.vec)))
                 end
             end
@@ -344,10 +341,10 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
             nothing
         else
             if occ.spin == orb_a.spin
-                delta_di += delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
+                delta_di += delta_τ12 * (λ(e.N,e.rs)/2) * 1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec))
             end
             if occ.spin == orb_b.spin
-                delta_di -= delta_τ12 * (lambda(e.N,e.rs)/2) * 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
+                delta_di -= delta_τ12 * (λ(e.N,e.rs)/2) * 1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec))
             end
         end
     end
@@ -376,25 +373,25 @@ function get_change_diagonal_interaction(c::Configuration, e::Ensemble, left_kin
 
         for occ in [kink.i, kink.j]
             if occ.spin == orb_a.spin
-                delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                delta_di += delta_τ * (λ(e.N,e.rs)/2) *
                                         (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec)))
             end
         end
         for occ in [kink.k, kink.l]
             if occ.spin == orb_b.spin
-                delta_di += delta_τ * (lambda(e.N,e.rs)/2) *
+                delta_di += delta_τ * (λ(e.N,e.rs)/2) *
                                         (1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)))
             end
         end
         for occ in [kink.i, kink.j]
             if occ.spin == orb_b.spin
-                delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                delta_di -= delta_τ * (λ(e.N,e.rs)/2) *
                                         (1/dot((occ.vec-orb_b.vec),(occ.vec-orb_b.vec)))
             end
         end
         for occ in [kink.k, kink.l]
             if occ.spin == orb_a.spin
-                delta_di -= delta_τ * (lambda(e.N,e.rs)/2) *
+                delta_di -= delta_τ * (λ(e.N,e.rs)/2) *
                                         (1/dot((occ.vec-orb_a.vec),(occ.vec-orb_a.vec)))
             end
         end
@@ -414,5 +411,5 @@ function get_sign_offdiagonal_product(e,c)
     for (_,kink) in c.kinks
         sign_ofd_prod *= sign(get_offdiagonal_element(e,kink))
     end
-    return(sign_ofd_prod)
+    return sign_ofd_prod
 end

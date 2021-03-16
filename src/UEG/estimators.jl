@@ -28,7 +28,7 @@ function W_diag(e::Ensemble, c::Configuration)
             redundant = true
             for occ2 in c.occupations
                 if (!redundant & (occ1.spin == occ2.spin))
-                    W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
+                    W_diag += 0.5 * λ(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
                 end
                 if occ1 == occ2
                     redundant = false
@@ -43,7 +43,7 @@ function W_diag(e::Ensemble, c::Configuration)
                 redundant = true
                 for occ2 in occs
                     if (!redundant & (occ1.spin == occ2.spin))
-                        W_diag += 0.5 * lambda(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (τ-old_τ)
+                        W_diag += 0.5 * λ(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (τ-old_τ)
                     end
                     if occ1 == occ2
                         redundant = false
@@ -110,7 +110,7 @@ end
 
 #####################Calculationg observables after Simulation
 function abs_E_mad(N::Int, lam::Float64) #internal units
-    return 2.83729747948527 * pi/2.0 * N * (lam/2)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+    return 2.83729747948527 * pi/2.0 * N * (lam/2)   #if we change the factor 2 in λ we have to change the factor lam/2 in this formula
 end
 
 function E_int_from_Hartree(E_Ha::Float64, lam::Float64)
@@ -118,26 +118,26 @@ function E_int_from_Hartree(E_Ha::Float64, lam::Float64)
 end
 
 function E_int_from_Hartree(E_Ha::Float64, e::Ensemble)
-    return (E_Ha /(16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2) * 0.5))
+    return (E_Ha /(16/((2*pi)^4 * (λ(e.N, e.rs)/2)^2) * 0.5))
 end
 
 function E_Ry(E_internal::Float64, lam::Float64)
-    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+    return (E_internal * 16/((2*pi)^4 * (lam/2)^2))   #if we change the factor 2 in λ we have to change the factor lam/2 in this formula
 end
 
 function E_Ry(E_internal::Float64, e::Ensemble)
-    return (E_internal * 16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2))   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+    return (E_internal * 16/((2*pi)^4 * (λ(e.N, e.rs)/2)^2))   #if we change the factor 2 in λ we have to change the factor lam/2 in this formula
 end
 
 function E_Ha(E_internal::Float64, lam::Float64)
-    return (E_internal * 16/((2*pi)^4 * (lam/2)^2) * 0.5)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+    return (E_internal * 16/((2*pi)^4 * (lam/2)^2) * 0.5)   #if we change the factor 2 in λ we have to change the factor lam/2 in this formula
 end
 
 function E_Ha(E_internal::Float64, e::Ensemble)
-    return (E_internal * 16/((2*pi)^4 * (lambda(e.N, e.rs)/2)^2) * 0.5)   #if we change the factor 2 in lambda we have to change the factor lam/2 in this formula
+    return (E_internal * 16/((2*pi)^4 * (λ(e.N, e.rs)/2)^2) * 0.5)   #if we change the factor 2 in λ we have to change the factor lam/2 in this formula
 end
 
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
-    return (E_Ry(E_internal-abs_E_mad(e.N, lambda(e.N,e.rs)),lambda(e.N,e.rs)))
+    return (E_Ry(E_internal-abs_E_mad(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
 end
