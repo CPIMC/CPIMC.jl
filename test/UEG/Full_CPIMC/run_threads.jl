@@ -3,6 +3,7 @@ using DelimitedFiles
 using DataFrames
 using CSV
 
+
 include("../../../src/Configuration.jl")
 include("../../../src/UEG/model.jl")
 include("../../../src/Updates/Ideal-Updates.jl")
@@ -14,31 +15,26 @@ include("../../../src/Updates/Type-D-Updates.jl")
 include("../../../src/Updates/Type-E-Updates.jl")
 include("../../../src/UEG/estimators.jl")
 include("../../../src/CPIMC.jl")
-#Threads.nthreads() = 13
-const ex_radius = 3 #max Radius for exitation
+
+
+const ex_radius = 3 # maximum radius for exitation
+
+
 function main()
     # MC options
-    NMC = 10^6
-    cyc = 100
-    NEquil =10^5
+    NMC = 5 * 10^5
+    cyc = 50
+    NEquil = 10^5
     # system parameters
-    θ = 0.3
-    rs = 2
+    θ = 0.125
+    rs = 2.0
 
-    #unpolarized Systems
-    #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1.6), get_sphere_with_same_spin(OrbitalHEG((0,0,0),-1),dk=1.6))
-    #S = union!(get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1), Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),-1), OrbitalHEG((1,0,0),-1),
-    #                    OrbitalHEG((0,1,0),-1), OrbitalHEG((0,0,1),-1), OrbitalHEG((-1,0,0),-1), OrbitalHEG((0,-1,0),-1), OrbitalHEG((0,0,-1),-1)]))
-
-    #33 Particles
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
-
-    #4Particles
-    #S = Set{OrbitalHEG{3}}([OrbitalHEG((0,0,0),1), OrbitalHEG((1,0,0),1), OrbitalHEG((0,1,0),1), OrbitalHEG((0,0,1),1)])
-
+    # use 7 particles
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
     N = length(S)
     c = Configuration(S)
 
+    println("parameters:")
     println("θ: ", θ)
     println("rs: ", rs)
     println("N: ", N)
@@ -65,28 +61,30 @@ function main()
     , :occs => (Group([Mean() for i in 1:100]), occupations)
     )
 
-
     println("Start MC process ... ")
-    Marcov_Chain_builders = Array{Task}(undef,Threads.nthreads())#die Anzahl threads ist inital die Anzahl Kerne
-    Measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
+    marcov_chain_builders = Array{Task}(undef,Threads.nthreads())# the number of threads set by `julia -t run_threads.jl` (--threads)
+    measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
     for t in 1:Threads.nthreads()
         m = deepcopy(measurements_Mean)
-        push!(Measurements_of_runs,m)
-        Marcov_Chain_builders[t] = Threads.@spawn(sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c))
+        push!(measurements_of_runs,m)
+        marcov_chain_builders[t] = Threads.@spawn(sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c))
     end
-    for mcb in Marcov_Chain_builders
+    for mcb in marcov_chain_builders
         wait(mcb)
     end
 
     println(" finished.")
+
     println("parameters:")
-    println("N: ", length(S))
     println("θ: ", θ)
     println("rs: ", rs)
+    println("N: ", N)
+
     println("measurements:")
     println("=============")
-    #Avarage over the uncorrolated mean-values of the single runs
-    for m in Measurements_of_runs
+
+    # avarage over the uncorrelated mean values of the single runs
+    for m in measurements_of_runs
         for (key,(stat,obs)) in m
             if key == :occs
                 fit!(first(measurements[key]), mean.(m[:occs][1].stats))
@@ -95,7 +93,8 @@ function main()
             end
         end
     end
-    #print measurements
+
+    # print measurements
     avg_sign = mean(first(measurements[:sign]))
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
@@ -107,7 +106,7 @@ function main()
         end
     end
 
-    #print addidtional observables
+    # print addidtional observables
     μW_diag = mean(first(measurements[:W_diag]))/avg_sign
     ΔW_diag = std(first(measurements[:W_diag]))/sqrt(Threads.nthreads()-1)/avg_sign
     μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
@@ -120,32 +119,26 @@ function main()
     ΔE = ΔW + ΔT
     μWt_Ry = Et_Ry(μW, e::Ensemble)
     ΔWt_Ry = E_Ry(ΔW, e::Ensemble)
-    μT_Ry = E_Ry(μT,lambda(e.N,e.rs))
-    ΔT_Ry = E_Ry(ΔT,lambda(e.N,e.rs))
+    μT_Ry = E_Ry(μT,λ(e.N,e.rs))
+    ΔT_Ry = E_Ry(ΔT,λ(e.N,e.rs))
     μE_Ry = μT_Ry + μWt_Ry
     ΔE_Ry = ΔT_Ry + ΔWt_Ry
-    #println("W_diag", "\t", μW_diag, " +/- ", ΔW_diag)
+
     println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
     println("W", "\t", μW, " +/- ", ΔW)
     println("E", "\t", μE, " +/- ", ΔE)
     println("W_t_Ry", "\t", μWt_Ry, " +/- ", ΔWt_Ry)
     println("T_Ry", "\t", μT_Ry, " +/- ", ΔT_Ry)
 
-
     println("")
 
-
-    println("occupations:")#plausibilität Prüfen
+    println("occupations:")
     println("============")
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
 
-    # create occnumsfile
-    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-           writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
-    end
-    #create resultsfile
-    #add measurements to File
+    # create resultsfile
+    # add measurements to file
     df = DataFrame(sign = 1)
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
@@ -153,7 +146,8 @@ function main()
             df[!,Symbol(:Δ, k)] .= std(f)
         end
     end
-    #add additional Variables to File
+
+    # add additional variables to file
     df[!,:W] .= μW
     df[!,:ΔW] .= ΔW
     df[!,:E] .= μE
@@ -165,9 +159,12 @@ function main()
     df[!,:E_Ry] .= μE_Ry
     df[!,:ΔE_Ry] .= ΔE_Ry
 
-    #CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_Steps$((NMC*Threads.nthreads()/cyc)).csv",df)
+    # create occupation numbers file
+    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
+        writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
+    end
+
     CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*Threads.nthreads()/cyc)).csv",df)
 end
 
-#Juno.@run(main())
 main()
