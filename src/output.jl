@@ -1,7 +1,7 @@
 using DelimitedFiles
 
 " print all measured observables and calculate further quantities "
-function print_results(measurements)
+function print_results(measurements, e::Ensemble)
 
     println("measurements:")
     println("=============")
@@ -36,7 +36,7 @@ function print_results(measurements)
         println("T_Ry", "\t", E_Ry(μT,e), " +/- ", E_Ry(ΔT,e))
     end
     # calculate interaction energy in Rydberg
-    if in.([:W_diag,:K_fermion], Ref(keys(measurements)))
+    if all( [:W_diag,:K_fermion] .∈ (keys(measurements),) )
         μW_diag = mean(first(measurements[:W_diag]))/avg_sign
         ΔW_diag = std(first(measurements[:W_diag]))/sqrt(measurements[:W_diag][1].n - 1)/avg_sign
         μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
@@ -50,7 +50,7 @@ function print_results(measurements)
         println("W_t_Ry", "\t", Et_Ry(μW,e), " +/- ", Et_Ry(ΔW,e))
     end
     # calculate total energy in Rydberg
-    if in.([:Ekin,:W_diag,:K_fermion], Ref(keys(measurements)))
+    if all( [:Ekin,:W_diag,:K_fermion] .∈ (keys(measurements),) )
         μE = μW + μT
         ΔE = ΔW + ΔT
         println("E", "\t", μE, " +/- ", ΔE)
