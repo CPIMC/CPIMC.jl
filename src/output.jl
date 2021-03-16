@@ -1,24 +1,63 @@
 using DelimitedFiles
 
+" print all measured observables and calculate further quantities "
 function print_results(measurements)
-    Nsamples = measurements[:Ekin][1].n
-    println("number of samples : ", Nsamples)
+
     println("measurements:")
     println("=============")
 
+    # calculate average sign
+    avg_sign = mean(first(measurements[:sign]))
+
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            println(string(k), "\t", mean(f), " +/- ", std(f) / Nsamples)
-        elseif typeof(f).name == typeof(Group()).name
-            println(string(k))
-            println("-------------")
-            println("means : $(mean.(f.stats))")
-            println("errors : $(std.(f.stats) ./ Nsamples))")
-            println("-------------")
+            if in(k,[:sign, :K])
+                println(k, "\t", mean(f), " +/- ", std(f)/sqrt(f.n - 1))
+            else
+                if typeof(f) == Variance{Float64,Float64,EqualWeight}
+                    println(k, "\t", mean(f)/avg_sign, " +/- ", std(f)/sqrt(f.n - 1)/avg_sign)
+                elseif typeof(f).name == typeof(Group()).name
+                    println(string(k))
+                    println("-------------")
+                    println("means : $(mean.(f.stats) ./ avg_sign)")
+                    println("errors : $(std.(f.stats) ./ sqrt(f.n - 1) ./ avg_sign))")
+                    println("-------------")
+                end
+            end
         end
+    end
+
+    # calculate kinetic energy in Rydberg
+    if in(:Ekin, keys(measurements))
+        μT = mean(first(measurements[:Ekin]))/avg_sign
+        ΔT = std(first(measurements[:Ekin]))/sqrt(measurements[:Ekin][1].n - 1)/avg_sign
+        μT_Ry = E_Ry(μT,λ(e.N,e.rs))
+        ΔT_Ry = E_Ry(ΔT,λ(e.N,e.rs))
+        println("T_Ry", "\t", E_Ry(μT,e), " +/- ", E_Ry(ΔT,e))
+    end
+    # calculate interaction energy in Rydberg
+    if in.([:W_diag,:K_fermion], Ref(keys(measurements)))
+        μW_diag = mean(first(measurements[:W_diag]))/avg_sign
+        ΔW_diag = std(first(measurements[:W_diag]))/sqrt(measurements[:W_diag][1].n - 1)/avg_sign
+        μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
+        ΔW_off_diag = abs(W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(measurements[:K_fermion][1].n - 1)/avg_sign))
+        μW = μW_diag + μW_off_diag
+        ΔW = ΔW_diag + ΔW_off_diag
+        ΔWt_Ry = Et_Ry(ΔW, e::Ensemble)
+        println("W_diag", "\t", μW_diag, " +/- ", ΔW_diag)
+        println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
+        println("W", "\t", μW, " +/- ", ΔW)
+        println("W_t_Ry", "\t", Et_Ry(μW,e), " +/- ", Et_Ry(ΔW,e))
+    end
+    # calculate total energy in Rydberg
+    if in.([:Ekin,:W_diag,:K_fermion], Ref(keys(measurements)))
+        μE = μW + μT
+        ΔE = ΔW + ΔT
+        println("E", "\t", μE, " +/- ", ΔE)
     end
 end
 
+# TODO: use sign
 function save_results(path, measurements, ensemble; options...)
     Nsamples = measurements[:Ekin][1].n
 
