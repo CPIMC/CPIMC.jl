@@ -5,7 +5,7 @@ mutable struct Update
     accepted :: UInt
 end
 
-" change to Configuration "# TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
+" change to Configuration " # TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
 struct Step{S<:Union{Nothing,<:Orbital,Configuration},T<:Union{Nothing,<:Orbital,Configuration}}
     drop :: S
     add :: T
@@ -22,11 +22,36 @@ Step(drop::Set{T}, add) where {T <: Orbital} = Step(Configuration(drop), add)
 Step(drop, add::Set{T}) where {T <: Orbital} = Step(drop, Configuration(add))
 Step(drop::Set{T}, add::Set{T}) where {T <: Orbital} = Step(Configuration(drop), Configuration(add))
 
+" change configuration c as given by Δ "
+function apply_update!(c::Configuration, Δ::Step)
+    drop!(c, Δ.drop)
+    add!(c, Δ.add)
+    nothing
+end
+
+" change configuration c as given by a list of subsequent Steps "
+function apply_update!(c::Configuration, Δ::Array{Step,1})
+    for δ in Δ
+        apply_update!(c, δ)
+    end
+end
+
+" return configuration Δ(c) "
+apply_step(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
+
+" change configuration c as given by a list of subsequent Steps "
+apply_step(c::Configuration, Δ::Array{Step,1}) = reduce(apply_step, Δ, init=c)
+
+" empty Step: do nothing "
+function apply_update!(c::Configuration, Δ::Step{Nothing,Nothing})
+    nothing
+end
+
 """ perform multiple MC steps on configuration c
     not fully implemented, but to illustrate
     the possibility to achieve this by
     dispatching on the extra_kwarg chain_length """# TODO write function union!(Δ, δ) which combines two Step objects
-function step!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_length)
+function update!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_length)
     @assert !isempty(updates)
 
     Δ = Step()
@@ -36,13 +61,13 @@ function step!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_le
     for i in 1:chain_length
         stp = rand(1:length(updates))
         chain[i] = stp
-        dv, δ = updates[stp].update(promote(c, Δ), e)
+        dv, δ = updates[stp].update(apply_step(c, Δ), e)
         #TODO write function union!(Δ, δ) which combines two Step objects
         p *= dv
     end
 
     if rand() < dv
-        promote!(c, Δ)
+        apply_update!(c, Δ)
         for stp in chain
             updates[stp].proposed += 1
             updates[stp].accepted += 1
@@ -51,61 +76,35 @@ function step!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_le
 end
 
 " perform an MC step on the configuration c "
-function step!(c::Configuration, e::Ensemble, updates::Array{Update,1})
+function update!(c::Configuration, e::Ensemble, updates::Array{Update,1})
     @assert !isempty(updates)
 
     up = rand(updates)
     up.proposed += 1
     dv, Δ = up.update(c, e)
     if rand() < dv
-        promote!(c, Δ)
+        apply_update!(c, Δ)
         up.accepted += 1
     end
 end
 
-" change configuration c as given by Δ "
-function promote!(c::Configuration, Δ::Step)
-    drop!(c, Δ.drop)
-    add!(c, Δ.add)
-    nothing
-end
-
-" change configuration c as given by a list of subsequent Steps "
-function promote!(c::Configuration, Δ::Array{Step,1})
-    for δ in Δ
-        promote!(c, δ)
-    end
-end
-
-" return configuration Δ(c) "
-promote(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
-
-" change configuration c as given by a list of subsequent Steps "
-promote(c::Configuration, Δ::Array{Step,1}) = reduce(promote, Δ, init=c)
-
-" empty Step: do nothing "
-function promote!(c::Configuration, Δ::Step{Nothing,Nothing})
-    nothing
-end
 
 function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
 
     println("starting equilibration")
-    k = 1# progress counter
+    k = 1 # progress counter
     for i in 1:throwAway
         # print progress
         if i%(throwAway/100) == 0
             print("eq: ",k,"/100","    ")
             k+=1
         end
-        step!(c, e, updates; kwargs...)
+        update!(c, e, updates; kwargs...)
     end
 
     println("starting Simulation")
-    #global add_c_counter = 0
-    #global remove_c_counter = 0
     i = 0
-    k = 1# progress counter
+    k = 1 # progress counter
     while i < steps
 
         # print progress
@@ -115,7 +114,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
         end
 
         " MC step "
-        step!(c, e, updates; kwargs...)
+        update!(c, e, updates; kwargs...)
 
         if i % sampleEvery == 0
             " calculate observables "
@@ -130,11 +129,10 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
 
         i += 1
     end
-    #println(add_c_counter)
-    #println(remove_c_counter)
 end
 
 
+# TODO: remove
 # Only use if all threads do not access any objekts in common
 function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
     @assert(length(c.kinks) == 0)
@@ -149,7 +147,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
             println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
-        step!(c, e, updates; kwargs...)
+        update!(c, e, updates; kwargs...)
     end
     if (Threads.threadid() == 1)
         println("\nstarting Simulation")
@@ -166,7 +164,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         end
 
         " MC step "
-        step!(c, e, updates; kwargs...)
+        update!(c, e, updates; kwargs...)
 
         "measurement"
         if i % sampleEvery == 0
