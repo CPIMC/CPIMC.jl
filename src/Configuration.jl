@@ -128,65 +128,50 @@ function get_nearest_τ_affecting_orb(Configuration::Configuration, orbital::Orb
   return (current_τ, first(first(kinks_of_orb)))
 end
 
-
-
-function get_τ_borders(Configuration::Configuration, orbitals::Set{<:Orbital},τ::ImgTime)
-  if length(Configuration.kinks) == 0
-      return(ImgTime(0),ImgTime(1))
-  end
-  #Initially we set τ right and τ left to the nearest Kinks left and right of τ.
-  τ_left_semi_token  = searchsortedafter(Configuration.kinks, τ)
-  τ_right_semi_token = searchsortedlast(Configuration.kinks, τ)
-  if τ_left_semi_token == pastendsemitoken(Configuration.kinks)
-      τ_left = first(first(Configuration.kinks))
-  else
-      τ_left = first(deref((Configuration.kinks, τ_left_semi_token)))
-  end
-  if τ_right_semi_token == beforestartsemitoken(Configuration.kinks)
-      τ_right = first(last(Configuration.kinks))
-  else
-      τ_right = first(deref((Configuration.kinks, τ_right_semi_token)))
-      if τ_right == τ
-          τ_right_semi_token = regress((Configuration.kinks,τ_right_semi_token))
-          if τ_right_semi_token == beforestartsemitoken(Configuration.kinks)
-              τ_right = first(last(Configuration.kinks))
-          else
-              τ_right = first(deref((Configuration.kinks, τ_right_semi_token)))
-          end
-      end
-  end
-  # now search for the nearst τ's that do actually affect one of the orbitals
-  non_interacting_orb_counter = 0
-  for orb in orbitals
-    @assert(τ_right != ImgTime(1))
-    tupel = get_nearest_τ_affecting_orb(Configuration, orb, τ)
-    if tupel[1] == nothing
-        non_interacting_orb_counter += 1
+""" return first kink after to τ
+    if there is no kink with ImgTime larger than τ, return first kink """
+function next(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
+    toc = searchsortedafter(ck, τ)
+    if toc == pastendsemitoken(ck)
+        first(ck)
     else
-        # here we always have to check wether the given intervall extends over 1
-        if τ_left < τ < tupel[1]
-            nothing
-        elseif tupel[1] < τ < τ_left
-            τ_left = tupel[1]
-        elseif τ_left < tupel[1]
-          τ_left = tupel[1]
-        end
-
-        if tupel[2] < τ < τ_right
-            nothing
-        elseif τ_right < τ < tupel[2]
-          τ_right = tupel[2]
-        elseif tupel[2] < τ_right
-            τ_right = tupel[2]
-        end
+        deref((ck, toc))
     end
-  end
-  if non_interacting_orb_counter == length(orbitals)
-      return (ImgTime(0),ImgTime(1))
-  else
-      return (τ_left,τ_right)
-  end
 end
+
+""" return first kink before τ
+    if there is no kink with ImgTime smaller than τ, return last kink """
+function prev(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
+    toc = regress((ck, searchsortedfirst(ck, τ)))
+    if toc == beforestartsemitoken(ck)
+        last(ck)
+    else
+        deref((ck, toc))
+    end
+end
+
+""" return a tuple of
+    the closest kink to the right and
+    the closest kink to the left of τ
+    that affect one of the orbitals in os """
+function adjacent_kinks_affecting_orbs(c::Configuration{T}, os::Set{T}, τ::ImgTime) :: Tuple{Pair{ImgTime,<:Kink{T}},Pair{ImgTime,<:Kink{T}}} where {T <: Orbital}
+    k = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), c.kinks)
+    prev(k, τ), next(k, τ)
+end
+
+""" return a tuple of
+    the ImgTime of the closest kink to the right and
+    the ImgTime of the closest kink to the left of τ
+    that affect one of the orbitals in os """
+function τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) :: Tuple{ImgTime,ImgTime} where {T <: Orbital}
+    k = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), c.kinks)
+    if isempty(k)
+        return ImgTime.((0,1))
+    else
+        first.((prev(k, τ), next(k, τ)))
+    end
+end
+
 
 " Return if an orbital is not affected by any kink. "
 function is_non_interacting(Configuration::Configuration{T}, orbital::T) :: Bool where {T<:Orbital}
@@ -426,7 +411,7 @@ function get_left_type_B_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_B(c.kinks[τ_left], kink)
       push!(pairs_left, (τ, τ_left))
     end
@@ -447,7 +432,7 @@ function get_right_type_B_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_B(kink, c.kinks[τ_right])
         push!(pairs_right, (τ, τ_right))
     end
@@ -468,7 +453,7 @@ function get_right_type_B_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_B(kink, c.kinks[τ_right])
       if dot(kink.i.vec-kink.k.vec, kink.i.vec-kink.k.vec) <= ex_radius^2
         if kink.i.spin == kink.k.spin
@@ -503,7 +488,7 @@ function get_left_type_C_removable_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_C(c.kinks[τ_left], kink)
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
         if kink.i.spin == kink.k.spin
@@ -527,7 +512,7 @@ function get_right_type_C_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_C(kink, c.kinks[τ_right])
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
         if kink.i.spin == kink.k.spin
@@ -562,7 +547,7 @@ function get_left_type_D_removable_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_D(c.kinks[τ_left], kink)
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
         if kink.i.spin == kink.k.spin
@@ -585,7 +570,7 @@ function get_right_type_D_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     if is_type_D(kink, c.kinks[τ_right])
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
         if kink.i.spin == kink.k.spin
@@ -632,7 +617,7 @@ function get_left_type_E_removable_pairs(c::Configuration)
   pairs_left = Set{}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
     sorted_kinks = is_type_E(c.kinks[τ_left], kink)
     if sorted_kinks == false
       continue
@@ -659,7 +644,7 @@ function get_right_type_E_removable_pairs(c::Configuration)
   pairs_right = Set{}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = get_τ_borders(c, kink_orb_set ,τ)
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
 
     sorted_kinks = is_type_E(kink, c.kinks[τ_right])
     if sorted_kinks == false

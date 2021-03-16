@@ -23,16 +23,16 @@ Step(drop, add::Set{T}) where {T <: Orbital} = Step(drop, Configuration(add))
 Step(drop::Set{T}, add::Set{T}) where {T <: Orbital} = Step(Configuration(drop), Configuration(add))
 
 " change configuration c as given by Δ "
-function apply_update!(c::Configuration, Δ::Step)
+function apply_step!(c::Configuration, Δ::Step)
     drop!(c, Δ.drop)
     add!(c, Δ.add)
     nothing
 end
 
 " change configuration c as given by a list of subsequent Steps "
-function apply_update!(c::Configuration, Δ::Array{Step,1})
+function apply_step!(c::Configuration, Δ::Array{Step,1})
     for δ in Δ
-        apply_update!(c, δ)
+        apply_step!(c, δ)
     end
 end
 
@@ -43,7 +43,7 @@ apply_step(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
 apply_step(c::Configuration, Δ::Array{Step,1}) = reduce(apply_step, Δ, init=c)
 
 " empty Step: do nothing "
-function apply_update!(c::Configuration, Δ::Step{Nothing,Nothing})
+function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
     nothing
 end
 
@@ -67,7 +67,7 @@ function update!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_
     end
 
     if rand() < dv
-        apply_update!(c, Δ)
+        apply_step!(c, Δ)
         for stp in chain
             updates[stp].proposed += 1
             updates[stp].accepted += 1
@@ -83,7 +83,7 @@ function update!(c::Configuration, e::Ensemble, updates::Array{Update,1})
     up.proposed += 1
     dv, Δ = up.update(c, e)
     if rand() < dv
-        apply_update!(c, Δ)
+        apply_step!(c, Δ)
         up.accepted += 1
     end
 end

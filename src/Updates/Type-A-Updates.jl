@@ -23,7 +23,7 @@ function move_particle(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     Δ = Step(x, y)
 
     # get orbitals for reverse update
-    oe2 = get_non_interacting_orbs_of_set(promote(c,Δ),setdiff!(get_sphere_with_same_spin(y, dk = ex_radius), promote(c,Δ).occupations ))
+    oe2 = get_non_interacting_orbs_of_set(apply_step(c,Δ),setdiff!(get_sphere_with_same_spin(y, dk = ex_radius), apply_step(c,Δ).occupations ))
 
 
     # quotient of proposal probabilities
