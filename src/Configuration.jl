@@ -345,64 +345,81 @@ function add!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
     add!(c1, c2.kinks)
 end
 
-""" returns an array of the imaginary-time ordered ladder operators used in the current configuration,
-where an operator corresponds to a tuple of 1 (creator) or -1(annihilator) and the corresponding obrital"""
-function get_timeordered_ladder_operators(c)
-    operators = Array{Pair{Int,basis(c)},1}()
-    for kink in values(c.kinks)
-        for orb in [kink.i,kink.j]
-            push!(operators, 1 => orb)
-        end
-        for orb in [kink.k,kink.l]
-            push!(operators, -1 => orb)
-        end
+# """ returns an array of the imaginary-time ordered ladder operators used in the current configuration,
+# where an operator corresponds to a tuple of 1 (creator) or -1(annihilator) and the corresponding obrital"""
+# function get_timeordered_ladder_operators(c)
+#     operators = Array{Pair{Int,basis(c)},1}()
+#     for kink in values(c.kinks)
+#         for orb in [kink.i,kink.j]
+#             push!(operators, 1 => orb)
+#         end
+#         for orb in [kink.k,kink.l]
+#             push!(operators, -1 => orb)
+#         end
+#     end
+#     return operators
+# end
+#
+#
+# """ returns 1 or -1 depending on the order of all ladder operators.
+# Used in the sign estimator."""
+# function ladder_operator_order_factor(c)
+#     phase_factor = 1
+#     operators = get_timeordered_ladder_operators(c)
+#     while !isempty(operators)
+#         if first(operators[1]) == 1
+#             op_type = 1
+#             index = 1
+#             op_orb = last(operators[index])
+#
+#         else
+#             op_type = -1
+#             operators[1:2] = [operators[2], operators[1]]
+#             phase_factor *= -1
+#             index = 2
+#             op_orb = last(operators[index])
+#         end
+#         while operators[index + op_type] != (op_type*(-1) => op_orb)
+#             operators[index:index+1] = [operators[index+1], operators[index]]
+#             phase_factor *= -1
+#             index += 1
+#             @assert(index <= length(operators))
+#         end
+#         deleteat!(operators, sort([index + op_type,index]))
+#     end
+#     return phase_factor
+# end
+
+""" get a list of orbitals that are affected by a kink in the conventional ordering i, j, k, l
+    this corresponds to the matrix element w_ijkl in the same order """
+orbs_ordered(x::T4) = [x.i, x.j, x.k, x.l]
+
+""" get a list of orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l """
+function orbs_ordered(ck::SortedDict{ImgTime,<:Kink{T}}) where T
+    if isempty(ck)
+        return Array{T,1}()
+    else
+        return vcat([orbs_ordered(k) for k in values(ck)]...)
     end
-    return operators
 end
 
-
-""" returns 1 or -1 depending on the order of all ladder operators.
-Used in the sign estimator."""
-function get_ladder_operator_order_factor(c)
+""" returns 1 or -1 depending on the order of all ladder operators as given by a list of orbitals """
+function ladder_operator_order_factor(sortedlist::Array{<:Orbital,1})
     phase_factor = 1
-    operator_orbs = get_timeordered_ladder_operators(c)
-    while !isempty(operators)
+    while !isempty(sortedlist)
         index = 1
-        op_orb = operator_orbs[index]
-        while operator_orbs[index + 1] != op_orb
-            operator_orbs[index:index+1] = [operator_orbs[index+1], operator_orbs[index]]
+        op_orb = sortedlist[index]
+        while sortedlist[index + 1] != op_orb
+            sortedlist[index:index+1] = [sortedlist[index+1], sortedlist[index]]
             phase_factor *= -1
             index += 1
-            @assert(index <= length(operator_orbs))
+            @assert(index <= length(sortedlist))
         end
-        deleteat!(operator_orbs, [index, index+1])
+        deleteat!(sortedlist, [index, index+1])
     end
     return phase_factor
 end
 
-'function get_ladder_operator_order_factor(c)
-    phase_factor = 1
-    operators = get_timeordered_ladder_operators(c)
-    while !isempty(operators)
-        if first(operators[1]) == 1
-            op_type = 1
-            index = 1
-            op_orb = last(operators[index])
-
-        else
-            op_type = -1
-            operators[1:2] = [operators[2], operators[1]]
-            phase_factor *= -1
-            index = 2
-            op_orb = last(operators[index])
-        end
-        while operators[index + op_type] != (op_type*(-1) => op_orb)
-            operators[index:index+1] = [operators[index+1], operators[index]]
-            phase_factor *= -1
-            index += 1
-            @assert(index <= length(operators))
-        end
-        deleteat!(operators, sort([index + op_type,index]))
-    end
-    return phase_factor * (-1)^(length(c.kinks))
-end'
+""" returns 1 or -1 depending on the order of all ladder operators as given by the orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l,
+used in the sign estimator."""
+ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_order_factor(orbs_ordered(ck))

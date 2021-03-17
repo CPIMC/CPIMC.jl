@@ -94,10 +94,7 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100) :: Array{Floa
     nk
 end
 
-function signum(e::Ensemble,  c::Configuration)
-    return (get_ladder_operator_order_factor(c)*get_sign_offdiagonal_product(e,c))
-end
-
+signum(e::Ensemble,  c::Configuration) = ladder_operator_order_factor(c.kinks)*get_sign_offdiagonal_product(e,c)
 
 function particleNumber(c::Configuration)
   return length(c.occupations)

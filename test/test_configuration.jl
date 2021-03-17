@@ -53,3 +53,21 @@ end
     @test !isunaffected(conf.kinks, d)
     @test isunaffected(conf.kinks, e)
 end
+
+
+@testset "orbs_ordered(::T4)" begin
+    @test orbs_ordered(T4(a,b,c,d))[1] == a
+    @test orbs_ordered(T4(a,b,c,d))[2] == b
+    @test orbs_ordered(T4(a,b,c,d))[3] == c
+    @test orbs_ordered(T4(a,b,c,d))[4] == d
+    @test orbs_ordered(T4(a,b,c,d)) == [a,b,c,d]
+end
+
+@testset "orbs_ordered(::SortedDict{ImgTime,<:Kink})" begin
+    orbs_ordered(conf.kinks)[1] == a
+    orbs_ordered(conf.kinks)[4] == d
+    orbs_ordered(conf.kinks)[end] == a
+    orbs_ordered(conf.kinks)[end-4] == d
+end
+
+println(typeof(orbs_ordered(conf.kinks)))
