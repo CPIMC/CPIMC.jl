@@ -12,7 +12,7 @@ function Ekin(e::Ensemble, c::Configuration)
     for (τ,kink) in c.kinks
         E_kin += sum(get_energy(n) for n in occs) * float(τ - old_τ)
         old_τ = τ
-        kink!(occs, kink)
+        excite!(occs, kink)
     end
     return(E_kin)
 end
@@ -51,7 +51,7 @@ function W_diag(e::Ensemble, c::Configuration)
                 end
             end
             old_τ = τ
-            kink!(occs, kink)
+            excite!(occs, kink)
         end
     end
     W_diag *= -1
@@ -88,7 +88,7 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100) :: Array{Floa
                 end
             end
             old_τ = tau
-            kink!(occs,k)
+            excite!(occs,k)
         end
     end
     nk

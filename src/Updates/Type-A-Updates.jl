@@ -1,11 +1,11 @@
 function move_particle(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
-    free_orbitals = get_non_interacting_orbs_of_set(c, c.occupations)
+    free_orbitals = filter(x -> isunaffected(c.kinks, x), c.occupations)
     if isempty(free_orbitals)
         return 1.0, Step()
     else
-        x = rand(get_non_interacting_orbs_of_set(c, c.occupations))
+        x = rand( free_orbitals )
     end
-    oe = get_non_interacting_orbs_of_set(c,setdiff!(get_sphere_with_same_spin(x, dk = ex_radius), c.occupations))
+    oe = filter(x -> isunaffected(c.kinks,x), setdiff!(get_sphere_with_same_spin(x, dk = ex_radius), c.occupations))
 
     #if there are no empty non interacting orbitals in neighbourhood make no change
     if isempty(oe)
@@ -23,11 +23,13 @@ function move_particle(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     Δ = Step(x, y)
 
     # get orbitals for reverse update
-    oe2 = get_non_interacting_orbs_of_set(apply_step(c,Δ),setdiff!(get_sphere_with_same_spin(y, dk = ex_radius), apply_step(c,Δ).occupations ))
+    oe2 = filter(x -> isunaffected(apply_step(c,Δ).kinks,x), setdiff!(get_sphere_with_same_spin(y, dk = ex_radius), apply_step(c,Δ).occupations) )
 
 
     # quotient of proposal probabilities
     dv = length(oe)/length(oe2)
+    @assert dv >= 0
+    @assert dw >= 0 "dw=$(dw), x=$(x), y=$(y), delta_di=$(delta_di)"
     @assert (dv*dw) >= 0
     return dv*dw, Δ
 end

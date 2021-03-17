@@ -13,6 +13,10 @@ sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
 
 conf = Configuration(get_sphere(OrbitalHEG((0,0,0),1),dk=1),sd)
 
+@testset "orbs" begin
+    @test orbs(T4(a,b,c,d)) == Set([a,b,c,d])
+end
+
 @testset "adjacent_kinks_affecting_orbs" begin
     @test adjacent_kinks_affecting_orbs(conf, Set([a]), ImgTime(0.0)) == (ImgTime(0.8) => T4(d,c,b,a), ImgTime(0.2) => T4(a,b,c,d))
     @test adjacent_kinks_affecting_orbs(conf, Set([b]), ImgTime(0.1)) == (ImgTime(0.8) => T4(d,c,b,a), ImgTime(0.2) => T4(a,b,c,d))
@@ -24,15 +28,15 @@ conf = Configuration(get_sphere(OrbitalHEG((0,0,0),1),dk=1),sd)
     @test adjacent_kinks_affecting_orbs(conf, Set([d,a]), ImgTime(0.7)) == (ImgTime(0.6) => T4(b,a,d,c), ImgTime(0.8) => T4(d,c,b,a))
     @test adjacent_kinks_affecting_orbs(conf, Set([a,c,d]), ImgTime(0.8)) == (ImgTime(0.6) => T4(b,a,d,c), ImgTime(0.2) => T4(a,b,c,d))
     @test adjacent_kinks_affecting_orbs(conf, Set([b,c,d]), ImgTime(0.9)) == (ImgTime(0.8) => T4(d,c,b,a), ImgTime(0.2) => T4(a,b,c,d))
-    #@test adjacent_kinks_affecting_orbs(conf, Set([e]), ImgTime(0.9)) == Nothing
+    @test adjacent_kinks_affecting_orbs(conf, Set([e]), ImgTime(0.9)) == (nothing,nothing)
 end
 
-@testset "get_kinks_of_orb" begin
-    @test get_kinks_of_orb(conf, a) == sd
-    @test get_kinks_of_orb(conf, b) == sd
-    @test get_kinks_of_orb(conf, c) == sd
-    @test get_kinks_of_orb(conf, d) == sd
-    @test get_kinks_of_orb(conf, e) == SortedDict{ImgTime, Kink{<:Orbital}}()
+@testset "kinks_affecting_orbs" begin
+    @test kinks_affecting_orbs(conf, Set([a])) == sd
+    @test kinks_affecting_orbs(conf, Set([b])) == sd
+    @test kinks_affecting_orbs(conf, Set([c])) == sd
+    @test kinks_affecting_orbs(conf, Set([d])) == sd
+    @test kinks_affecting_orbs(conf, Set([e])) == SortedDict{ImgTime, Kink{<:Orbital}}()
 end
 
 @testset "τ_borders" begin
@@ -40,4 +44,12 @@ end
     @test τ_borders(conf, Set([a,e]), ImgTime(0.5)) == (ImgTime(0.2), ImgTime(0.6))
     @test τ_borders(conf, Set([b,d]), ImgTime(0.1)) == (ImgTime(0.8), ImgTime(0.2))
     @test τ_borders(conf, Set([e]), ImgTime(0.9)) == (ImgTime(0.0), ImgTime(1.0))
+end
+
+@testset "isunaffected" begin
+    @test !isunaffected(conf.kinks, a)
+    @test !isunaffected(conf.kinks, b)
+    @test !isunaffected(conf.kinks, c)
+    @test !isunaffected(conf.kinks, d)
+    @test isunaffected(conf.kinks, e)
 end
