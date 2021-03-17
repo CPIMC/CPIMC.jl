@@ -1,3 +1,87 @@
+
+
+
+"""If left kink and right_kink are type-E-entangled it returns a tuple of the two kinks whos orbs
+are sorted in a way that k an j of both kinks are the common orbitals.
+Otherwise it returns false.
+This does not check wether the two kinks are neighbouring"""
+function is_type_E(left_kink::T4, right_kink::T4)
+  c_orb1 = intersect!(Set([left_kink.i, left_kink.j]), Set([right_kink.k,right_kink.l]))
+  c_orb2 = intersect!(Set([left_kink.k, left_kink.l]), Set([right_kink.i,right_kink.j]))
+  if ((length(c_orb1) == 1) & (length(c_orb2) == 1))
+    c_orb1 = first(c_orb1)
+    c_orb2 = first(c_orb2)
+    noncommon_orb_leftk_left = first(setdiff!(Set([left_kink.k, left_kink.l]), Set([right_kink.i,right_kink.j])))
+    noncommon_orb_rightk_right = first(setdiff!(Set([right_kink.i,right_kink.j]), Set([left_kink.k, left_kink.l])))
+    noncommon_orb_leftk_right = first(setdiff!(Set([left_kink.i, left_kink.j]), Set([right_kink.k,right_kink.l])))
+    noncommon_orb_rightk_left = first(setdiff!(Set([right_kink.k,right_kink.l]), Set([left_kink.i, left_kink.j])))
+    @assert(length(Set([noncommon_orb_leftk_left, noncommon_orb_rightk_right, noncommon_orb_leftk_right, noncommon_orb_rightk_left])) == 4)
+    @assert(noncommon_orb_leftk_right.vec - noncommon_orb_leftk_left.vec == noncommon_orb_rightk_left.vec - noncommon_orb_rightk_right.vec)
+    return((T4(noncommon_orb_leftk_right, c_orb1, c_orb2, noncommon_orb_leftk_left),
+                T4(noncommon_orb_rightk_right, c_orb2, c_orb1, noncommon_orb_rightk_left)))
+  else
+    return(false)
+  end
+end
+
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-E-Entangeld AND removable.
+"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+other kink in the corresponding direktion are looked at.
+The Tuples are always arranged in a way that the Kink who gets neighboured by
+the opther stands first.(vice versa does not have to be the case)
+The Set consists of the pairs where the Type-E-entanglement is oriented
+#to the left of the first τ."""
+function get_left_type_E_removable_pairs(c::Configuration)
+  pairs_left = Set{}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
+    sorted_kinks = is_type_E(c.kinks[τ_left], kink)
+    if sorted_kinks == false
+      continue
+    end
+    @assert(τ_left != τ_right)
+    @assert(τ_right != ImgTime(1))
+    if dot(last(sorted_kinks).i.vec - last(sorted_kinks).k.vec,
+                last(sorted_kinks).i.vec - last(sorted_kinks).k.vec) <= (ex_radius^2)
+      push!(pairs_left, (τ => last(sorted_kinks),τ_left => first(sorted_kinks)))
+    end
+  end
+  return pairs_left
+end
+
+
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-E-Entangeld AND removable.
+"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+other kink in the corresponding direktion are looked at.
+The Tuples are always arranged in a way that the Kink who gets neighboured by
+the opther stands first.(vice versa does not have to be the case)
+The Set consists of the pairs where the Type-E-entanglement is oriented
+#to the right of the first τ."""
+function get_right_type_E_removable_pairs(c::Configuration)
+  pairs_right = Set{}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
+
+    sorted_kinks = is_type_E(kink, c.kinks[τ_right])
+    if sorted_kinks == false
+      continue
+    end
+    @assert(τ_left != τ_right)
+    @assert(τ_right != ImgTime(1))
+    if dot(first(sorted_kinks).i.vec - first(sorted_kinks).k.vec,
+                first(sorted_kinks).i.vec - first(sorted_kinks).k.vec) <= (ex_radius^2)
+        push!(pairs_right, (τ => first(sorted_kinks),τ_right => last(sorted_kinks)))
+    end
+
+
+  end
+  return pairs_right
+end
+
+
+
 function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     #After the updates the i and l komponents of both kinks will contain the old kink, wile the j and k components contain the old orbitals
     prop_prob = 1.0

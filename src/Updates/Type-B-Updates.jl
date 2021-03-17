@@ -1,3 +1,85 @@
+
+
+"""Returns True if left_kink and right_kink are entangled in a Type-B way.
+This does not check wether the two kinks are neighbouring"""
+function is_type_B(left_kink::T4, right_kink::T4)
+  if (Set([left_kink.i, left_kink.j]) == Set([right_kink.k, right_kink.l])) &
+        (Set([left_kink.k, left_kink.l]) == Set([right_kink.i, right_kink.j]))
+    return(true)
+  else
+    return(false)
+  end
+end
+
+
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld.
+This function has no use in the current update set removability will therefore not be considered here.
+"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+other kink in the corresponding direktion are looked at.
+The Tuples are always arranged in a way that the Kink who gets neighboured by
+the opther stands first. (for type-B-entanglement that always imples the
+vice versa case)
+The Set consists of the pairs where the Type-B-entanglement is oriented
+to the left of the first τ."""
+function get_left_type_B_pairs(c::Configuration)
+  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
+    if is_type_B(c.kinks[τ_left], kink)
+      push!(pairs_left, (τ, τ_left))
+    end
+  end
+  return pairs_left
+end
+
+
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld. Removablility will
+no be looked at. "neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+other kink in the corresponding direktion are looked at.
+The Tuples are always arranged in a way that the Kink who gets neighboured by
+the opther stands first. (for type-B-entanglement that always imples the
+vice versa case)
+The Set consists of the pairs where the Type-B-entanglement is oriented
+#to the right of the first τ."""
+function get_right_type_B_pairs(c::Configuration)
+  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
+    if is_type_B(kink, c.kinks[τ_right])
+        push!(pairs_right, (τ, τ_right))
+    end
+  end
+  return pairs_right
+end
+
+
+"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld AND removable.
+"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+other kink in the corresponding direktion are looked at.
+The Tuples are always arranged in a way that the Kink who gets neighboured by
+the opther stands first. (for type-B-entanglement that always imples the
+vice versa case)
+The Set consists of the pairs where the Type-B-entanglement is oriented
+#to the right of the first τ."""
+function get_right_type_B_removable_pairs(c::Configuration)
+  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+  for (τ,kink) in c.kinks
+    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
+    if is_type_B(kink, c.kinks[τ_right])
+      if dot(kink.i.vec-kink.k.vec, kink.i.vec-kink.k.vec) <= ex_radius^2
+        if kink.i.spin == kink.k.spin
+          push!(pairs_right, (τ, τ_right))
+        end
+      end
+    end
+  end
+  return pairs_right
+end
+
+
 function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     #samplign propability
     prop_prob = 1
@@ -257,11 +339,11 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
     kink2 = τ2 => c.kinks[τ2]
     occs = occupations(c, first(kink1))
 
-    opportunities = get_non_interacting_orbs_of_set_in_interval(
-                        c,setdiff!(
+    opportunities = filter( x -> isunaffected_in_interval(c.kinks, x, first(kink1), first(kink2))
+                        ,setdiff!(
                             get_sphere_with_same_spin(last(kink1).i, dk = ex_radius
                             ), occs
-                        ),first(kink1),first(kink2)
+                        )
                     )
     delete!(opportunities, last(kink1).k)
     delete!(opportunities, last(kink1).l)
@@ -273,8 +355,7 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
     if new_orb_i == new_orb_j
         return 1.0, Step()
     end
-    if (!is_non_interacting_in_interval(c,new_orb_j,first(kink1),first(kink2)) |
-        in(new_orb_j,occs))
+    if !isunaffected_in_interval(c.kinks,new_orb_j,first(kink1),first(kink2)) | in(new_orb_j,occs)
         return 1.0, Step()
     else
         #calculate change in diagonal interaction energy
@@ -311,18 +392,17 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
                         )
         end
 
-        kink!(occs, T4(new_orb_i, new_orb_j, last(kink1).i, last(kink1).j))
+        excite!(occs, T4(new_orb_i, new_orb_j, last(kink1).i, last(kink1).j))
         # MC Step generated by this update
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ))
-        opportunities_reverse = get_non_interacting_orbs_of_set_in_interval(
-                                    apply_step(c,Δ),setdiff!(
+        opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ), x, first(kink1), first(kink2))
+                                    ,setdiff!(
                                         get_sphere_with_same_spin(new_orb_i, dk = ex_radius
                                         ), occs
-                                    ),first(kink1),first(kink2)
+                                    )
                                 )
-
         delete!(opportunities_reverse, last(kink1).k)
         delete!(opportunities_reverse, last(kink1).l)
 

@@ -22,15 +22,15 @@ const ex_radius = 3 # maximum radius for exitation
 
 function main()
     # MC options
-    NMC = 5 * 10^5
+    NMC = 3 * 10^5
     cyc = 50
     NEquil = 10^5
     # system parameters
-    θ = 0.125
-    rs = 2.0
+    θ = 0.5
+    rs = 1.0
 
     # use 7 particles
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=1)
+    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
     N = length(S)
     c = Configuration(S)
 
