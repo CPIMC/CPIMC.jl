@@ -668,12 +668,10 @@ where an operator corresponds to a tuple of 1 (creator) or -1(annihilator) and t
 function get_timeordered_ladder_operators(c)
   operators = Array{Pair{Int,basis(c)},1}()
   for (_,kink) in c.kinks
-    for orb in [kink.i,kink.j]
-      push!(operators, 1 => orb)
-    end
-    for orb in [kink.k,kink.l]
-      push!(operators, -1 => orb)
-    end
+      push!(operators, 1 => kink.i)
+      push!(operators, 1 => kink.j)
+      push!(operators, -1 => kink.k)
+      push!(operators, -1 => kink.l)
   end
   return operators
 end

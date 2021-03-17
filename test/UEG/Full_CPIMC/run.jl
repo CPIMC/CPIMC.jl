@@ -59,7 +59,8 @@ function main()
     println("rs: ", rs)
     println("N: ", N)
 
-    print_results(measurements)
+
+    print_results(measurements, e)
     #save_results("out/", measurements, e)
 end
 
