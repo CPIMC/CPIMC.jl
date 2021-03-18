@@ -27,7 +27,7 @@ function main()
 
     e = Ensemble(rs, get_β_internal(θ,N), N)# get_β_internal only works for 3D
 
-    updates = Update.([move_particle],0,0)
+    updates = Update.([move_particle],0,0,0)
 
     measurements = Dict(
       :Ekin => (Variance(UInt), Ekin)

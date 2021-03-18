@@ -40,7 +40,7 @@ function main()
     println("N: ", N)
 
     e = Ensemble(rs, get_β_internal(θ,N,c), N) # get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0)#  , add_type_E, remove_type_E, add_remove_kink_chain
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#  , add_type_E, remove_type_E, add_remove_kink_chain
                                                                                     #, change_type_B    #
 
 

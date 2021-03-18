@@ -39,7 +39,7 @@ function main()
     println("N: ", N)
 
     e = Ensemble(rs, get_β_internal(θ,N,c), N) # TODO: get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0) # change_type_B is not required for CPIMC, but for RCPIMC
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E,add_remove_kink_chain, shuffle_indices],0,0,0) # change_type_B is not required for CPIMC, but for RCPIMC
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
       :sign => (Variance(), signum)
@@ -58,6 +58,10 @@ function main()
     println("θ: ", θ)
     println("rs: ", rs)
     println("N: ", N)
+
+    for u in updates
+        println("$(u.update):\t$(u.proposed) proposed,\t$(u.accepted) accepted,\t$(u.trivial) trivial,\tratio(acc/prop) : $(u.accepted/u.proposed),\tratio(triv/prop) : $(u.trivial/u.proposed)")
+    end
 
 
     print_results(measurements, e)
