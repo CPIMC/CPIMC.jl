@@ -3,6 +3,7 @@ mutable struct Update
     update :: Function
     proposed :: UInt
     accepted :: UInt
+    trivial :: UInt
 end
 
 " change to Configuration " # TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
@@ -84,7 +85,11 @@ function update!(c::Configuration, e::Ensemble, updates::Array{Update,1})
     dv, Δ = up.update(c, e)
     if rand() < dv
         apply_step!(c, Δ)
-        up.accepted += 1
+        if Δ == Step()
+            up.trivial += 1
+        else
+            up.accepted += 1
+        end
     end
 end
 
