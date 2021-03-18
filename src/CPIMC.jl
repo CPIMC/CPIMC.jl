@@ -147,6 +147,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
             println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
+        #TODO Use reentrantlook?
         update!(c, e, updates; kwargs...)
     end
     if (Threads.threadid() == 1)

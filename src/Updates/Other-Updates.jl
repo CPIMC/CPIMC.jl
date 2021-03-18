@@ -8,7 +8,6 @@ function shuffle_indices(c::Configuration, e::Ensemble)
         Δ = Step(Configuration(kink), Configuration(first(kink) => T4(last(kink).j,last(kink).i,last(kink).k,last(kink).l)))
     else
         # shuffle annihilators
-        c.kinks[first(kink)] = T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)
         Δ = Step(Configuration(kink), Configuration(first(kink) => T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)))
     end
     return 1.0, Δ
