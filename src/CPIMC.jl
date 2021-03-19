@@ -127,7 +127,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
                 if in(key,[:sign, :K])
                     fit!(stat, obs(e,c))
                 else
-                    fit!(stat, obs(e,c)*signum(e,c))
+                    fit!(stat, obs(e,c)*signum(c))
                 end
             end
         end
@@ -183,7 +183,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
                         println("Das wird nicht geprinted")
                         fit!(stat, eachrow(obs(e,c)))
                     else
-                        fit!(stat, obs(e,c)*signum(e,c))
+                        fit!(stat, obs(e,c)*signum(c))
                     end
                 end
             end

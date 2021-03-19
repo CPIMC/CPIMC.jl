@@ -7,7 +7,11 @@ function print_results(measurements, e::Ensemble)
     println("=============")
 
     # calculate average sign
-    avg_sign = mean(first(measurements[:sign]))
+    if haskey(measurements, :sign)
+        avg_sign = mean(first(measurements[:sign]))
+    else
+        avg_sign = 1.0
+    end
 
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
