@@ -18,6 +18,8 @@ conf_pol = Configuration(sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1),sd)
 @testset "fractional_spin_polarization" begin
     @test fractional_spin_polarization(sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1)) == 1
     @test fractional_spin_polarization(sphere(OrbitalHEG((0,0,0),Up),dk=1)) == 0
+    @test (β(0.125, 7, fractional_spin_polarization(sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1))) ==
+        β(0.125, 14, fractional_spin_polarization(sphere(OrbitalHEG((0,0,0),Up),dk=1))))
 end
 
 #occ = OrbitalHEG((0, 0, 1), Down)
@@ -27,7 +29,6 @@ end
 @testset "wminus" begin
     occ = OrbitalHEG((0, 0, 1), Down)
     orb = OrbitalHEG((-2, 0, 0), Up)
-    Juno.@run(abs(wminus(occ,orb,orb,occ)))
     @test !isinf(abs(wminus(occ,orb,orb,occ)))
 end
 

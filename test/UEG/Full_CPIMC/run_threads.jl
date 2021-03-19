@@ -118,18 +118,18 @@ function main()
     ΔW = ΔW_diag + ΔW_off_diag
     μE = μW + μT
     ΔE = ΔW + ΔT
-    μWt_Ry = Et_Ry(μW, e::Ensemble)
-    ΔWt_Ry = E_Ry(ΔW, e::Ensemble)
-    μT_Ry = E_Ry(μT,λ(e.N,e.rs))
-    ΔT_Ry = E_Ry(ΔT,λ(e.N,e.rs))
-    μE_Ry = μT_Ry + μWt_Ry
-    ΔE_Ry = ΔT_Ry + ΔWt_Ry
+    μWt_Ha = Et_Ha(μW, e::Ensemble)
+    ΔWt_Ha = E_Ha(ΔW, e::Ensemble)
+    μT_Ha = E_Ha(μT,λ(e.N,e.rs))
+    ΔT_Ha = E_Ha(ΔT,λ(e.N,e.rs))
+    μE_Ha = μT_Ha + μWt_Ha
+    ΔE_Ha = ΔT_Ha + ΔWt_Ha
 
     println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
     println("W", "\t", μW, " +/- ", ΔW)
     println("E", "\t", μE, " +/- ", ΔE)
-    println("W_t_Ry", "\t", μWt_Ry, " +/- ", ΔWt_Ry)
-    println("T_Ry", "\t", μT_Ry, " +/- ", ΔT_Ry)
+    println("W_t_Ha", "\t", μWt_Ha, " +/- ", ΔWt_Ha)
+    println("T_Ha", "\t", μT_Ha, " +/- ", ΔT_Ha)
 
     println("")
 
@@ -165,12 +165,12 @@ function main()
     df[!,:ΔW] .= ΔW
     df[!,:E] .= μE
     df[!,:ΔE] .= ΔE
-    df[!,:Wt_Ry] .= μWt_Ry
-    df[!,:ΔWt_Ry] .= ΔWt_Ry
-    df[!,:T_Ry] .= μT_Ry
-    df[!,:ΔT_Ry] .= ΔT_Ry
-    df[!,:E_Ry] .= μE_Ry
-    df[!,:ΔE_Ry] .= ΔE_Ry
+    df[!,:Wt_Ha] .= μWt_Ha
+    df[!,:ΔWt_Ha] .= ΔWt_Ha
+    df[!,:T_Ha] .= μT_Ha
+    df[!,:ΔT_Ha] .= ΔT_Ha
+    df[!,:E_Ha] .= μE_Ha
+    df[!,:ΔE_Ha] .= ΔE_Ha
 
     # create occupation numbers file
     open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io

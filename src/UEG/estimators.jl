@@ -107,7 +107,7 @@ end
 
 
 #####################Calculationg observables after Simulation
-function abs_E_mad(N::Int, lam::Float64) #internal units
+function abs_E_mad_Ry(N::Int, lam::Float64) #internal units
     return 2.83729747948527 * pi/2.0 * N * lam
 end
 
@@ -137,5 +137,9 @@ end
 
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
-    return (E_Ry(E_internal-abs_E_mad(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
+    return (E_Ry(E_internal-abs_E_mad_Ry(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
+end
+
+function Et_Ha(E_internal::Float64, e::Ensemble)
+    return (E_Ry(E_internal-abs_E_mad_Ry(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))/2
 end
