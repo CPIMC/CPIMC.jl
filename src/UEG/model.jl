@@ -63,10 +63,13 @@ kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
 
 " anti-symmetrized interaction matrix element "
 function wminus(i::OrbitalHEG{D}, j::OrbitalHEG{D}, k::OrbitalHEG{D}, l::OrbitalHEG{D}) where {D}
-    if (i == k && j == l)
+    if (i.vec == k.vec)
+        @assert j.vec == l.vec)
         return 0.0
-    elseif (i == l && j == k)
-        if i.spin == k.spin
+    elseif (i.vec == l.vec)
+        @assert(j.vec == k.vec)
+        if i.spin == j.spin
+            @assert(k.spin == l.spin)
             return -kernel(i,k)
         else
             return 0.0

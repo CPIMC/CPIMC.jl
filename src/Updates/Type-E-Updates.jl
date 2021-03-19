@@ -261,7 +261,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
             new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
         else
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), -1 * new_kink_old_creator.spin)
+            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), flip(new_kink_old_creator.spin))
         end
 
         if (!in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).i) | (new_kink_new_creator == last(old_kink).j))
@@ -363,9 +363,8 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         @assert(inverse_prop_prob != Inf)
     end
 
-
-    @assert(delta_τ > 0 )
-    @assert(dw != Inf)
+    @assert(!iszero(delta_τ))
+    @assert(!isinf(dw))
     @assert(prop_prob != 0)
     @assert(inverse_prop_prob != Inf)
     @assert(inverse_prop_prob != 0)

@@ -101,7 +101,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
     for i in 1:throwAway
         # print progress
         if i%(throwAway/100) == 0
-            print("eq: ",k,"/100","    ")
+            print("eq: ",k,"/100   ","K ",length(c.kinks), "    ")
             k+=1
         end
         update!(c, e, updates; kwargs...)
@@ -114,7 +114,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
 
         # print progress
         if i%(steps/100) == 0
-            print(k,"/100","    ")
+            print(k,"/100   ","K ", length(c.kinks), "    ")
             k+=1
         end
 
