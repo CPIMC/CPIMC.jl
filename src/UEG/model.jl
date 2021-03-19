@@ -40,7 +40,7 @@ end
 
 calculate β in internal units
 """
-function β(θ::Float64, N::Int, ξ::Float64)
+function β(θ::Float64, N::Int, ξ::Float64 = 1)
     return (2*pi)^2/(((6*(pi^2) * N/2 * (1+abs(ξ)))^(2/3))*θ)
 end
 
@@ -100,7 +100,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
     if Δτ12 < 0
         Δτ12 += 1
     end
-    
+
     @assert (orb_a.spin != orb_b.spin) == (orb_c.spin != orb_d.spin )
 
     Δdi = Δτ12 * λ(e.N,e.rs) * ( wminus(orb_a, orb_b, orb_b, orb_a) - wminus(orb_c, orb_d, orb_d, orb_c) )
@@ -206,7 +206,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         kink_semi_token = startof(c.kinks)
     end
     τ_kink,kink = deref((c.kinks,kink_semi_token))
-    
+
     # The kink at τ1 is already considered in occs.
     if τ_kink == τ1
         kink_semi_token = advance((c.kinks,kink_semi_token))
@@ -215,9 +215,9 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         end
         τ_kink,kink = deref((c.kinks,kink_semi_token))
     end
-    
+
     loop_counter = 0
-    
+
     while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
         Δτ = τ2 - τ_kink
         if Δτ < 0
@@ -241,7 +241,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         τ_kink,kink = deref((c.kinks,kink_semi_token))
         loop_counter += 1
     end
-    
+
     return -Δdi
 end
 

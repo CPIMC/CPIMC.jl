@@ -66,7 +66,7 @@ function save_results(path, measurements, ensemble; options...)
     Nsamples = measurements[:Ekin][1].n
 
     # thermodynamic observables (single observations)
-    fname = joinpath(path, "Obs_N$(ensemble.N)_th$(replace(string(get_β_internal(ensemble.β,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
+    fname = joinpath(path, "Obs_N$(ensemble.N)_th$(replace(string(β(ensemble.β,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
     if !isfile(fname)
         print("Print single observables to file ... ")
         open(fname, "a") do io

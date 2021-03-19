@@ -375,7 +375,7 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
 
         dw = exp(-(e.β*delta_τ*(energy(new_orb_i) + energy(new_orb_j) -
                                     energy(last(kink1).i) - energy(last(kink1).j)) + e.β*delta_di)) *
-           (offdiagonal_element(e,new_orb_i, new_orb_j, last(kink1).k, last(kink1).l)/offdiagonal_element(e,last(kink1)))^2
+           (offdiagonal_element(e,T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/offdiagonal_element(e,last(kink1)))^2
 
         #shuffle indices of the new orbs in the second kink
         drop_kinks = (kink1,kink2)
@@ -396,7 +396,7 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ))
-        opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ), x, first(kink1), first(kink2))
+        opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ).kinks, x, first(kink1), first(kink2))
                                     ,setdiff!(
                                         sphere_with_same_spin(new_orb_i, dk = ex_radius), occs
                                     )
