@@ -26,11 +26,11 @@ function main()
     cyc = 50
     NEquil = 10^5
     # system parameters
-    θ = 0.5
-    rs = 1.0
+    θ = 0.125
+    rs = 2
 
     # use 7 particles
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
+    S = sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1)
     N = length(S)
     c = Configuration(S)
 
@@ -39,9 +39,9 @@ function main()
     println("rs: ", rs)
     println("N: ", N)
 
-    e = Ensemble(rs, get_β_internal(θ,N,c), N) # get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#  , add_type_E, remove_type_E, add_remove_kink_chain
-                                                                                    #, change_type_B    #
+    e = Ensemble(rs, β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_remove_kink_chain, shuffle_indices],0,0,0)#  , add_type_E, remove_type_E, add_remove_kink_chain
+                                                                                    #, change_type_B    # , add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E
 
 
     measurements = Dict(
@@ -138,6 +138,13 @@ function main()
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
 
+    println("acceptance ratios:")
+    println("============")
+    for u in updates
+        println("$(u.update):\t$(u.proposed) proposed,\t$(u.accepted) accepted,\t$(u.trivial) trivial,\tratio(acc/prop) : $(u.accepted/u.proposed),\tratio(triv/prop) : $(u.trivial/u.proposed)")
+    end
+
+
     # create resultsfile
     # add measurements to file
     df = DataFrame(sign = 1)
@@ -170,7 +177,7 @@ function main()
         writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
     end
 
-    CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*Threads.nthreads()/cyc)).csv",df)
+    #CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*Threads.nthreads()/cyc)).csv",df)
 end
 
 main()
