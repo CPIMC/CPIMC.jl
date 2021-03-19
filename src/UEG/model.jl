@@ -40,7 +40,7 @@ end
 
 calculate β in internal units
 """
-function β(θ::Float64, N::Int, ξ::Float64 = 1)
+function β(θ::Float64, N::Int, ξ::Float64 = 1.0)
     return (2*pi)^2/(((6*(pi^2) * N/2 * (1+abs(ξ)))^(2/3))*θ)
 end
 
@@ -65,8 +65,12 @@ kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
 function wminus(i::OrbitalHEG{D}, j::OrbitalHEG{D}, k::OrbitalHEG{D}, l::OrbitalHEG{D}) where {D}
     if (i == k && j == l)
         return 0.0
-    elseif (i == l && j == k && i.spin == k.spin)
-        return -kernel(i,k)
+    elseif (i == l && j == k)
+        if i.spin == k.spin
+            return -kernel(i,k)
+        else
+            return 0.0
+        end
     else
         if i.spin == j.spin
             return kernel(i, k) - kernel(i, l)
@@ -119,11 +123,12 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
                 Δdi -= Δτ12 * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
             end
         end
-        @assert abs(Δdi) != Inf
+        @assert !isinf(abs(Δdi))
+        @assert(!isnan(Δdi))
     end
 
     if isempty(c.kinks)
-        return -Δdi
+        return Δdi
     end
 
     kink_semi_token = searchsortedfirst(c.kinks,τ1)
@@ -143,8 +148,8 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
 
     loop_counter = 0
 
-    @assert abs(Δdi) != Inf
-
+    @assert !isinf(abs(Δdi))
+    @assert(!isnan(Δdi))
     # collect contributions to diagonal interaction energy due to kinks in the interval
     while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
         Δτ = τ2 - τ_kink
@@ -168,8 +173,8 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
             end
         end
 
-        @assert abs(Δdi) != Inf
-
+        @assert !isinf(abs(Δdi))
+        @assert(!isnan(Δdi))
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
             kink_semi_token = startof(c.kinks)
@@ -177,8 +182,8 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         τ_kink,kink = deref((c.kinks,kink_semi_token))
         loop_counter += 1
     end
-
-    return -Δdi
+    @assert(!isnan(Δdi))
+    return Δdi
 end
 
 " This function assumes for now that all kinks in c are of type 4. "
@@ -199,7 +204,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         end
     end
     if isempty(c.kinks)
-        return -Δdi
+        return Δdi
     end
     kink_semi_token = searchsortedfirst(c.kinks,τ1)
     if kink_semi_token == pastendsemitoken(c.kinks)
@@ -242,7 +247,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         loop_counter += 1
     end
 
-    return -Δdi
+    return Δdi
 end
 
 """
