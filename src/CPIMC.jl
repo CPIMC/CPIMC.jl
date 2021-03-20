@@ -114,7 +114,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
 
         # print progress
         if i%(steps/100) == 0
-            print(k,"/100   ","K ", length(c.kinks), "    ")
+            print(k,"/100   ","K: ", length(c.kinks), "    ")
             k+=1
         end
 
@@ -122,14 +122,8 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
         update!(c, e, updates; kwargs...)
 
         if i % sampleEvery == 0
-            " calculate observables "
-            for (key,(stat,obs)) in measurements
-                if in(key,[:sign, :K])
-                    fit!(stat, obs(e,c))
-                else
-                    fit!(stat, obs(e,c)*signum(c))
-                end
-            end
+            " calculate estimators "
+            measure(measurements, e, c)
         end
 
         i += 1
@@ -175,18 +169,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         "measurement"
         if i % sampleEvery == 0
             " calculate observables "
-            for (key,(stat,obs)) in measurements
-                if in(key,[:sign, :K])
-                    fit!(stat, obs(e,c))
-                else
-                    if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
-                        println("Das wird nicht geprinted")
-                        fit!(stat, eachrow(obs(e,c)))
-                    else
-                        fit!(stat, obs(e,c)*signum(c))
-                    end
-                end
-            end
+            measure(measurements, e, c)
         end
         i += 1
     end
