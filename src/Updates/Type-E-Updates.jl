@@ -249,7 +249,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         end
         #find occupied orb for creation of Type_E
         opportunities_new_kink_new_annihilator = setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-                                                                 sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, new_kink_old_annihilator.spin), dk = ex_radius)), occs)
+                                                                 sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).k)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).l)
         if isempty(opportunities_new_kink_new_annihilator)

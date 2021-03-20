@@ -158,7 +158,7 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         end
         new_orb1 = rand(opportunities_new_orb1)
         prop_prob *= 1.0/length(opportunities_new_orb1)
-        new_orb2 = OrbitalHEG(last(old_kink).l.vec + (last(old_kink).k.vec - new_orb1.vec), last(old_kink).j.spin)
+        new_orb2 = OrbitalHEG(last(old_kink).l.vec + last(old_kink).k.vec - new_orb1.vec, last(old_kink).j.spin)
         if in(new_orb2, occs) | (new_orb1 == new_orb2)
             return 1.0, Step()
         end

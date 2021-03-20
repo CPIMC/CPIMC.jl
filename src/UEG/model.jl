@@ -65,23 +65,29 @@ kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
 
 " anti-symmetrized interaction matrix element "
 function wminus(i::OrbitalHEG{D}, j::OrbitalHEG{D}, k::OrbitalHEG{D}, l::OrbitalHEG{D}) where {D}
-    @assert(i != k, i != l)
-    if (i.vec == k.vec) || (i.vec == l.vec)
-        return 0
-    else
-        if i.spin == j.spin
-            return kernel(i, k) - kernel(i, l)
-        elseif i.spin == k.spin
-            return kernel(i, k)
-        elseif i.spin == l.spin
-            return -kernel(i, l)
-        end
+    @assert ((i != k) && (i != l))
+    @assert ((i.spin == j.spin) == (k.spin == l.spin))
+    @assert(in(i.spin,[k.spin,l.spin]))
+    @assert(i.vec + j.vec == k.vec + l.vec)
+    if i.spin == j.spin
+        @assert(!isinf(abs(kernel(i, k) - kernel(i, l))))
+        return kernel(i, k) - kernel(i, l)
+    elseif i.spin == k.spin
+        @assert(!isinf(abs(kernel(i, k))))
+        return kernel(i, k)
+    elseif i.spin == l.spin
+        @assert(!isinf(abs(kernel(i, l))))
+        return -kernel(i, l)
     end
 end
 
 " diagonal interaction matrix element "
 function wdiag(a::OrbitalHEG{D}, b::OrbitalHEG{D}) where {D}
-    return -kernel(a, b)
+    if a.spin != b.spin
+        return 0
+    else
+        return -kernel(a, b)
+    end
 end
 
 # " anti-symmetrized interaction matrix element "

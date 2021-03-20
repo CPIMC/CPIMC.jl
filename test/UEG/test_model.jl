@@ -22,15 +22,32 @@ conf_pol = Configuration(sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1),sd)
         β(0.125, 14, fractional_spin_polarization(sphere(OrbitalHEG((0,0,0),Up),dk=1))))
 end
 
-#occ = OrbitalHEG((0, 0, 1), Down)
-#orb = OrbitalHEG((-2, 0, 0), Up)
-#Juno.@run(wminus(occ,orb,orb,occ))
 
 @testset "wminus" begin
-    occ = OrbitalHEG((0, 0, 1), Down)
-    orb = OrbitalHEG((-2, 0, 0), Up)
-    @test !isinf(abs(wminus(occ,orb,orb,occ)))
+    r = 1:5
+
+    for _ in 1:10000
+        orb1 = OrbitalHEG((rand(r),rand(r),rand(r)),rand([Up,Down]))
+        orb2 = orb1
+        while orb1 == orb2
+            orb2 = OrbitalHEG((rand(r),rand(r),rand(r)),rand([Up,Down]))
+        end
+        orb3 = orb1
+        while (orb3 == orb2) || (orb3 == orb1)
+            orb3 = OrbitalHEG((rand(r),rand(r),rand(r)),rand([orb1.spin,orb2.spin]))
+        end
+
+        if orb1.spin == orb2.spin
+            orb4 = OrbitalHEG((orb1.vec + orb2.vec - orb3.vec), orb3.spin)
+        else
+            orb4 = OrbitalHEG((orb1.vec + orb2.vec - orb3.vec), flip(orb3.spin))
+        end
+
+        @test !isinf(abs(wminus(orb1,orb2,orb3,orb4)))
+        @test !isnan(abs(wminus(orb1,orb2,orb3,orb4)))
+    end
 end
+
 
 @testset "W_diag" begin
     τ1 = ImgTime(0.8)
