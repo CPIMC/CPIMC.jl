@@ -154,6 +154,10 @@ signum(c::Configuration) = ladder_operator_order_factor(c.kinks)*sign_offdiagona
 
 
 #####################Calculationg observables after Simulation
+function W_off_diag(e::Ensemble, avg_K::Float64)
+    return (-(avg_K/e.β))
+end
+
 function abs_E_madelung(N::Int, λ::Float64) #internal units
     return 2.83729747948527 * pi/2.0 * N * λ
 end
