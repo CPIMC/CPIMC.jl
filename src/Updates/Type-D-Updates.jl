@@ -56,7 +56,10 @@ function get_right_type_D_removable_pairs(c::Configuration)
   return pairs_right
 end
 
-
+function possible_new_orb1_D(occs, exite_orb, old_orb1, old_orb2)
+    return filter(new_orb_1 -> in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin)),
+                    intersect!(sphere_with_same_spin(exite_orb, dk = ex_radius), occs))
+end
 
 function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob = 1.0
@@ -69,7 +72,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
-        opportunities_new_orb1 = intersect!(sphere_with_same_spin(last(old_kink).i, dk = ex_radius), occs)
+        opportunities_new_orb1 = possible_new_orb1_D(occs, last(old_kink).i, last(old_kink).k, last(old_kink).l)
         delete!(opportunities_new_orb1, last(old_kink).i)
         delete!(opportunities_new_orb1, last(old_kink).j)
         if isempty(opportunities_new_orb1)
@@ -112,16 +115,12 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #change_Configuration
         #see if c.occupations change
         if τ_new_kink > first(old_kink)  #new kink was added left of old kink
-            # change_occupations(c.occupations, T4(last(old_kink).i,last(old_kink).j, new_orb1, new_orb2))
             drop_orbs = Set([new_orb1, new_orb2])
             add_orbs = Set([last(old_kink).i,last(old_kink).j])
         else
             drop_orbs = Set{basis(c)}()
             add_orbs = Set{basis(c)}()
         end
-
-        # c.kinks[τ_new_kink] = T4(last(old_kink).i, last(old_kink).j,new_orb1, new_orb2)
-        # c.kinks[first(old_kink)] = T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
 
         prop_prob *= 0.5#shuffle creators of the changed kink TODO: is this necessary for ergodicy ?
         if rand() < 0.5
@@ -152,7 +151,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         inverse_prop_prob = (1.0/length(get_right_type_D_removable_pairs(apply_step(c,Δ)))) * 0.5
     else
         #add kink right
-        opportunities_new_orb1 = intersect!(sphere_with_same_spin(last(old_kink).k, dk = ex_radius), occs)
+        opportunities_new_orb1 = possible_new_orb1_D(occs, last(old_kink).k, last(old_kink).i, last(old_kink).j)
         delete!(opportunities_new_orb1, last(old_kink).i)
         delete!(opportunities_new_orb1, last(old_kink).j)
         if isempty(opportunities_new_orb1)
@@ -197,16 +196,12 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         #change_Configuration
         #see if c.occupations change
         if τ_new_kink < first(old_kink)  #new kink was added right of old kink
-            # change_occupations(c.occupations, T4(last(old_kink).k, last(old_kink).l,new_orb1,new_orb2))
             drop_orbs = Set([new_orb1,new_orb2])
             add_orbs = Set([last(old_kink).k, last(old_kink).l])
         else
             drop_orbs = Set{basis(c)}()
             add_orbs = Set{basis(c)}()
         end
-
-        # c.kinks[τ_new_kink] = T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l)
-        # c.kinks[first(old_kink)] = T4(last(old_kink).i, last(old_kink).j, new_orb1, new_orb2)
 
         prop_prob *= 0.5#shuffle annihilators (!) of the changed kink TODO: is this necessary for ergodicy ?
         if rand() < 0.5
@@ -262,8 +257,6 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         removed_orb2 = c.kinks[removed_kink_τ].l
 
         #change configuration
-        # c.kinks[changed_kink_τ] = T4(c.kinks[removed_kink_τ].i,c.kinks[removed_kink_τ].j,c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l)
-        # @assert removed_orb1 != c.kinks[changed_kink_τ].k
         @assert removed_orb1 != c.kinks[changed_kink_τ].k
         add_kinks = (changed_kink_τ => T4(c.kinks[removed_kink_τ].i,c.kinks[removed_kink_τ].j,c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l),)
 
@@ -286,7 +279,7 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = intersect!(sphere_with_same_spin(apply_step(c,Δ).kinks[changed_kink_τ].i, dk = ex_radius), occs)
+        opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].i)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].j)
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))
@@ -336,12 +329,10 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
 
         #change configuration
-        # c.kinks[changed_kink_τ] = T4(c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j,c.kinks[removed_kink_τ].k,c.kinks[removed_kink_τ].l)
         add_kinks = (changed_kink_τ => T4(c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j,c.kinks[removed_kink_τ].k,c.kinks[removed_kink_τ].l),)
 
         #see if c.occupations change
         if removed_kink_τ < changed_kink_τ  #new kink was added right of old kink
-            # change_occupations(c.occupations, T4(removed_orb1, removed_orb2, c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l))
             drop_orbs = Set([c.kinks[removed_kink_τ].k,c.kinks[removed_kink_τ].l])
             add_orbs = Set([removed_orb1, removed_orb2])
         else
@@ -357,7 +348,7 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = intersect!(sphere_with_same_spin(apply_step(c,Δ).kinks[changed_kink_τ].k, dk = ex_radius), occs)
+        opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].i)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].j)
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))

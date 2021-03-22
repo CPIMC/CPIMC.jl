@@ -58,6 +58,11 @@ function get_right_type_C_removable_pairs(c::Configuration)
 end
 
 
+function possible_new_orb1_C(occs, exite_orb, old_orb1, old_orb2)
+    return filter(new_orb_1 -> !in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin)),
+                    setdiff!(sphere_with_same_spin(exite_orb, dk = ex_radius), occs))
+end
+
 function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob = 1.0
     if isempty(c.kinks)
@@ -69,7 +74,7 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
-        opportunities_new_orb1 = setdiff!(sphere_with_same_spin(last(old_kink).k, dk = ex_radius), occs)
+        opportunities_new_orb1 = possible_new_orb1_C(occs, last(old_kink).k, last(old_kink).i, last(old_kink).j)
         delete!(opportunities_new_orb1, last(old_kink).k)
         delete!(opportunities_new_orb1, last(old_kink).l)
         if isempty(opportunities_new_orb1)
@@ -150,7 +155,7 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
     else
         #add kink right
-        opportunities_new_orb1 = setdiff!(sphere_with_same_spin(last(old_kink).i, dk = ex_radius), occs)
+        opportunities_new_orb1 = possible_new_orb1_C(occs, last(old_kink).i, last(old_kink).k, last(old_kink).l)
         delete!(opportunities_new_orb1, last(old_kink).k)
         delete!(opportunities_new_orb1, last(old_kink).l)
         if isempty(opportunities_new_orb1)
@@ -262,8 +267,6 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         removed_orb2 = c.kinks[changed_kink_τ].l
 
         #change configuration
-        # c.kinks[changed_kink_τ] = T4(c.kinks[changed_kink_τ].i, c.kinks[changed_kink_τ].j, c.kinks[removed_kink_τ].k,c.kinks[removed_kink_τ].l)
-        # @assert removed_orb1 != c.kinks[changed_kink_τ].k
         @assert removed_orb1 != c.kinks[removed_kink_τ].k
         add_kinks = (changed_kink_τ => T4(c.kinks[changed_kink_τ].i, c.kinks[changed_kink_τ].j, c.kinks[removed_kink_τ].k,c.kinks[removed_kink_τ].l),)
 
@@ -284,7 +287,7 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = setdiff!(sphere_with_same_spin(apply_step(c,Δ).kinks[changed_kink_τ].k, dk = ex_radius), occs)
+        opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].k)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].l)
 
@@ -331,7 +334,6 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
 
         #change configuration
-        # c.kinks[changed_kink_τ] = T4(c.kinks[removed_kink_τ].i, c.kinks[removed_kink_τ].j, c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l)
         add_kinks = (changed_kink_τ => T4(c.kinks[removed_kink_τ].i, c.kinks[removed_kink_τ].j, c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l),)
 
         #see if c.occupations change
@@ -352,7 +354,7 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = setdiff!(sphere_with_same_spin(apply_step(c,Δ).kinks[changed_kink_τ].i, dk = ex_radius), occs)
+        opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].k)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].l)
 
