@@ -31,15 +31,17 @@ function main()
     # use 7 particles
     S = sphere_with_same_spin(OrbitalHEG((0,0,0)),dk=1)
     N = length(S)
-    xi = fractional_spin_polarization(S)
+    ξ = fractional_spin_polarization(S)
     c = Configuration(S)
+    d = dimension(c.occupations)
 
     println("parameters:")
     println("θ: ", θ)
     println("rs: ", rs)
     println("N: ", N)
+    println("ξ: ", ξ)
 
-    e = Ensemble(rs, β(θ,N,xi), N) # TODO: get_β_internal only works for 3D
+    e = Ensemble(rs, β(θ, rs, N, ξ, d), N) # TODO: get_β_internal only works for 3D
     updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E,add_remove_kink_chain, shuffle_indices],0,0,0) # change_type_B is not required for CPIMC, but for RCPIMC
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
