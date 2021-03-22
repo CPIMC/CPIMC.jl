@@ -58,9 +58,9 @@ function get_right_type_C_removable_pairs(c::Configuration)
 end
 
 
-function possible_new_orb1_C(occs, exite_orb, old_orb1, old_orb2)
-    return filter(new_orb_1 -> !in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin)),
-                    setdiff!(sphere_with_same_spin(exite_orb, dk = ex_radius), occs))
+function possible_new_orb1_C(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
+    return filter(new_orb_1 -> !in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
+                    setdiff!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
 end
 
 function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
@@ -74,7 +74,7 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
-        opportunities_new_orb1 = possible_new_orb1_C(occs, last(old_kink).k, last(old_kink).i, last(old_kink).j)
+        opportunities_new_orb1 = possible_new_orb1_C(occs, last(old_kink).k, last(old_kink).l,last(old_kink).i, last(old_kink).j)
         delete!(opportunities_new_orb1, last(old_kink).k)
         delete!(opportunities_new_orb1, last(old_kink).l)
         if isempty(opportunities_new_orb1)
@@ -84,6 +84,7 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         prop_prob *= 1.0/length(opportunities_new_orb1)
         new_orb2 = OrbitalHEG(last(old_kink).j.vec + (last(old_kink).i.vec - new_orb1.vec), last(old_kink).l.spin)
         if in(new_orb2, occs) | (new_orb1 == new_orb2)
+            @assert(false)
             return 1.0, Step()
         end
         τ_Intervall = first(old_kink) - first(τ_borders(c, Set([last(old_kink).k, last(old_kink).l, new_orb1, new_orb2]), first(old_kink)))
@@ -155,10 +156,11 @@ function add_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
     else
         #add kink right
-        opportunities_new_orb1 = possible_new_orb1_C(occs, last(old_kink).i, last(old_kink).k, last(old_kink).l)
+        opportunities_new_orb1 = possible_new_orb1_C(occs, last(old_kink).i, last(old_kink).j, last(old_kink).k, last(old_kink).l)
         delete!(opportunities_new_orb1, last(old_kink).k)
         delete!(opportunities_new_orb1, last(old_kink).l)
         if isempty(opportunities_new_orb1)
+            @assert(false)
             return 1.0, Step()
         end
         new_orb1 = rand(opportunities_new_orb1)
@@ -263,8 +265,8 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         @assert ( dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2) ) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
         #safe thoose for later
-        removed_orb1 = c.kinks[changed_kink_τ].k
-        removed_orb2 = c.kinks[changed_kink_τ].l
+        removed_orb1 = c.kinks[removed_kink_τ].i
+        removed_orb2 = c.kinks[removed_kink_τ].j
 
         #change configuration
         @assert removed_orb1 != c.kinks[removed_kink_τ].k
@@ -287,10 +289,10 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j)
+        opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].k)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].l)
-
+        @assert(in(removed_orb1,opportunities_reverse_new_orb1))
         τ_Intervall = changed_kink_τ - first(τ_borders(apply_step(c,Δ), Set([removed_orb1, removed_orb2,
                          apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l]),changed_kink_τ))
 
@@ -329,8 +331,8 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         @assert (dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2)) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
         #safe thoose for later
-        removed_orb1 = c.kinks[changed_kink_τ].i
-        removed_orb2 = c.kinks[changed_kink_τ].j
+        removed_orb1 = c.kinks[removed_kink_τ].k
+        removed_orb2 = c.kinks[removed_kink_τ].l
 
 
         #change configuration
@@ -354,10 +356,10 @@ function remove_type_C(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l)
+        opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].k)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].l)
-
+        @assert(in(removed_orb1,opportunities_reverse_new_orb1))
         τ_Intervall =  last(τ_borders(apply_step(c,Δ), Set([apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j,
                                                     removed_orb1, removed_orb2]),changed_kink_τ)) - changed_kink_τ
 

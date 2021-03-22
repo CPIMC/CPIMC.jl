@@ -142,11 +142,11 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
     end
     k = 1# progress counter
     for i in 1:throwAway
-        if (i%(throwAway/100) == 0) #& (Threads.threadid() == 1)
+        if (i%(throwAway/100) == 0)
             println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
-        #TODO Use reentrantlook?
+        #TODO Use reentrantlook for Update counters?
         update!(c, e, updates; kwargs...)
     end
     if (Threads.threadid() == 1)

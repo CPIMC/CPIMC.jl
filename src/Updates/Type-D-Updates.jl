@@ -56,9 +56,9 @@ function get_right_type_D_removable_pairs(c::Configuration)
   return pairs_right
 end
 
-function possible_new_orb1_D(occs, exite_orb, old_orb1, old_orb2)
-    return filter(new_orb_1 -> in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, old_orb2.spin)),
-                    intersect!(sphere_with_same_spin(exite_orb, dk = ex_radius), occs))
+function possible_new_orb1_D(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
+    return filter(new_orb_1 -> in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
+                    intersect!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
 end
 
 function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
@@ -72,7 +72,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
-        opportunities_new_orb1 = possible_new_orb1_D(occs, last(old_kink).i, last(old_kink).k, last(old_kink).l)
+        opportunities_new_orb1 = possible_new_orb1_D(occs, last(old_kink).i, last(old_kink).j, last(old_kink).k, last(old_kink).l)
         delete!(opportunities_new_orb1, last(old_kink).i)
         delete!(opportunities_new_orb1, last(old_kink).j)
         if isempty(opportunities_new_orb1)
@@ -82,6 +82,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         prop_prob *= 1.0/length(opportunities_new_orb1)
         new_orb2 = OrbitalHEG(last(old_kink).k.vec + (last(old_kink).l.vec - new_orb1.vec), last(old_kink).j.spin)
         if !in(new_orb2, occs) | (new_orb1 == new_orb2)
+            @assert(false)
             return 1.0, Step()
         end
         τ_Intervall = first(old_kink) - first(τ_borders(c, Set([last(old_kink).i, last(old_kink).j, new_orb1, new_orb2]), first(old_kink)))
@@ -151,7 +152,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         inverse_prop_prob = (1.0/length(get_right_type_D_removable_pairs(apply_step(c,Δ)))) * 0.5
     else
         #add kink right
-        opportunities_new_orb1 = possible_new_orb1_D(occs, last(old_kink).k, last(old_kink).i, last(old_kink).j)
+        opportunities_new_orb1 = possible_new_orb1_D(occs, last(old_kink).k, last(old_kink).l, last(old_kink).i, last(old_kink).j)
         delete!(opportunities_new_orb1, last(old_kink).i)
         delete!(opportunities_new_orb1, last(old_kink).j)
         if isempty(opportunities_new_orb1)
@@ -161,6 +162,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         prop_prob *= 1.0/length(opportunities_new_orb1)
         new_orb2 = OrbitalHEG(last(old_kink).i.vec + (last(old_kink).j.vec - new_orb1.vec), last(old_kink).l.spin)
         if !in(new_orb2, occs) | (new_orb1 == new_orb2)
+            @assert(false)
             return 1.0, Step()
         end
         τ_Intervall = last(τ_borders(c, Set([
@@ -211,7 +213,7 @@ function add_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                         first(old_kink) => T4(last(old_kink).i, last(old_kink).j, new_orb2, new_orb1)
                         )
         else
-            # do note shuffle
+            # do not shuffle
             add_kinks = (
                         τ_new_kink => T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l),
                         first(old_kink) => T4(last(old_kink).i, last(old_kink).j, new_orb1, new_orb2)
@@ -279,7 +281,7 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l)
+        opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].i)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].j)
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))
@@ -348,7 +350,7 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j)
+        opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l, apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].i)
         delete!(opportunities_reverse_new_orb1, apply_step(c,Δ).kinks[changed_kink_τ].j)
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))
