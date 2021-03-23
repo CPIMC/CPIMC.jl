@@ -350,6 +350,8 @@ end
     this corresponds to the matrix element w_ijkl in the same order """
 orbs_ordered(x::T4) = [x.i, x.j, x.k, x.l]
 
+
+#TODO change Name to orbs_time_ordered
 """ get a list of orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l """
 function orbs_ordered(ck::SortedDict{ImgTime,<:Kink{T}}) where T
     if isempty(ck)

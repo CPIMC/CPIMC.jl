@@ -65,13 +65,12 @@ function main()
     println("Start MC process ... ")
     marcov_chain_builders = Array{Task}(undef,Threads.nthreads())# the number of threads set by `julia -t run_threads.jl` (--threads)
     measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
-    for t in 1:Threads.nthreads()
+
+
+    Threads.@threads for t in 1:Threads.nthreads()
         m = deepcopy(measurements_Mean)
         push!(measurements_of_runs,m)
-        marcov_chain_builders[t] = Threads.@spawn(sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c))
-    end
-    for mcb in marcov_chain_builders
-        wait(mcb)
+        sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c)
     end
 
     println(" finished.")
