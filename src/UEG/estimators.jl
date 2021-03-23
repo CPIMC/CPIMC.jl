@@ -188,9 +188,9 @@ end
 
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
-    return (E_Ry(E_internal-abs_E_mad_Ry(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
+    return (E_Ry(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
 end
 
 function Et_Ha(E_internal::Float64, e::Ensemble)
-    return (E_Ry(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))/2
+    return E_Ha(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs))
 end
