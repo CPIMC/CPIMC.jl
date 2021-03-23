@@ -128,6 +128,22 @@ end
 
 @testset "compare parameter calculation with old versions for ξ=1 " begin
 
+    " returns a tuple of number of particles with spin up and number of particles with spin down "
+    function get_spin_up_down_count(c::Configuration)
+        up = 0
+        down = 0
+        for orb in c.occupations
+            if orb.spin == Up
+                up += 1
+            elseif orb.spin == Down
+                down += 1
+            else
+                @assert(false)#Spin is not 1 or -1
+            end
+        end
+        return (up,down)
+    end
+
     " This is the expression used in the previous version. "
     function β_old(θ::Float64, N::Int, c::Union{Nothing,Configuration} = nothing )
         if isnothing(c) # no configuration provided
@@ -135,13 +151,14 @@ end
         else
             Spin_Faktor = max(get_spin_up_down_count(c)...)/N
         end
+        println("Spin_Faktor : ", Spin_Faktor)
         return ((2*pi)^2)/(((6*(pi^2)*N*Spin_Faktor)^(2/3))*θ)
     end
 
     "This is the expression as given in the thesis of T. Schoof."
     β_ref(θ::Float64, N::Int) = ((2*pi)^2)/(((6*(pi^2)*N)^(2/3))*θ)
 
-    N = 18
+    N = 4
     r = 0.56
     Θ = 0.123
     ξ = 1.0# use full polarization for comparison
@@ -149,6 +166,14 @@ end
     d = 3
 
     @test β_ref(Θ, N) ≈ β(Θ, r, N, ξ, d)
+
+    ## test for unpolarized system
+    c = Configuration(Set([OrbitalHEG((1,),Down), OrbitalHEG((2,),Up), OrbitalHEG((3,),Down), OrbitalHEG((4,),Up)]))
+
+    println("spin_count : ", get_spin_up_down_count(c))
+    println("xi = ", fractional_spin_polarization(c))
+
+    @test β_old(Θ, N, c) ≈ β(Θ, r, N, fractional_spin_polarization(c), d)
 
     " This is the expression used in the previous version. "
     function λ_old(N::Int, rs::Float64)
