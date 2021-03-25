@@ -20,10 +20,15 @@ include("../../../src/CPIMC.jl")
 const ex_radius = 3 # maximum radius for exitation
 
 
+#To run on a Linux System use "julia --threads NT run_Threads", where NT is the
+#desired number of Threads.
+#Inside the Code you can use Threads.nthreads() to check how many Threads
+#the Programm uses.
 function main()
     # MC options
     NMC = 3*10^5
     cyc = 50
+    N_Runs = 24
     NEquil = 10^5
     # system parameters
     θ = 0.125
@@ -63,11 +68,10 @@ function main()
     )
 
     println("Start MC process ... ")
-    marcov_chain_builders = Array{Task}(undef,Threads.nthreads())# the number of threads set by `julia -t run_threads.jl` (--threads)
     measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
 
 
-    Threads.@threads for t in 1:Threads.nthreads()
+    Threads.@threads for t in 1:24
         m = deepcopy(measurements_Mean)
         push!(measurements_of_runs,m)
         sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c)

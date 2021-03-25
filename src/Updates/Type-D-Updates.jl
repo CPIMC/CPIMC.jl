@@ -374,7 +374,6 @@ function remove_type_D(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
     end
 
-    occupations(apply_step(c,Δ).occupations, apply_step(c,Δ).kinks)
     @assert(dw != Inf)
     @assert(delta_τ > 0 )
     @assert(!isinf((inverse_prop_prob/prop_prob) * dw))

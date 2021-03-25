@@ -137,6 +137,7 @@ return all kinks in c which affect one ore more of the orbitals in os
 """
 kinks_affecting_orbs(c::Configuration{T}, os::Set{T}) where {T <: Orbital} = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), c.kinks)
 
+kinks_affecting_orbs(ck::SortedDict{ImgTime,<:Kink}, os::Set{T}) where {T <: Orbital} = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), ck)
 """     adjacent_kinks(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime) where {T <: Orbital}
 return a tuple of imaginary times the closest kink to the right and
 the closest kink to the left of τ that affect one of the orbitals in os
@@ -381,3 +382,62 @@ end
 """ returns 1 or -1 depending on the order of all ladder operators as given by the orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l,
 used in the sign estimator."""
 ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_order_factor(orbs_ordered(ck))
+
+
+
+
+"""
+    is_type_1(left_kink::T4, right_kink::T4)
+Returns True if left_kink and right_kink are entangled in a Type-1 way.
+This does not check wether the two kinks are neighbouring."""
+function is_type_1(left_kink::T4, right_kink::T4)
+  if ((length(intersect(Set([left_kink.i, left_kink.j]),Set([right_kink.k, right_kink.l]))) == 1) &
+        (length(intersect(Set([left_kink.k, left_kink.l]), Set([right_kink.i, right_kink.j]))) == 0)) ||
+    ((length(intersect(Set([left_kink.i, left_kink.j]),Set([right_kink.k, right_kink.l]))) == 0) &
+          (length(intersect(Set([left_kink.k, left_kink.l]), Set([right_kink.i, right_kink.j]))) == 1))
+    return(true)
+  else
+    return(false)
+  end
+end
+
+"""
+    right_type_1_chain_length(ck, τ, count = 0)
+Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the right.
+"""
+function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, count = 0)
+    kink = ck[τ]
+    next_kink = next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
+    if is_type_1(ck[τ], last(next_kink)) & (count < length(ck))
+        return right_type_1_chain_length(ck, first(next_kink), count + 1)
+    else
+        return count
+    end
+end
+
+"""
+    left_type_1_chain_length(ck, τ, count = 0)
+Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
+"""
+function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, count = 0)
+    kink = ck[τ]
+    prev_kink = prev(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
+    if is_type_1(last(prev_kink), ck[τ]) & (count < length(ck))
+        return left_type_1_chain_length(ck, first(prev_kink), count + 1)
+    else
+        return count
+    end
+end
+
+"""
+    longest_type_1_chain_length(ck) where T
+Returns the longest chain of type-1-entaglements in ck.
+"""
+function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T
+    longest_length = 0
+    for (τ, kink) in ck
+        longest_length = max(right_type_1_chain_length(ck, τ),
+                                left_type_1_chain_length(ck, τ), longest_length)
+    end
+    return longest_length
+end
