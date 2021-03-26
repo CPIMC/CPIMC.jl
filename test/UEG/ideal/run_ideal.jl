@@ -21,12 +21,14 @@ function main()
     N = length(S)
     ξ = fractional_spin_polarization(S)
     c = Configuration(S)
+    d = dimension(c.occupations)
 
     println("θ: ", θ)
     println("rs: ", rs)
     println("N: ", N)
+    println("d: ", d)
 
-    e = Ensemble(rs, β(θ,N,ξ), N) # β only works for 3D
+    e = Ensemble(rs, β(θ,N,ξ,d), N) # β only works for 3D
 
     updates = Update.([move_particle],0,0,0)
 
