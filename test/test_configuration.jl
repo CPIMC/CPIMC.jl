@@ -73,7 +73,7 @@ end
     @test orbs_ordered(conf.kinks)[1] == a
     @test orbs_ordered(conf.kinks)[4] == d
     @test orbs_ordered(conf.kinks)[end] == a
-    @test orbs_ordered(conf.kinks)[end-3] == d
+    @test orbs_ordered(conf.kinks)[end-4] == c
 end
 
 @testset "Type_1_investigation" begin
