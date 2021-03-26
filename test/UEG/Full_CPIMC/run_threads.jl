@@ -20,17 +20,23 @@ include("../../../src/CPIMC.jl")
 const ex_radius = 3 # maximum radius for exitation
 
 
+#To run on a Linux System use "julia --threads NT run_Threads", where NT is the
+#desired number of Threads.
+#Inside the Code you can use Threads.nthreads() to check how many Threads
+#the Programm uses.
 function main()
     # MC options
-    NMC = 3 * 10^5
+    NMC = 3*10^5
     cyc = 50
+    N_Runs = 24
     NEquil = 10^5
     # system parameters
-    θ = 0.5
-    rs = 1.0
+    θ = 0.125
+    rs = 2.0
 
     # use 7 particles
-    S = get_sphere_with_same_spin(OrbitalHEG((0,0,0),1),dk=2)
+    S = sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1)
+    #S = sphere(OrbitalHEG((0,0,0),Up),dk=1)
     N = length(S)
     c = Configuration(S)
 
@@ -39,9 +45,8 @@ function main()
     println("rs: ", rs)
     println("N: ", N)
 
-    e = Ensemble(rs, get_β_internal(θ,N,c), N) # get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#  , add_type_E, remove_type_E, add_remove_kink_chain
-                                                                                    #, change_type_B    #
+    e = Ensemble(rs, β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#, change_type_B
 
 
     measurements = Dict(
@@ -63,15 +68,13 @@ function main()
     )
 
     println("Start MC process ... ")
-    marcov_chain_builders = Array{Task}(undef,Threads.nthreads())# the number of threads set by `julia -t run_threads.jl` (--threads)
     measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
-    for t in 1:Threads.nthreads()
+
+
+    Threads.@threads for t in 1:24
         m = deepcopy(measurements_Mean)
         push!(measurements_of_runs,m)
-        marcov_chain_builders[t] = Threads.@spawn(sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c))
-    end
-    for mcb in marcov_chain_builders
-        wait(mcb)
+        sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c)
     end
 
     println(" finished.")
@@ -118,18 +121,18 @@ function main()
     ΔW = ΔW_diag + ΔW_off_diag
     μE = μW + μT
     ΔE = ΔW + ΔT
-    μWt_Ry = Et_Ry(μW, e::Ensemble)
-    ΔWt_Ry = E_Ry(ΔW, e::Ensemble)
-    μT_Ry = E_Ry(μT,λ(e.N,e.rs))
-    ΔT_Ry = E_Ry(ΔT,λ(e.N,e.rs))
-    μE_Ry = μT_Ry + μWt_Ry
-    ΔE_Ry = ΔT_Ry + ΔWt_Ry
+    μWt_Ha = Et_Ha(μW, e::Ensemble)
+    ΔWt_Ha = E_Ha(ΔW, e::Ensemble)
+    μT_Ha = E_Ha(μT,λ(e.N,e.rs))
+    ΔT_Ha = E_Ha(ΔT,λ(e.N,e.rs))
+    μE_Ha = μT_Ha + μWt_Ha
+    ΔE_Ha = ΔT_Ha + ΔWt_Ha
 
     println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
     println("W", "\t", μW, " +/- ", ΔW)
     println("E", "\t", μE, " +/- ", ΔE)
-    println("W_t_Ry", "\t", μWt_Ry, " +/- ", ΔWt_Ry)
-    println("T_Ry", "\t", μT_Ry, " +/- ", ΔT_Ry)
+    println("W_t_Ha", "\t", μWt_Ha, " +/- ", ΔWt_Ha)
+    println("T_Ha", "\t", μT_Ha, " +/- ", ΔT_Ha)
 
     println("")
 
@@ -137,6 +140,13 @@ function main()
     println("============")
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
+
+    println("acceptance ratios:")
+    println("============")
+    for u in updates
+        println("$(u.update):\t$(u.proposed) proposed,\t$(u.accepted) accepted,\t$(u.trivial) trivial,\tratio(acc/prop) : $(u.accepted/u.proposed), ratio(acc/(prop-triv)) : $(u.accepted/(u.proposed-u.trivial))")
+    end
+
 
     # create resultsfile
     # add measurements to file
@@ -158,12 +168,12 @@ function main()
     df[!,:ΔW] .= ΔW
     df[!,:E] .= μE
     df[!,:ΔE] .= ΔE
-    df[!,:Wt_Ry] .= μWt_Ry
-    df[!,:ΔWt_Ry] .= ΔWt_Ry
-    df[!,:T_Ry] .= μT_Ry
-    df[!,:ΔT_Ry] .= ΔT_Ry
-    df[!,:E_Ry] .= μE_Ry
-    df[!,:ΔE_Ry] .= ΔE_Ry
+    df[!,:Wt_Ha] .= μWt_Ha
+    df[!,:ΔWt_Ha] .= ΔWt_Ha
+    df[!,:T_Ha] .= μT_Ha
+    df[!,:ΔT_Ha] .= ΔT_Ha
+    df[!,:E_Ha] .= μE_Ha
+    df[!,:ΔE_Ha] .= ΔE_Ha
 
     # create occupation numbers file
     open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io

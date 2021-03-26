@@ -101,7 +101,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
     for i in 1:throwAway
         # print progress
         if i%(throwAway/100) == 0
-            print("eq: ",k,"/100","    ")
+            print("eq: ",k,"/100   ","K ",length(c.kinks), "    ")
             k+=1
         end
         update!(c, e, updates; kwargs...)
@@ -114,7 +114,7 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
 
         # print progress
         if i%(steps/100) == 0
-            print(k,"/100","    ")
+            print(k,"/100   ","K: ", length(c.kinks), "    ")
             k+=1
         end
 
@@ -122,14 +122,8 @@ function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Upd
         update!(c, e, updates; kwargs...)
 
         if i % sampleEvery == 0
-            " calculate observables "
-            for (key,(stat,obs)) in measurements
-                if in(key,[:sign, :K])
-                    fit!(stat, obs(e,c))
-                else
-                    fit!(stat, obs(e,c)*signum(c))
-                end
-            end
+            " calculate estimators "
+            measure(measurements, e, c)
         end
 
         i += 1
@@ -148,11 +142,11 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
     end
     k = 1# progress counter
     for i in 1:throwAway
-        if (i%(throwAway/100) == 0) #& (Threads.threadid() == 1)
+        if (i%(throwAway/100) == 0)
             println("               "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100"," ","K: ",length(c.kinks))
             k+=1
         end
-        #TODO Use reentrantlook?
+        #TODO Use reentrantlook for Update counters?
         update!(c, e, updates; kwargs...)
     end
     if (Threads.threadid() == 1)
@@ -175,18 +169,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
         "measurement"
         if i % sampleEvery == 0
             " calculate observables "
-            for (key,(stat,obs)) in measurements
-                if in(key,[:sign, :K])
-                    fit!(stat, obs(e,c))
-                else
-                    if typeof(stat) == Group#####################Diese Bedingung ist anscheinend niemals erfüllt
-                        println("Das wird nicht geprinted")
-                        fit!(stat, eachrow(obs(e,c)))
-                    else
-                        fit!(stat, obs(e,c)*signum(c))
-                    end
-                end
-            end
+            measure(measurements, e, c)
         end
         i += 1
     end

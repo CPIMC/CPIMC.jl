@@ -5,6 +5,12 @@ b = OrbitalHEG((3,0,0))
 c = OrbitalHEG((0,0,0))
 d = OrbitalHEG((1,0,0))
 e = OrbitalHEG((5,9,9))
+f = OrbitalHEG((1,1,1))
+
+g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
+h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
+
+
 
 sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
                                            ImgTime(0.5) => T4(c,d,a,b),
@@ -70,3 +76,25 @@ end
     @test orbs_ordered(conf.kinks)[end-4] == c
 end
 
+@testset "longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T" begin
+    g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
+    h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
+
+    Type_1_chain = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
+                                               ImgTime(0.5) => T4(f,g,e,a),
+                                               ImgTime(0.6) => T4(c,d,h,g),
+                                               ImgTime(0.8) => T4(e,h,b,f) )
+
+    @test (a.vec + b.vec - c.vec - d.vec) == OrbitalHEG((0,0,0)).vec
+    @test (f.vec + g.vec - e.vec - a.vec) == OrbitalHEG((0,0,0)).vec
+    @test (c.vec + d.vec - h.vec - g.vec) == OrbitalHEG((0,0,0)).vec
+    @test (e.vec + h.vec - b.vec - f.vec) == OrbitalHEG((0,0,0)).vec
+
+    occs = setdiff!(union!(sphere(OrbitalHEG((0,0,0),Up),dk=1),
+                        Set([e,h])),
+                Set([g,f]))
+    conf_Type_1 = Configuration(occs,Type_1_chain)
+    @test (occupations(conf_Type_1, ImgTime(0.9)) == occs)
+    @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
+
+end

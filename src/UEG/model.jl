@@ -156,22 +156,58 @@ kernel(i::StaticVector{N,Int}, k::StaticVector{N,Int}) where {N} = 1.0 / dot( i-
 kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
 
 
+
+
 " anti-symmetrized interaction matrix element "
 function wminus(i::OrbitalHEG{D}, j::OrbitalHEG{D}, k::OrbitalHEG{D}, l::OrbitalHEG{D}) where {D}
-    if (i == k && j == l)
-        return 0.0
-    elseif (i == l && j == k && i.spin == k.spin)
-        return -kernel(i,k)
-    else
-        if i.spin == j.spin
-            return kernel(i, k) - kernel(i, l)
-        elseif i.spin == k.spin
-            return kernel(i, k)
-        elseif i.spin == l.spin
-            return -kernel(i, l)
-        end
+    @assert ((i != k) && (i != l))
+    @assert ((i.spin == j.spin) == (k.spin == l.spin))
+    @assert(in(i.spin,[k.spin,l.spin]))
+    @assert(i.vec + j.vec == k.vec + l.vec)
+    if i.spin == j.spin
+        @assert(!isinf(abs(kernel(i, k) - kernel(i, l))))
+        return kernel(i, k) - kernel(i, l)
+    elseif i.spin == k.spin
+        @assert(!isinf(abs(kernel(i, k))))
+        return kernel(i, k)
+    elseif i.spin == l.spin
+        @assert(!isinf(abs(kernel(i, l))))
+        return -kernel(i, l)
     end
 end
+
+" diagonal interaction matrix element "
+function wdiag(a::OrbitalHEG{D}, b::OrbitalHEG{D}) where {D}
+    if a.spin != b.spin
+        return 0
+    else
+        return -kernel(a, b)
+    end
+end
+
+# " anti-symmetrized interaction matrix element "
+# function wminus(i::OrbitalHEG{D}, j::OrbitalHEG{D}, k::OrbitalHEG{D}, l::OrbitalHEG{D}) where {D}
+#     if (i.vec == k.vec)
+#         @assert j.vec == l.vec
+#         return 0.0
+#     elseif (i.vec == l.vec)
+#         @assert(j.vec == k.vec)
+#         if i.spin == j.spin
+#             @assert(k.spin == l.spin)
+#             return -kernel(i,k)
+#         else
+#             return 0.0
+#         end
+#     else
+#         if i.spin == j.spin
+#             return kernel(i, k) - kernel(i, l)
+#         elseif i.spin == k.spin
+#             return kernel(i, k)
+#         elseif i.spin == l.spin
+#             return -kernel(i, l)
+#         end
+#     end
+# end
 
 wminus(kink::T4) = wminus(kink.i, kink.j, kink.k, kink.l)
 
@@ -198,7 +234,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
 
     @assert (orb_a.spin != orb_b.spin) == (orb_c.spin != orb_d.spin )
 
-    Δdi = Δτ12 * λ(e.N,e.rs) * ( wminus(orb_a, orb_b, orb_b, orb_a) - wminus(orb_c, orb_d, orb_d, orb_c) )
+    Δdi = Δτ12 * λ(e.N,e.rs) * ( wdiag(orb_a, orb_b) - wdiag(orb_c, orb_d) )
 
     occs = occupations(c, τ1)
 
@@ -208,17 +244,18 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
             continue
         else
             for orb in [orb_a, orb_b]
-                Δdi += Δτ12 * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
+                Δdi += Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb)
             end
             for orb in [orb_c, orb_d]
-                Δdi -= Δτ12 * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
+                Δdi -= Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb)
             end
         end
-        @assert abs(Δdi) != Inf
+        @assert !isinf(abs(Δdi))
+        @assert(!isnan(Δdi))
     end
 
     if isempty(c.kinks)
-        return -Δdi
+        return Δdi
     end
 
     kink_semi_token = searchsortedfirst(c.kinks,τ1)
@@ -238,8 +275,8 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
 
     loop_counter = 0
 
-    @assert abs(Δdi) != Inf
-
+    @assert !isinf(abs(Δdi))
+    @assert(!isnan(Δdi))
     # collect contributions to diagonal interaction energy due to kinks in the interval
     while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
         Δτ = τ2 - τ_kink
@@ -248,23 +285,23 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         end
         for occ in [kink.i, kink.j]
             for orb in [orb_a, orb_b]
-                 Δdi += Δτ * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
+                 Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
             end
             for orb in [orb_c, orb_d]
-                 Δdi -= Δτ * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
+                 Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
             end
         end
         for occ in [kink.k, kink.l]
             for orb in [orb_a, orb_b]
-                 Δdi -= Δτ * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
+                 Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
             end
             for orb in [orb_c, orb_d]
-                 Δdi += Δτ * λ(e.N,e.rs) * wminus(occ,orb,orb,occ)
+                 Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
             end
         end
 
-        @assert abs(Δdi) != Inf
-
+        @assert !isinf(abs(Δdi))
+        @assert(!isnan(Δdi))
         kink_semi_token = advance((c.kinks,kink_semi_token))
         if kink_semi_token == pastendsemitoken(c.kinks)
             kink_semi_token = startof(c.kinks)
@@ -272,8 +309,8 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         τ_kink,kink = deref((c.kinks,kink_semi_token))
         loop_counter += 1
     end
-
-    return -Δdi
+    @assert(!isnan(Δdi))
+    return Δdi
 end
 
 " This function assumes for now that all kinks in c are of type 4. "
@@ -289,12 +326,12 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         if occ.vec in [ orb_a.vec, orb_b.vec ]
             continue
         else
-            Δdi += Δτ12 * λ(e.N,e.rs) * wminus(occ,orb_a,orb_a,occ)
-            Δdi -= Δτ12 * λ(e.N,e.rs) * wminus(occ,orb_b,orb_b,occ)
+            Δdi += Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb_a)
+            Δdi -= Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb_b)
         end
     end
     if isempty(c.kinks)
-        return -Δdi
+        return Δdi
     end
     kink_semi_token = searchsortedfirst(c.kinks,τ1)
     if kink_semi_token == pastendsemitoken(c.kinks)
@@ -320,12 +357,12 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         end
 
         for occ in [kink.i, kink.j]
-            Δdi += Δτ * λ(e.N,e.rs) * wminus(occ,orb_a,orb_a,occ)
-            Δdi -= Δτ * λ(e.N,e.rs) * wminus(occ,orb_b,orb_b,occ)
+            Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb_a)
+            Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb_b)
         end
         for occ in [kink.k, kink.l]
-            Δdi += Δτ * λ(e.N,e.rs) * wminus(occ,orb_b,orb_b,occ)
-            Δdi -= Δτ * λ(e.N,e.rs) * wminus(occ,orb_a,orb_a,occ)
+            Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb_b)
+            Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb_a)
         end
 
 
@@ -337,7 +374,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         loop_counter += 1
     end
 
-    return -Δdi
+    return Δdi
 end
 
 """

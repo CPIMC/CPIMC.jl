@@ -1,7 +1,25 @@
-#include("../../../src/HEG/model.jl")
+"""
+    measure(measurements, e, c)
+calculate estimators and fit to measurements.
+    """
+function measure(measurements, e, c)
+    s = signum(c)
+    for (key,(stat,obs)) in measurements
+        if in(key,[:sign, :K])
+            fit!(stat, obs(e,c))
+        else
+            fit!(stat, obs(e,c)*s)
+        end
+    end
+end
 
+"""
+    Ekin(e::Ensemble, c::Configuration)
+
+estimator for the kinetic energy
+    """
 function Ekin(e::Ensemble, c::Configuration)
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         return(sum(energy(n) for n in c.occupations))
     end
     occs = copy(c.occupations)
@@ -17,18 +35,29 @@ function Ekin(e::Ensemble, c::Configuration)
     return(E_kin)
 end
 
+"""
+    W_off_diag(e::Ensemble, c::Configuration)
+
+estimator for the offdiagonal contribution to the interaction energy
+This estimator is redundant because we can calculate the offdiagonal interaction energy from K_fermion.
+"""
 function W_off_diag(e::Ensemble, c::Configuration)
-    return(-(length(c.kinks)/e.β))
+    return -(length(c.kinks)/e.β)
 end
 
+"""
+    W_diag(e::Ensemble, c::Configuration)
+
+estimator for the diagonal contribution to the interaction energy
+"""
 function W_diag(e::Ensemble, c::Configuration)
     W_diag = 0
-    if length(c.kinks) == 0
+    if isempty(c.kinks)
         for occ1 in c.occupations
             redundant = true
             for occ2 in c.occupations
                 if (!redundant & (occ1.spin == occ2.spin))
-                    W_diag += λ(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec))
+                    W_diag += λ(e.N,e.rs) * kernel(occ1,occ2)
                 end
                 if occ1 == occ2
                     redundant = false
@@ -43,7 +72,7 @@ function W_diag(e::Ensemble, c::Configuration)
                 redundant = true
                 for occ2 in occs
                     if (!redundant & (occ1.spin == occ2.spin))
-                        W_diag += λ(e.N,e.rs) / dot((occ1.vec-occ2.vec),(occ1.vec-occ2.vec)) * (τ-old_τ)
+                        W_diag += λ(e.N,e.rs) * kernel(occ1,occ2) * (τ-old_τ)
                     end
                     if occ1 == occ2
                         redundant = false
@@ -55,21 +84,43 @@ function W_diag(e::Ensemble, c::Configuration)
         end
     end
     W_diag *= -1
-    return(W_diag)
+    return W_diag
 end
 
-function Epot(e::Ensemble, c::Configuration)
-    return(W_diag(e, c) + W_off_diag(e,c))
+"""
+    Epot(e::Ensemble, c::Configuration)
+
+estimator for the interaction energy
+This estimator is redundant because we can calculate the interaction energy from K_fermion and W_diag.
+"""
+function W(e::Ensemble, c::Configuration)
+    return W_diag(e, c) + W_off_diag(e,c)
 end
 
+"""
+    E(e::Ensemble, c::Configuration)
+
+estimator for the interaction energy
+This estimator is redundant because we can calculate the full energy as the sum of the kinetic and the interaction part.
+"""
 function E(e::Ensemble, c::Configuration)
-    return(Ekin(e, c) + Epot(e,c))
+    return Ekin(e, c) + Epot(e,c)
 end
 
+"""
+    K(e::Ensemble, c::Configuration)
+
+estimator for the number of kinks
+"""
 function K(e::Ensemble, c::Configuration)
-    return(length(c.kinks))
+    return length(c.kinks)
 end
 
+"""
+    occupations(e::Ensemble, c::Configuration, emax::Int=100) :: Array{Float64,1}
+
+estimator for the occupations of the emax:Int lowest single particle energy eigenvalues
+"""
 function occupations(e::Ensemble, c::Configuration, emax::Int=100) :: Array{Float64,1}
     nk = zeros(Float64, emax)
     if isempty(c.kinks)
@@ -93,42 +144,42 @@ function occupations(e::Ensemble, c::Configuration, emax::Int=100) :: Array{Floa
     end
     nk
 end
+"""
+    signum(e::Ensemble, c::Configuration)
 
+estimator for the sign of the weight function
+"""
 signum(e::Ensemble, c::Configuration) = signum(c)
 signum(c::Configuration) = ladder_operator_order_factor(c.kinks)*sign_offdiagonal_product(c)
 
-function particleNumber(c::Configuration)
-  return length(c.occupations)
-end
 
+#####################Calculationg observables after Simulation
 function W_off_diag(e::Ensemble, avg_K::Float64)
     return (-(avg_K/e.β))
 end
 
-
-#####################Calculationg observables after Simulation
-function abs_E_mad(N::Int, lam::Float64) #internal units
-    return 2.83729747948527 * pi/2.0 * N * lam
+function abs_E_madelung(N::Int, λ::Float64) #internal units
+    return 2.83729747948527 * pi/2.0 * N * λ
 end
 
-function E_int_from_Hartree(E_Ha::Float64, lam::Float64)
-    return (E_Ha /(16/((2*pi)^4 * (lam/2)^2) * 0.5))
+function E_int_from_Hartree(E_Ha::Float64, λ::Float64)
+    return (E_Ha /(16/((2*pi)^4 * (λ/2)^2) * 0.5))
 end
 
 function E_int_from_Hartree(E_Ha::Float64, e::Ensemble)
     return (E_Ha /(16/((2*pi)^4 * (λ(e.N, e.rs)/2)^2) * 0.5))
 end
 
-function E_Ry(E_internal::Float64, lam::Float64)
-    return (E_internal * 16/((2*pi)^4 * lam^2))
+function E_Ry(E_internal::Float64, λ::Float64)
+    return (E_internal * 16/((2*pi)^4 * λ^2))
 end
 
 function E_Ry(E_internal::Float64, e::Ensemble)
     return (E_internal * 16/((2*pi)^4 * λ(e.N, e.rs)^2))
 end
 
-function E_Ha(E_internal::Float64, lam::Float64)
-    return (E_internal * 16/((2*pi)^4 * lam^2) * 0.5)
+function E_Ha(E_internal::Float64, λ::Float64)
+    return (E_internal * 16/((2*pi)^4 * λ^2) * 0.5)
 end
 
 function E_Ha(E_internal::Float64, e::Ensemble)
@@ -137,5 +188,9 @@ end
 
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
-    return (E_Ry(E_internal-abs_E_mad(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
+    return (E_Ry(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
+end
+
+function Et_Ha(E_internal::Float64, e::Ensemble)
+    return E_Ha(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs))
 end

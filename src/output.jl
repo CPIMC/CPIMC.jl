@@ -35,9 +35,9 @@ function print_results(measurements, e::Ensemble)
     if in(:Ekin, keys(measurements))
         μT = mean(first(measurements[:Ekin]))/avg_sign
         ΔT = std(first(measurements[:Ekin]))/sqrt(measurements[:Ekin][1].n - 1)/avg_sign
-        μT_Ry = E_Ry(μT,λ(e.N,e.rs))
-        ΔT_Ry = E_Ry(ΔT,λ(e.N,e.rs))
-        println("T_Ry", "\t", E_Ry(μT,e), " +/- ", E_Ry(ΔT,e))
+        μT_Ha = E_Ha(μT,λ(e.N,e.rs))
+        ΔT_Ha = E_Ha(ΔT,λ(e.N,e.rs))
+        println("T_Ry", "\t", μT_Ha, " +/- ", ΔT_Ha)
     end
     # calculate interaction energy in Rydberg
     if all( [:W_diag,:K_fermion] .∈ (keys(measurements),) )
@@ -47,11 +47,11 @@ function print_results(measurements, e::Ensemble)
         ΔW_off_diag = abs(W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(measurements[:K_fermion][1].n - 1)/avg_sign))
         μW = μW_diag + μW_off_diag
         ΔW = ΔW_diag + ΔW_off_diag
-        ΔWt_Ry = Et_Ry(ΔW, e::Ensemble)
+        ΔWt_Ha = Et_Ha(ΔW, e::Ensemble)
         println("W_diag", "\t", μW_diag, " +/- ", ΔW_diag)
         println("W_off_diag", "\t", μW_off_diag, " +/- ", ΔW_off_diag)
         println("W", "\t", μW, " +/- ", ΔW)
-        println("W_t_Ry", "\t", Et_Ry(μW,e), " +/- ", Et_Ry(ΔW,e))
+        println("W_t_Ha", "\t", Et_Ha(μW,e), " +/- ", Et_Ha(ΔW,e))
     end
     # calculate total energy in Rydberg
     if all( [:Ekin,:W_diag,:K_fermion] .∈ (keys(measurements),) )
@@ -66,7 +66,7 @@ function save_results(path, measurements, ensemble; options...)
     Nsamples = measurements[:Ekin][1].n
 
     # thermodynamic observables (single observations)
-    fname = joinpath(path, "Obs_N$(ensemble.N)_th$(replace(string(get_β_internal(ensemble.β,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
+    fname = joinpath(path, "Obs_N$(ensemble.N)_th$(replace(string(β(ensemble.β,ensemble.N)),"." => ""))_rs$(replace(string(ensemble.rs),"." => "")).dat")
     if !isfile(fname)
         print("Print single observables to file ... ")
         open(fname, "a") do io
