@@ -10,17 +10,17 @@ import LinearAlgebra: dot
 return opposite spin projection
 """
 function flip(s::Spin)
-  if s == Down
-    Up
-  else
-    Down
-  end
+    if s == Down
+        Up
+    else
+        Down
+    end
 end
 
 
 "representation of single particle state"
 struct OrbitalHEG{D} <: Orbital
-    "D-dimensional excitation vector"
+    "D-dimensional momentum vector"
     vec :: StaticVector{D,Int}
     "spin"
     spin :: Spin
@@ -32,6 +32,23 @@ OrbitalHEG(v::Tuple,s=Up) = OrbitalHEG(SVector(v),s)
 function energy(o::OrbitalHEG)
     dot(o.vec,o.vec)
 end
+
+"""
+    flip(o::OrbitalHEG)
+return an OrbitalHEG with the same momentum vector but opposite spin projection as the given o::OrbitalHEG """
+flip(o::OrbitalHEG) = OrbitalHEG(tuple(o.vec...),flip(o.spin))
+
+
+"""
+    dimension(o::OrbitalHEG{D}) where {D}
+return the dimension of the momentum vector of an Orbital"""
+dimension(o::OrbitalHEG{D}) where {D} = D
+
+"""
+    dimension(os::Set{<:OrbitalHEG{D}}) where {D}
+return the dimension of the momentum vectors of a Set{<:Orbital{D}}
+"""
+dimension(os::Set{<:OrbitalHEG{D}}) where {D} = D
 
 function shell(o::OrbitalHEG{1};dw::Int=2)
     eq = energy(o)
