@@ -107,6 +107,7 @@ end
         #ξ = 1.0#rand()
         for i in 1:10
             @test β(θ, N, ξ, rs) ≈ β(θ, N, ξ, rs*rand()*100)
+            @test β(θ, N, ξ, rs,2) ≈ β(θ, N, ξ, rs*rand()*100,2)
         end
         @test (β_old(θ, N) ≈ β(θ, N, ξ))
         @test (β_ref(θ, N) ≈ β(θ, N, ξ))
