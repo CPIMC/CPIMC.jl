@@ -349,16 +349,16 @@ end
 
 """ get a list of orbitals that are affected by a kink in the conventional ordering i, j, k, l
     this corresponds to the matrix element w_ijkl in the same order """
-orbs_ordered(x::T4) = [x.i, x.j, x.k, x.l]
+time_ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
 
 
 #TODO change Name to orbs_time_ordered
 """ get a list of orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l """
-function orbs_ordered(ck::SortedDict{ImgTime,<:Kink{T}}) where T
+function time_ordered_orbs(ck::SortedDict{ImgTime,<:Kink{T}}) where T time_ordered_orbs
     if isempty(ck)
         return Array{T,1}()
     else
-        return vcat([orbs_ordered(k) for k in values(ck)]...)
+        return vcat([time_ordered_orbs(k) for k in values(ck)]...)
     end
 end
 
@@ -381,7 +381,7 @@ end
 
 """ returns 1 or -1 depending on the order of all ladder operators as given by the orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l,
 used in the sign estimator."""
-ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_order_factor(orbs_ordered(ck))
+ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_order_factor(time_ordered_orbs(ck))
 
 
 

@@ -33,7 +33,7 @@ end
     @test β(Θ, N, ξ, d) ≈ (α * r)^2 * 16 / ( (1 + ξ)^(2/d) * (2π)^4 * λ(N, r, d)^2 * Θ )
 end
 
-@testset "compare parameter calculation with old versions for ξ=1 " begin
+@testset "compare parameter calculation with old versions " begin
 
     " returns a tuple of number of particles with spin up and number of particles with spin down "
     function get_spin_up_down_count(c::Configuration)

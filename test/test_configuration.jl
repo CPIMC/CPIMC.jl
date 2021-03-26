@@ -61,19 +61,19 @@ end
 end
 
 
-@testset "orbs_ordered(::T4)" begin
-    @test orbs_ordered(T4(a,b,c,d))[1] == a
-    @test orbs_ordered(T4(a,b,c,d))[2] == b
-    @test orbs_ordered(T4(a,b,c,d))[3] == c
-    @test orbs_ordered(T4(a,b,c,d))[4] == d
-    @test orbs_ordered(T4(a,b,c,d)) == [a,b,c,d]
+@testset "time_ordered_orbs(::T4)" begin
+    @test time_ordered_orbs(T4(a,b,c,d))[1] == a
+    @test time_ordered_orbs(T4(a,b,c,d))[2] == b
+    @test time_ordered_orbs(T4(a,b,c,d))[3] == c
+    @test time_ordered_orbs(T4(a,b,c,d))[4] == d
+    @test time_ordered_orbs(T4(a,b,c,d)) == [a,b,c,d]
 end
 
-@testset "orbs_ordered(::SortedDict{ImgTime,<:Kink})" begin
-    @test orbs_ordered(conf.kinks)[1] == a
-    @test orbs_ordered(conf.kinks)[4] == d
-    @test orbs_ordered(conf.kinks)[end] == a
-    @test orbs_ordered(conf.kinks)[end-4] == c
+@testset "time_ordered_orbs(::SortedDict{ImgTime,<:Kink})" begin
+    @test time_ordered_orbs(conf.kinks)[1] == a
+    @test time_ordered_orbs(conf.kinks)[4] == d
+    @test time_ordered_orbs(conf.kinks)[end] == a
+    @test time_ordered_orbs(conf.kinks)[end-4] == c
 end
 
 @testset "Type_1_investigation" begin
