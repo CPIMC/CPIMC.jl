@@ -146,7 +146,7 @@ the inverse temperature is defined by β = 1 / (kB*T) where kB is the Boltzmann 
 calculate β in internal units
 """
 # The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-β(Θ, rs, N, ξ, d=3) = 1 / ( Θ * EF(rs, ξ, d) * internal_energy_factor(N, rs, d) )
+β(Θ, N, ξ, rs = 1, d=3) = 1 / ( Θ * EF(rs, ξ, d) * internal_energy_factor(N, rs, d) )
 
 
 " coulomb kernel for 3D plane wavevectors "

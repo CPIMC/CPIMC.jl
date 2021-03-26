@@ -30,7 +30,7 @@ end
     ξ = 0.254
     α = (4 / (9π))^(1/3)
     d = 3
-    @test β(Θ, r, N, ξ, d) ≈ (α * r)^2 * 16 / ( (1 + ξ)^(2/d) * (2π)^4 * λ(N, r, d)^2 * Θ )
+    @test β(Θ, N, ξ, r, d) ≈ (α * r)^2 * 16 / ( (1 + ξ)^(2/d) * (2π)^4 * λ(N, r, d)^2 * Θ )
 end
 
 @testset "compare parameter calculation with old versions for ξ=1 " begin
@@ -58,7 +58,7 @@ end
         else
             Spin_Faktor = max(get_spin_up_down_count(c)...)/N
         end
-        println("Spin_Faktor : ", Spin_Faktor)
+        #println("Spin_Faktor : ", Spin_Faktor)
         return ((2*pi)^2)/(((6*(pi^2)*N*Spin_Faktor)^(2/3))*θ)
     end
 
@@ -72,16 +72,16 @@ end
     α = (4 / (9π))^(1/3)
     d = 3
 
-    @test β_ref(Θ, N) ≈ β(Θ, r, N, ξ, d)
+    @test β_ref(Θ, N) ≈ β(Θ, N, ξ, r, d)
 
     ## test for unpolarized system
     c = Configuration(Set([OrbitalHEG((1,),Down), OrbitalHEG((2,),Up), OrbitalHEG((3,),Down), OrbitalHEG((4,),Up)]))
 
 
-    println("spin_count : ", get_spin_up_down_count(c))
-    println("xi = ", fractional_spin_polarization(c))
+    #println("spin_count : ", get_spin_up_down_count(c))
+    #println("xi = ", fractional_spin_polarization(c))
 
-    @test β_old(Θ, N, c) ≈ β(Θ, r, N, fractional_spin_polarization(c), d)
+    @test β_old(Θ, N, c) ≈ β(Θ, N, fractional_spin_polarization(c), r, d)
 
     " This is the expression used in the previous version. "
     function λ_old(N::Int, rs::Float64)
@@ -89,6 +89,29 @@ end
     end
 
     @test λ_old(N, r) ≈ λ(N, r)
+
+    """
+        β(θ::Float64, N::Int, ξ::Float64 )
+
+    calculate β in internal units
+    """
+    function β_previus_version(θ::Float64, N::Int, ξ::Float64 = 1.0)
+        return (2*pi)^2/(((6*(pi^2) * N/2 * (1+abs(ξ)))^(2/3))*θ)
+    end
+
+
+    for i in 1:100
+        θ = rand()*100
+        rs = rand()*100
+        N = 4#rand(1:100)
+        #ξ = 1.0#rand()
+        for i in 1:10
+            @test β(θ, N, ξ, rs) ≈ β(θ, N, ξ, rs*rand()*100)
+        end
+        @test (β_old(θ, N) ≈ β(θ, N, ξ))
+        @test (β_ref(θ, N) ≈ β(θ, N, ξ))
+        @test (β_previus_version(θ, N, ξ) ≈ β(θ, N, ξ))
+    end
 
 end
 
@@ -148,4 +171,3 @@ end
     @test round(W_diag(e,apply_step(conf_pol, Δ)) - W_diag(e,conf_pol),digits = 11) == round(Δdiagonal_interaction(conf_pol, e, a::Orbital, b::Orbital, c::Orbital, d::Orbital, τ1, τ2),digits= 11)
     @test round(W_diag(e,apply_step(conf, Δ)) - W_diag(e,conf),digits = 11) == round(Δdiagonal_interaction(conf, e, a::Orbital, b::Orbital, c::Orbital, d::Orbital, τ1, τ2), digits= 11)
 end
-

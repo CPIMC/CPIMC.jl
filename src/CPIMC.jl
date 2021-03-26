@@ -143,7 +143,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
     k = 1# progress counter
     for i in 1:throwAway
         if (i%(throwAway/100) == 0)
-            println("                                "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100", "; T1c: ", right_type_1_count(c.kinks), "; T1L: ", longest_type_1_chain_length(c.kinks),"; K: ",length(c.kinks))
+            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100","; K: ",length(c.kinks))
 
             k+=1
         end
@@ -160,7 +160,7 @@ function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, upda
     while i < steps
         #print progress
         if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
-            println("                                "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100"," ", "; T1c: ", right_type_1_count(c.kinks), "; T1L: ", longest_type_1_chain_length(c.kinks),"; K: ",length(c.kinks))
+            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
             k+=1
         end
 

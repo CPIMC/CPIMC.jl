@@ -21,7 +21,7 @@ const ex_radius = 3 # maximum radius for exitation
 
 function main()
     # MC options
-    NMC = 5 * 10^5
+    NMC = 3 * 10^5
     cyc = 50
     NEquil = 10^5
     # system parameters
@@ -41,7 +41,7 @@ function main()
     println("N: ", N)
     println("ξ: ", ξ)
 
-    e = Ensemble(rs, β(θ, rs, N, ξ, d), N) # TODO: get_β_internal only works for 3D
+    e = Ensemble(rs, β(θ, N, ξ, rs, d), N) # TODO: get_β_internal only works for 3D
     updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E,add_remove_kink_chain, shuffle_indices],0,0,0) # change_type_B is not required for CPIMC, but for RCPIMC
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
