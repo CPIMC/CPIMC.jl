@@ -145,8 +145,29 @@ the inverse temperature is defined by β = 1 / (kB*T) where kB is the Boltzmann 
 
 calculate β in internal units
 """
-# The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-β(Θ, N, ξ, rs = 1, d=3) = 1 / ( Θ * EF(rs, ξ, d) * internal_energy_factor(N, rs, d) )
+function β(Θ, N, ξ, d=3)
+    #calculate the factor alpha used in calculation of the fermi-vector in Ha units
+    if d == 1
+        α = 4 / π
+    elseif d == 2
+        α = 1 / sqrt(2)
+    elseif d == 3
+        α = cbrt( 4 / (9π) )
+    else
+        throw(DomainError("Fermi-wavenumber only defined for 1-, 2- and 3-dimensional systems. Choose d ∈ {1,2,3} and not d=$(d)"))
+    end
+
+    #calculate λ_rs_ratio
+    if d == 3
+        λ_rs_ratio = (4 / (2π)^3 ) * cbrt(4π*N/3)
+    elseif d == 2
+        λ_rs_ratio = sqrt(N/π) / (2π)
+    else
+        throw(DomainError("coupling constant λ is only implemented for dimension d ∈ {2,3} and not for d=$(d)"))
+    end
+
+    return (16/Θ) * (α / ((1 + ξ)^(1/d) * (2π)^2 * λ_rs_ratio))^2
+end
 
 
 " coulomb kernel for 3D plane wavevectors "

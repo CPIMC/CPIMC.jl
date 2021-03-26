@@ -30,7 +30,7 @@ end
     ξ = 0.254
     α = (4 / (9π))^(1/3)
     d = 3
-    @test β(Θ, N, ξ, r, d) ≈ (α * r)^2 * 16 / ( (1 + ξ)^(2/d) * (2π)^4 * λ(N, r, d)^2 * Θ )
+    @test β(Θ, N, ξ, d) ≈ (α * r)^2 * 16 / ( (1 + ξ)^(2/d) * (2π)^4 * λ(N, r, d)^2 * Θ )
 end
 
 @testset "compare parameter calculation with old versions for ξ=1 " begin
@@ -72,7 +72,7 @@ end
     α = (4 / (9π))^(1/3)
     d = 3
 
-    @test β_ref(Θ, N) ≈ β(Θ, N, ξ, r, d)
+    @test β_ref(Θ, N) ≈ β(Θ, N, ξ, d)
 
     ## test for unpolarized system
     c = Configuration(Set([OrbitalHEG((1,),Down), OrbitalHEG((2,),Up), OrbitalHEG((3,),Down), OrbitalHEG((4,),Up)]))
@@ -81,7 +81,7 @@ end
     #println("spin_count : ", get_spin_up_down_count(c))
     #println("xi = ", fractional_spin_polarization(c))
 
-    @test β_old(Θ, N, c) ≈ β(Θ, N, fractional_spin_polarization(c), r, d)
+    @test β_old(Θ, N, c) ≈ β(Θ, N, fractional_spin_polarization(c), d)
 
     " This is the expression used in the previous version. "
     function λ_old(N::Int, rs::Float64)
@@ -103,14 +103,15 @@ end
     for i in 1:100
         θ = rand()*100
         rs = rand()*100
-        N = 4#rand(1:100)
-        #ξ = 1.0#rand()
+        N = rand(1:100)
+        ξ = 1.0
         for i in 1:10
-            @test β(θ, N, ξ, rs) ≈ β(θ, N, ξ, rs*rand()*100)
-            @test β(θ, N, ξ, rs,2) ≈ β(θ, N, ξ, rs*rand()*100,2)
+            #@test β(θ, N, ξ, rs) ≈ β(θ, N, ξ, rs*rand()*100)
+            #@test β(θ, N, ξ, rs,2) ≈ β(θ, N, ξ, rs*rand()*100,2)
         end
         @test (β_old(θ, N) ≈ β(θ, N, ξ))
         @test (β_ref(θ, N) ≈ β(θ, N, ξ))
+        ξ = rand()
         @test (β_previus_version(θ, N, ξ) ≈ β(θ, N, ξ))
     end
 
