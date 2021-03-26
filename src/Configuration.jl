@@ -405,13 +405,14 @@ end
     right_type_1_chain_length(ck, τ, count = 0)
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the right.
 """
-function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, count = 0)
+function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
     kink = ck[τ]
     next_kink = next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
-    if is_type_1(ck[τ], last(next_kink)) & (count < length(ck))
-        return right_type_1_chain_length(ck, first(next_kink), count + 1)
+    if is_type_1(ck[τ], last(next_kink)) & !in(τ, counted_τs)
+        push!(counted_τs,τ)
+        return right_type_1_chain_length(ck, first(next_kink), counted_τs)
     else
-        return count
+        return length(counted_τs)
     end
 end
 
@@ -419,13 +420,14 @@ end
     left_type_1_chain_length(ck, τ, count = 0)
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
 """
-function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, count = 0)
+function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
     kink = ck[τ]
     prev_kink = prev(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
-    if is_type_1(last(prev_kink), ck[τ]) & (count < length(ck))
-        return left_type_1_chain_length(ck, first(prev_kink), count + 1)
+    if is_type_1(last(prev_kink), ck[τ]) & !in(τ, counted_τs)
+        push!(counted_τs,τ)
+        return left_type_1_chain_length(ck, first(prev_kink), counted_τs)
     else
-        return count
+        return length(counted_τs)
     end
 end
 
@@ -440,4 +442,18 @@ function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T
                                 left_type_1_chain_length(ck, τ), longest_length)
     end
     return longest_length
+end
+
+"""
+    longest_type_1_chain_length(ck) where T
+Returns the longest chain of type-1-entaglements in ck.
+"""
+function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
+    count = 0
+    for (τ, kink) in ck
+        if is_type_1(kink, last(next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])),τ)))
+            count += 1
+        end
+    end
+    return count
 end

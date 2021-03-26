@@ -28,14 +28,14 @@ function main()
     # MC options
     NMC = 3*10^5
     cyc = 50
-    N_Runs = 24
+    N_Runs = 6
     NEquil = 10^5
     # system parameters
-    θ = 0.125
-    rs = 2.0
+    θ = 0.5
+    rs = 1.0
 
     # use 7 particles
-    S = sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1)
+    S = sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=2)
     #S = sphere(OrbitalHEG((0,0,0),Up),dk=1)
     N = length(S)
     c = Configuration(S)
@@ -55,6 +55,7 @@ function main()
     , :W_diag => (Variance(), W_diag)
     , :K => (Variance(), K)
     , :K_fermion => (Variance(), K)
+    , :T1L => (Variance(), longest_type_1_chain_length)
     , :occs => (Group([Variance() for i in 1:100]), occupations)
     )
 
@@ -64,6 +65,7 @@ function main()
     , :W_diag => (Mean(), W_diag)
     , :K => (Mean(), K)
     , :K_fermion => (Mean(), K)
+    , :T1L => (Mean(), longest_type_1_chain_length)
     , :occs => (Group([Mean() for i in 1:100]), occupations)
     )
 
@@ -71,7 +73,7 @@ function main()
     measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
 
 
-    Threads.@threads for t in 1:24
+    Threads.@threads for t in 1:N_Runs
         m = deepcopy(measurements_Mean)
         push!(measurements_of_runs,m)
         sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c)

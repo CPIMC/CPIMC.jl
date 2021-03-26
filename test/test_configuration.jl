@@ -76,7 +76,7 @@ end
     @test orbs_ordered(conf.kinks)[end-3] == d
 end
 
-@testset "longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T" begin
+@testset "Type_1_investigation" begin
     g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
     h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
 
@@ -96,5 +96,23 @@ end
     conf_Type_1 = Configuration(occs,Type_1_chain)
     @test (occupations(conf_Type_1, ImgTime(0.9)) == occs)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
+    @test right_type_1_count(conf_Type_1.kinks) == 4
+
+    Type_1_chain[0.52] = T4(e,a,g,f)
+    Type_1_chain[0.54] = T4(g,f,a,e)
+
+    conf_Type_1 = Configuration(occs,Type_1_chain)
+
+    @test length(conf_Type_1.kinks) == 6
+
+    @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
+    @test right_type_1_count(conf_Type_1.kinks) == 4
+
+    Type_1_chain[0.82] = T4(b,a,d,c)
+    Type_1_chain[0.84] = T4(c,d,a,b)
+
+    conf_Type_1 = Configuration(occs,Type_1_chain)
+    @test longest_type_1_chain_length(conf_Type_1.kinks) == 3
+    @test right_type_1_count(conf_Type_1.kinks) == 4
 
 end

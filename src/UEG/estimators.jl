@@ -153,6 +153,10 @@ signum(e::Ensemble, c::Configuration) = signum(c)
 signum(c::Configuration) = ladder_operator_order_factor(c.kinks)*sign_offdiagonal_product(c)
 
 
+longest_type_1_chain_length(e::Ensemble, c::Configuration) = longest_type_1_chain_length(c.kinks)
+
+right_type_1_count(e::Ensemble, c::Configuration) = right_type_1_count(c.kinks)
+
 #####################Calculationg observables after Simulation
 function W_off_diag(e::Ensemble, avg_K::Float64)
     return (-(avg_K/e.β))
