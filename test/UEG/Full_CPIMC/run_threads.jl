@@ -20,23 +20,23 @@ include("../../../src/CPIMC.jl")
 const ex_radius = 3 # maximum radius for exitation
 
 
-#To run on a Linux System use "julia --threads NT run_Threads", where NT is the
+#To run on a Linux System use "julia --threads NT run_threads.jl", where NT is the
 #desired number of Threads.
 #Inside the Code you can use Threads.nthreads() to check how many Threads
 #the Programm uses.
 function main()
     # MC options
-    NMC = 3*10^5
+    NMC = 5*10^5
     cyc = 50
-    N_Runs = 12
+    N_Runs = 24
     NEquil = 10^5
     # system parameters
     θ = 0.125
-    rs = 1.75
+    rs = 2.0
 
     # use 7 particles
     S = sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1)
-    #S = sphere(OrbitalHEG((0,0,0),Up),dk=1)
+    #S = sphere(OrbitalHEG((0,0,0),Up),dk=2)
     N = length(S)
     c = Configuration(S)
 
@@ -105,20 +105,20 @@ function main()
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
             if in(k,[:sign, :K])
-                println(k, "\t", mean(f), " +/- ", std(f)/sqrt(Threads.nthreads()-1))
+                println(k, "\t", mean(f), " +/- ", std(f)/sqrt(N_Runs-1))
             else
-                println(k, "\t", mean(f)/avg_sign, " +/- ", std(f)/sqrt(Threads.nthreads()-1)/avg_sign)
+                println(k, "\t", mean(f)/avg_sign, " +/- ", std(f)/sqrt(N_Runs-1)/avg_sign)
             end
         end
     end
 
     # print addidtional observables
     μW_diag = mean(first(measurements[:W_diag]))/avg_sign
-    ΔW_diag = std(first(measurements[:W_diag]))/sqrt(Threads.nthreads()-1)/avg_sign
+    ΔW_diag = std(first(measurements[:W_diag]))/sqrt(N_Runs-1)/avg_sign
     μW_off_diag = W_off_diag(e::Ensemble, mean(first(measurements[:K_fermion]))/avg_sign)
-    ΔW_off_diag = abs(W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(Threads.nthreads()-1)/avg_sign))
+    ΔW_off_diag = abs(W_off_diag(e::Ensemble, std(first(measurements[:K_fermion]))/sqrt(N_Runs-1)/avg_sign))
     μT = mean(first(measurements[:Ekin]))/avg_sign
-    ΔT = std(first(measurements[:Ekin]))/sqrt(Threads.nthreads()-1)/avg_sign
+    ΔT = std(first(measurements[:Ekin]))/sqrt(N_Runs-1)/avg_sign
     μW = μW_diag + μW_off_diag
     ΔW = ΔW_diag + ΔW_off_diag
     μE = μW + μT
@@ -157,10 +157,10 @@ function main()
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
             if in(k,[:sign, :K])
                 df[!,k] .= mean(f)
-                df[!,Symbol(:Δ, k)] .= std(f)/sqrt(Threads.nthreads()-1)
+                df[!,Symbol(:Δ, k)] .= std(f)/sqrt(N_Runs-1)
             else
                 df[!,k] .= mean(f)/avg_sign
-                df[!,Symbol(:Δ, k)] .= std(f)/sqrt(Threads.nthreads()-1)/avg_sign
+                df[!,Symbol(:Δ, k)] .= std(f)/sqrt(N_Runs-1)/avg_sign
             end
         end
     end
@@ -178,11 +178,11 @@ function main()
     df[!,:ΔE_Ha] .= ΔE_Ha
 
     # create occupation numbers file
-    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*Threads.nthreads()/cyc)).dat", "w") do io
-        writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*Threads.nthreads()/cyc)))
+    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*N_Runs/cyc)).dat", "w") do io
+        writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*N_Runs/cyc)))
     end
 
-    CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*Threads.nthreads()/cyc)).csv",df)
+    CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*N_Runs/cyc)).csv",df)
 end
 
 main()
