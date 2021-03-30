@@ -479,17 +479,8 @@ function wminus(i::Orbital, j::Orbital, k::Orbital, l::Orbital) where {D}
     end
 end
 
-" diagonal interaction matrix element "
-function wdiag(a::Orbital, b::Orbital) where {D}
-    if a.spin != b.spin
-        return 0
-    else
-        return -kernel(a, b)
-    end
-end
-
-
 wminus(kink::T4) = wminus(kink.i, kink.j, kink.k, kink.l)
+
 
 function offdiagonal_element(e::Ensemble, kink::T4)
     # We sample with the weight of antisymmetrized matrix element but we do not restrict
@@ -499,163 +490,187 @@ end
 
 
 
-"""
-    Δdiagonal_interaction(c::Configuration, e::Ensemble, left_kink::T4, τ1, τ2)
-
-change in the diagonal part of the interaction when applying left_kink between τ1 and τ2
-"""
-
-function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, orb_c::Orbital, orb_d::Orbital, τ1, τ2)
-    Δτ12 = τ2 - τ1
-
-    if Δτ12 < 0
-        Δτ12 += 1
+function w(i::Orbital, j::Orbital, k::Orbital, l::Orbital) # TODO: use type-declaration here in case multiple particle-species exist ?
+    if !iszero(i.vec + j.vec - k.vec - l.vec) | (i.spin != k.spin) | (j.spin != l.spin)# momentum and spin conservation
+        return 0.0
+    else
+        @assert i.vec != k.vec "Divergent contribution in two-particle matrix element for vectors i=$(i.vec), k=$(k.vec). Such contribution should not arise for the uniform electron gas."
+        return 1.0 / dot(i.vec - k.vec, i.vec - k.vec)
     end
-
-    @assert (orb_a.spin != orb_b.spin) == (orb_c.spin != orb_d.spin )
-
-    Δdi = Δτ12 * e.λ * ( wdiag(orb_a, orb_b) - wdiag(orb_c, orb_d) )
-
-    occs = occupations(c, τ1)
-
-    # collect diagonal interaction energy at τ1
-    for occ in occs
-        if occ.vec in [ orb_a.vec, orb_b.vec, orb_c.vec, orb_d.vec ]
-            continue
-        else
-            for orb in [orb_a, orb_b]
-                Δdi += Δτ12 * e.λ * wdiag(occ,orb)
-            end
-            for orb in [orb_c, orb_d]
-                Δdi -= Δτ12 * e.λ * wdiag(occ,orb)
-            end
-        end
-        @assert !isinf(abs(Δdi))
-        @assert(!isnan(Δdi))
-    end
-
-    if isempty(c.kinks)
-        return Δdi
-    end
-
-    kink_semi_token = searchsortedfirst(c.kinks,τ1)
-    if kink_semi_token == pastendsemitoken(c.kinks)
-        kink_semi_token = startof(c.kinks)
-    end
-    τ_kink,kink = deref((c.kinks,kink_semi_token))
-
-    # the kink at τ1 is already considered in occs
-    if τ_kink == τ1
-        kink_semi_token = advance((c.kinks,kink_semi_token))
-        if kink_semi_token == pastendsemitoken(c.kinks)
-            kink_semi_token = startof(c.kinks)
-        end
-        τ_kink,kink = deref((c.kinks,kink_semi_token))
-    end
-
-    loop_counter = 0
-
-    @assert !isinf(abs(Δdi))
-    @assert(!isnan(Δdi))
-    # collect contributions to diagonal interaction energy due to kinks in the interval
-    while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
-        Δτ = τ2 - τ_kink
-        if Δτ < 0
-            Δτ += 1
-        end
-        for occ in [kink.i, kink.j]
-            for orb in [orb_a, orb_b]
-                 Δdi += Δτ * e.λ * wdiag(occ,orb)
-            end
-            for orb in [orb_c, orb_d]
-                 Δdi -= Δτ * e.λ * wdiag(occ,orb)
-            end
-        end
-        for occ in [kink.k, kink.l]
-            for orb in [orb_a, orb_b]
-                 Δdi -= Δτ * e.λ * wdiag(occ,orb)
-            end
-            for orb in [orb_c, orb_d]
-                 Δdi += Δτ * e.λ * wdiag(occ,orb)
-            end
-        end
-
-        @assert !isinf(abs(Δdi))
-        @assert(!isnan(Δdi))
-        kink_semi_token = advance((c.kinks,kink_semi_token))
-        if kink_semi_token == pastendsemitoken(c.kinks)
-            kink_semi_token = startof(c.kinks)
-        end
-        τ_kink,kink = deref((c.kinks,kink_semi_token))
-        loop_counter += 1
-    end
-    @assert(!isnan(Δdi))
-    return Δdi
 end
 
-" This function assumes for now that all kinks in c are of type 4. "
-function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, τ1, τ2)
-    Δτ12 = τ2 - τ1
-    if Δτ12 < 0
-        Δτ12 += 1
-    end
-    Δdi = 0
-    occs = occupations(c, τ1)
-    @assert !in(orb_a, occs)
-    for occ in occs
-        if occ.vec in [ orb_a.vec, orb_b.vec ]
-            continue
-        else
-            Δdi += Δτ12 * e.λ * wdiag(occ,orb_a)
-            Δdi -= Δτ12 * e.λ * wdiag(occ,orb_b)
-        end
-    end
-    if isempty(c.kinks)
-        return Δdi
-    end
-    kink_semi_token = searchsortedfirst(c.kinks,τ1)
-    if kink_semi_token == pastendsemitoken(c.kinks)
-        kink_semi_token = startof(c.kinks)
-    end
-    τ_kink,kink = deref((c.kinks,kink_semi_token))
 
-    # The kink at τ1 is already considered in occs.
-    if τ_kink == τ1
-        kink_semi_token = advance((c.kinks,kink_semi_token))
-        if kink_semi_token == pastendsemitoken(c.kinks)
-            kink_semi_token = startof(c.kinks)
-        end
-        τ_kink,kink = deref((c.kinks,kink_semi_token))
-    end
-
-    loop_counter = 0
-
-    while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
-        Δτ = τ2 - τ_kink
-        if Δτ < 0
-            Δτ += 1
-        end
-
-        for occ in [kink.i, kink.j]
-            Δdi += Δτ * e.λ * wdiag(occ,orb_a)
-            Δdi -= Δτ * e.λ * wdiag(occ,orb_b)
-        end
-        for occ in [kink.k, kink.l]
-            Δdi += Δτ * e.λ * wdiag(occ,orb_b)
-            Δdi -= Δτ * e.λ * wdiag(occ,orb_a)
-        end
+## This function can be redefined if the q=0 component is included
+""" helper function for the calculation of the many-body diagonal interaction matrix element
+    return 0 for the (divergent) term of equal momenta of i and k """
+w_aux(i, j, k, l) = i.vec == k.vec ? 0.0 : w(i,j,k,l)
 
 
-        kink_semi_token = advance((c.kinks,kink_semi_token))
-        if kink_semi_token == pastendsemitoken(c.kinks)
-            kink_semi_token = startof(c.kinks)
-        end
-        τ_kink,kink = deref((c.kinks,kink_semi_token))
-        loop_counter += 1
-    end
-
-    return Δdi
+""" change in the diagonal interaction matrix element due to a change in the occupation occ
+    in an periodic interval (τ1,τ2) where no kinks occur
+    the change in the occupation is assumed to consist in a creation of two orbitals i, j
+    and in the annihlation of two orbitals k, l """
+function ΔW_diag(c, i, j, k, l, occ)
+    # contributions due to mean field interactions of the annihilated orbitals
+    Δ = sum([ w_aux(ν,k,k,ν) for ν in drop(occ, k) ])# interactions of mean field with k
+    Δ += sum([ w_aux(ν,l,l,ν) for ν in drop(occ, l) ])# interactions of mean field with l
+    Δ += w(k,l,l,k)# interaction between k and l
+    # contributions due to mean field interactions of the created orbitals
+    @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
+    Δ -= sum([ w_aux(ν,i,i,ν) + w_aux(ν,j,j,ν) for ν in drop(occ, Set([k,l]))]) + w(i,j,j,i)
 end
+
+""" change in the diagonal interaction matrix element due to a change in the occupation occ
+    in an periodic interval (τ1,τ2) where no kinks occur
+    the change in the occupation is assumed to consist in a creation of one orbitals i
+    and in the annihlation of one orbitals j """
+function ΔW_diag(c, i, j, occ)
+    # contributions due to mean field interactions of the annihilated orbitals
+    Δ = sum([ w_aux(ν,j,j,ν) for ν in drop(occ, j) ])# interactions of mean field with k
+    # contributions due to mean field interactions of the created orbitals
+    @assert (i ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
+    Δ -= sum([ w_aux(ν,i,i,ν) for ν in drop(occ, j) ])
+end
+
+" return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2 "
+function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
+    if isempty(ck)
+        return nothing# TODO: also return nothing if below filter() produces empty lists?
+    end
+    if τ1 < τ2
+        k = filter(x -> τ1 < first(x) < τ2, ck)
+        if isempty(k)
+            return nothing
+        else
+            return k
+        end
+    elseif τ1 > τ2
+        k = filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
+        if isempty(k)
+            return nothing
+        else
+            return k
+        end
+    end# nothing is returned if τ1 == τ2
+end
+
+function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
+
+    @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
+
+    kinks_in_τ1_τ2 = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+
+    if isnothing(kinks_in_τ1_τ2) | isempty(c.kinks)# if there are no kinks in between τ1, τ2 or if c.kinks is empty
+        # println("no kinks in between")
+
+        # periodic difference of the times
+        if τ1 < τ2
+            Δτ = τ2 - τ1
+        elseif τ1 > τ2
+            Δτ = 1 + τ1 - τ2
+        end
+
+        # if no kinks occur in the interval where the occupations differ, the change occurs on the entire time-interval Δτ
+        # the factor λ is the coupling constant
+        return ΔW_diag(c, i, j, k, l, occupations(c,τ1)) * e.λ * Δτ
+    else
+        # println("$(length(kinks_in_τ1_τ2)) kinks in between τ1=$(τ1) and τ2=$(τ2)")
+        # println("kinks at times : ", [first(k) for k in c.kinks])
+
+        ## calculate first interval from τ1 to next kink in between τ1 and τ2
+        t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
+        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) left of τ2 if !isnothing(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
+
+        # periodic difference of the times
+        if τ1 < t2
+            Δτ = t2 - τ1
+        elseif τ1 > t2
+            Δτ = 1 + τ1 - t2
+        end
+
+        δ = ΔW_diag(c, i, j, k, l, occupations(c,τ1)) * Δτ
+
+        ## loop over the remaining intervals between τ1 and τ2
+        for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
+            # print("\tτ=$(τ)")
+
+            t1 = τ
+            t2 = first(next(c.kinks,t1))# get time of the next kink. for the last τ in the loop, this will be τ2
+
+            # periodic difference of the times
+            if t1 < t2
+                Δτ = t2 - t1
+            elseif τ1 > τ2
+                Δτ = 1 + t1 - t2
+            end
+
+            δ += ΔW_diag(c, i, j, k, l, occupations(c,τ)) * Δτ
+            # print(" done.\n")
+        end
+        return δ * e.λ# the factor λ is the coupling constant
+    end
+end
+
+
+function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
+
+    @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
+
+    kinks_in_τ1_τ2 = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+
+    if isnothing(kinks_in_τ1_τ2) | isempty(c.kinks)# if there are no kinks in between τ1, τ2 or if c.kinks is empty
+        # println("no kinks in between")
+
+        # periodic difference of the times
+        if τ1 < τ2
+            Δτ = τ2 - τ1
+        elseif τ1 > τ2
+            Δτ = 1 + τ1 - τ2
+        end
+
+        # if no kinks occur in the interval where the occupations differ, the change occurs on the entire time-interval Δτ
+        # the factor λ is the coupling constant
+        return ΔW_diag(c, i, j, occupations(c,τ1)) * e.λ * Δτ
+    else
+        # println("$(length(kinks_in_τ1_τ2)) kinks in between τ1=$(τ1) and τ2=$(τ2)")
+        # println("kinks at times : ", [first(k) for k in c.kinks])
+
+        ## calculate first interval from τ1 to next kink in between τ1 and τ2
+        t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
+        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) left of τ2 if !isnothing(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
+
+        # periodic difference of the times
+        if τ1 < t2
+            Δτ = t2 - τ1
+        elseif τ1 > t2
+            Δτ = 1 + τ1 - t2
+        end
+
+        δ = ΔW_diag(c, i, j, occupations(c,τ1)) * Δτ
+
+        ## loop over the remaining intervals between τ1 and τ2
+        for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
+            # print("\tτ=$(τ)")
+
+            t1 = τ
+            t2 = first(next(c.kinks,t1))# get time of the next kink. for the last τ in the loop, this will be τ2
+
+            # periodic difference of the times
+            if t1 < t2
+                Δτ = t2 - t1
+            elseif τ1 > τ2
+                Δτ = 1 + t1 - t2
+            end
+
+            δ += ΔW_diag(c, i, j, occupations(c,τ)) * Δτ
+            # print(" done.\n")
+        end
+        return δ * e.λ # the factor λ is the coupling constant
+    end
+end
+
+
+
 
 """
     sign_offdiagonal_product(c::Configuration)
