@@ -534,24 +534,11 @@ end
 
 " return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2 "
 function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
-    if isempty(ck)
-        return nothing# TODO: also return nothing if below filter() produces empty lists?
-    end
     if τ1 < τ2
-        k = filter(x -> τ1 < first(x) < τ2, ck)
-        if isempty(k)
-            return nothing
-        else
-            return k
-        end
-    elseif τ1 > τ2
-        k = filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
-        if isempty(k)
-            return nothing
-        else
-            return k
-        end
-    end# nothing is returned if τ1 == τ2
+        filter(x -> τ1 < first(x) < τ2, ck)
+    else
+        filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
+    end
 end
 
 function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
@@ -560,9 +547,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
 
     kinks_in_τ1_τ2 = kinks_from_periodic_interval(c.kinks, τ1, τ2)
 
-    if isnothing(kinks_in_τ1_τ2) | isempty(c.kinks)# if there are no kinks in between τ1, τ2 or if c.kinks is empty
-        # println("no kinks in between")
-
+    if isempty(kinks_in_τ1_τ2) # if there are no kinks in between τ1, τ2 or if c.kinks is empty
         # periodic difference of the times
         if τ1 < τ2
             Δτ = τ2 - τ1
@@ -574,9 +559,6 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
         # the factor λ is the coupling constant
         return ΔW_diag(c, i, j, k, l, occupations(c,τ1)) * e.λ * Δτ
     else
-        # println("$(length(kinks_in_τ1_τ2)) kinks in between τ1=$(τ1) and τ2=$(τ2)")
-        # println("kinks at times : ", [first(k) for k in c.kinks])
-
         ## calculate first interval from τ1 to next kink in between τ1 and τ2
         t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
         @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) left of τ2 if !isnothing(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
@@ -592,8 +574,6 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
 
         ## loop over the remaining intervals between τ1 and τ2
         for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
-            # print("\tτ=$(τ)")
-
             t1 = τ
             t2 = first(next(c.kinks,t1))# get time of the next kink. for the last τ in the loop, this will be τ2
 
@@ -605,7 +585,6 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
             end
 
             δ += ΔW_diag(c, i, j, k, l, occupations(c,τ)) * Δτ
-            # print(" done.\n")
         end
         return δ * e.λ# the factor λ is the coupling constant
     end
@@ -618,9 +597,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
 
     kinks_in_τ1_τ2 = kinks_from_periodic_interval(c.kinks, τ1, τ2)
 
-    if isnothing(kinks_in_τ1_τ2) | isempty(c.kinks)# if there are no kinks in between τ1, τ2 or if c.kinks is empty
-        # println("no kinks in between")
-
+    if isempty(kinks_in_τ1_τ2) # if there are no kinks in between τ1, τ2 or if c.kinks is empty
         # periodic difference of the times
         if τ1 < τ2
             Δτ = τ2 - τ1
@@ -632,9 +609,6 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
         # the factor λ is the coupling constant
         return ΔW_diag(c, i, j, occupations(c,τ1)) * e.λ * Δτ
     else
-        # println("$(length(kinks_in_τ1_τ2)) kinks in between τ1=$(τ1) and τ2=$(τ2)")
-        # println("kinks at times : ", [first(k) for k in c.kinks])
-
         ## calculate first interval from τ1 to next kink in between τ1 and τ2
         t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
         @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) left of τ2 if !isnothing(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
@@ -650,8 +624,6 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
 
         ## loop over the remaining intervals between τ1 and τ2
         for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
-            # print("\tτ=$(τ)")
-
             t1 = τ
             t2 = first(next(c.kinks,t1))# get time of the next kink. for the last τ in the loop, this will be τ2
 
@@ -663,7 +635,6 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
             end
 
             δ += ΔW_diag(c, i, j, occupations(c,τ)) * Δτ
-            # print(" done.\n")
         end
         return δ * e.λ # the factor λ is the coupling constant
     end
