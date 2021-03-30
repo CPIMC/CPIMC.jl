@@ -49,15 +49,14 @@ thus here no convention is made as to which spin component should be occupied mo
 
 
 """
-    λ(N, rs, d=3)
+    λ(N, rs, d::Int)
 
 calculate λ, which is the coupling constant of the Hamiltonian in internal units
 from the particle number N, Bruecker parameter rs for the density and spatial dimension d
 the differences for d ∈ {2,3} reflect the different expressions for the Coulomb interaction, whichs Fourier component is v_q = \frac{4π}{q^2} in 3D and v_q = \frac{2π}{q} in 2D
 the one-dimensional case involves a short-distance cutoff to avoid the non-integrable divergence of the interaction at zero distance and is not implemented
 """
-# The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-function λ(N, rs, d::Int=3)
+function λ(N, rs, d::Int)
     if d == 3
         (4 / (2π)^3 ) * cbrt(4π*N/3) * rs
     elseif d == 2
@@ -69,11 +68,10 @@ end
 
 
 """
-    rs(N::Int, λ::Float64, d=3)
+    rs(N, λ, d::Int)
 calculate the Brueckner parameter rs for the density from the particle number N
 and λ, which is the coupling constant of the Hamiltonian in internal units"""
-# The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-function rs(N, λ, d::Int=3)
+function rs(N, λ, d::Int)
     if d == 3
         ( (2π)^3 / 4 ) * cbrt(3 / (4π*N)) * λ
     elseif d == 2
@@ -85,22 +83,20 @@ end
 
 
 """
-    internal_energy_factor(N, rs, d=3)
+    internal_energy_factor(N, rs, d)
 
 This factor is used to convert an energy quantity from Hartree a.u. to internal units.
 A value of the quantity in Hartree a.u. has to be multiplied by this factor to yield the corresponding value of the quantity in internal units.
 A value of the quantity in internal units has to be divided by this factor to yield the corresponding value of the quantity in Hartree a.u.
 """
-# The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-internal_energy_factor(N, rs, d=3) = (2π)^4 * λ(N, rs, d)^2 / 8
+internal_energy_factor(N, rs, d) = (2π)^4 * λ(N, rs, d)^2 / 8
 
 """
-    kF(rs, ξ, d::Int=3)
+    kF(rs, ξ, d::Int)
 calculate the Fermi wavenumber in Hartree a.u. from Brueckner parameter rs for the density,
 the fractional spin polarization ξ and spatial dimension d
 """
-# The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-function kF(rs, ξ, d::Int=3)
+function kF(rs, ξ, d::Int)
     if d == 1
         α = 4 / π
     elseif d == 2
@@ -115,26 +111,25 @@ end
 
 
 """
-    EF(rs, ξ, d::Int=3)
+    EF(rs, ξ, d::Int)
 calculate the Fermi energy in Hartree a.u. from Brueckner parameter rs for the density,
 the fractional spin polarization ξ and spatial dimension d
 """
-# The dimension is given as an optional argument with default value 3 in order to work with the current implementation, which requires λ to be defined for 2 arguments (N, rs). When λ is part of struct Ensemble, the default value can be removed.
-EF(rs, ξ, d::Int=3) = kF(rs, ξ, d)^2 / 2
+EF(rs, ξ, d::Int) = kF(rs, ξ, d)^2 / 2
 
 """
-    β_au(Θ, EF)
+    β_Ha(Θ, EF)
 calculate the inverse temperature in Hartree a.u. from the reduced temperature Θ and the Fermi energy EF in Hartree a.u.
 the inverse temperature is defined by β = 1 / (kB*T) where kB is the Boltzmann constant and T is the temperature
 """
 β_Ha(Θ, EF) = 1 / (Θ * EF)
 
 """
-    β(Θ, rs, N, ξ, d=3)
+    β(Θ, rs, N, ξ, d::Int)
 
 calculate β in internal units
 """
-function β(Θ, N, ξ, d=3)
+function β(Θ, N, ξ, d::Int)
     #calculate the factor alpha used in calculation of the fermi-vector in Ha units
     if d == 1
         α = 4 / π

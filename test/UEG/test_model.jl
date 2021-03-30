@@ -88,13 +88,8 @@ end
         return 4/((2*pi)^3) * (4*pi/3)^(1/3) * rs * N^(1/3)
     end
 
-    @test λ_old(N, r) ≈ λ(N, r)
+    @test λ_old(N, r) ≈ λ(N, r, d)
 
-    """
-        β(θ::Float64, N::Int, ξ::Float64 )
-
-    calculate β in internal units
-    """
     function β_previous_version(θ::Float64, N::Int, ξ::Float64 = 1.0)
         return (2*pi)^2/(((6*(pi^2) * N/2 * (1+abs(ξ)))^(2/3))*θ)
     end
@@ -105,14 +100,10 @@ end
         rs = rand()*100
         N = rand(1:100)
         ξ = 1.0
-        for i in 1:10
-            #@test β(θ, N, ξ, rs) ≈ β(θ, N, ξ, rs*rand()*100)
-            #@test β(θ, N, ξ, rs,2) ≈ β(θ, N, ξ, rs*rand()*100,2)
-        end
-        @test (β_old(θ, N) ≈ β(θ, N, ξ))
-        @test (β_ref(θ, N) ≈ β(θ, N, ξ))
+        @test (β_old(θ, N) ≈ β(θ, N, ξ, d))
+        @test (β_ref(θ, N) ≈ β(θ, N, ξ, d))
         ξ = rand()
-        @test (β_previous_version(θ, N, ξ) ≈ β(θ, N, ξ))
+        @test (β_previous_version(θ, N, ξ) ≈ β(θ, N, ξ, d))
     end
 
 end
