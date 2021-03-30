@@ -6,7 +6,7 @@ using CSV
 
 include("../../../src/Configuration.jl")
 include("../../../src/UEG/model.jl")
-include("../../../src/Updates/Ideal-Updates.jl")
+#include("../../../src/Updates/Ideal-Updates.jl")
 include("../../../src/Updates/Other-Updates.jl")
 include("../../../src/Updates/Type-A-Updates.jl")
 include("../../../src/Updates/Type-B-Updates.jl")
@@ -45,7 +45,7 @@ function main()
     println("rs: ", rs)
     println("N: ", N)
 
-    e = Ensemble(rs, β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
+    e = Ensemble_UEG(rs, β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
     updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#, change_type_B
 
 
@@ -104,7 +104,7 @@ function main()
     avg_sign = mean(first(measurements[:sign]))
     for (k,(f,m)) in measurements
         if typeof(f) == Variance{Float64,Float64,EqualWeight}
-            if in(k,[:sign, :K])
+            if in(k,[:sign, :K, :T1c])
                 println(k, "\t", mean(f), " +/- ", std(f)/sqrt(N_Runs-1))
             else
                 println(k, "\t", mean(f)/avg_sign, " +/- ", std(f)/sqrt(N_Runs-1)/avg_sign)

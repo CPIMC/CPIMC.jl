@@ -41,7 +41,7 @@ function main()
     println("N: ", N)
     println("ξ: ", ξ)
 
-    e = Ensemble(rs, β(θ, N, ξ, d), N)
+    e = Ensemble_UEG(rs, β(θ, N, ξ, d), N)
     updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E,add_remove_kink_chain, shuffle_indices],0,0,0) # change_type_B is not required for CPIMC, but for RCPIMC
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)

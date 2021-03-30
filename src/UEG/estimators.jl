@@ -5,7 +5,7 @@ calculate estimators and fit to measurements.
 function measure(measurements, e, c)
     s = signum(c)
     for (key,(stat,obs)) in measurements
-        if in(key,[:sign, :K])
+        if in(key,[:sign, :K, :T1c])
             fit!(stat, obs(e,c))
         else
             fit!(stat, obs(e,c)*s)
