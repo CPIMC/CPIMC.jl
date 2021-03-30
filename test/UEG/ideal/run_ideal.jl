@@ -1,5 +1,6 @@
 using OnlineStats
 
+include("../../../src/Ensemble.jl")
 include("../../../src/Configuration.jl")
 include("../../../src/UEG/model.jl")
 include("../../../src/Updates/Ideal-Updates.jl")
@@ -28,7 +29,7 @@ function main()
     println("N: ", N)
     println("d: ", d)
 
-    e = Ensemble(rs, β(θ,N,ξ,d), N) # β only works for 3D
+    e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N) # β only works for 3D
 
     updates = Update.([move_particle],0,0,0)
 

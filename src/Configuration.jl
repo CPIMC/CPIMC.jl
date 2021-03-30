@@ -79,10 +79,6 @@ basis(c::Configuration{T}) where T = T
 " abstract type for single-particle basis states, implementation is required for each model "
 abstract type Orbital end
 
-" abstract type for an Ensamble, implementation is required for each model "
-abstract type Ensemble end
-
-
 " apply a T4 kink to a set of basis states "
 function excite(o::Set{T}, κ::T4{T}) where T
   @assert ( in(κ.k, o) & in(κ.l, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied. (Pauli-Principle)"
@@ -498,7 +494,7 @@ wminus(kink::T4) = wminus(kink.i, kink.j, kink.k, kink.l)
 function offdiagonal_element(e::Ensemble, kink::T4)
     # We sample with the weight of antisymmetrized matrix element but we do not restrict
     # the order of indices of our possible kinks. We therefor need an extra factor 1/4 in the weight-function
-    return 1/4 * λ(e.N,e.rs) * wminus(kink)
+    return 1/4 * e.λ * wminus(kink)
 end
 
 
@@ -518,7 +514,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
 
     @assert (orb_a.spin != orb_b.spin) == (orb_c.spin != orb_d.spin )
 
-    Δdi = Δτ12 * λ(e.N,e.rs) * ( wdiag(orb_a, orb_b) - wdiag(orb_c, orb_d) )
+    Δdi = Δτ12 * e.λ * ( wdiag(orb_a, orb_b) - wdiag(orb_c, orb_d) )
 
     occs = occupations(c, τ1)
 
@@ -528,10 +524,10 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
             continue
         else
             for orb in [orb_a, orb_b]
-                Δdi += Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb)
+                Δdi += Δτ12 * e.λ * wdiag(occ,orb)
             end
             for orb in [orb_c, orb_d]
-                Δdi -= Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb)
+                Δdi -= Δτ12 * e.λ * wdiag(occ,orb)
             end
         end
         @assert !isinf(abs(Δdi))
@@ -569,18 +565,18 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         end
         for occ in [kink.i, kink.j]
             for orb in [orb_a, orb_b]
-                 Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
+                 Δdi += Δτ * e.λ * wdiag(occ,orb)
             end
             for orb in [orb_c, orb_d]
-                 Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
+                 Δdi -= Δτ * e.λ * wdiag(occ,orb)
             end
         end
         for occ in [kink.k, kink.l]
             for orb in [orb_a, orb_b]
-                 Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
+                 Δdi -= Δτ * e.λ * wdiag(occ,orb)
             end
             for orb in [orb_c, orb_d]
-                 Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb)
+                 Δdi += Δτ * e.λ * wdiag(occ,orb)
             end
         end
 
@@ -610,8 +606,8 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         if occ.vec in [ orb_a.vec, orb_b.vec ]
             continue
         else
-            Δdi += Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb_a)
-            Δdi -= Δτ12 * λ(e.N,e.rs) * wdiag(occ,orb_b)
+            Δdi += Δτ12 * e.λ * wdiag(occ,orb_a)
+            Δdi -= Δτ12 * e.λ * wdiag(occ,orb_b)
         end
     end
     if isempty(c.kinks)
@@ -641,12 +637,12 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
         end
 
         for occ in [kink.i, kink.j]
-            Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb_a)
-            Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb_b)
+            Δdi += Δτ * e.λ * wdiag(occ,orb_a)
+            Δdi -= Δτ * e.λ * wdiag(occ,orb_b)
         end
         for occ in [kink.k, kink.l]
-            Δdi += Δτ * λ(e.N,e.rs) * wdiag(occ,orb_b)
-            Δdi -= Δτ * λ(e.N,e.rs) * wdiag(occ,orb_a)
+            Δdi += Δτ * e.λ * wdiag(occ,orb_b)
+            Δdi -= Δτ * e.λ * wdiag(occ,orb_a)
         end
 
 

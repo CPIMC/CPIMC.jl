@@ -1,3 +1,4 @@
+include("../src/Ensemble.jl")
 include("../src/Configuration.jl")
 include("../src/UEG/model.jl")
 include("../src/Updates/Ideal-Updates.jl")

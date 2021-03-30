@@ -18,13 +18,3 @@ function particleNumber(e::Ensemble, c::Configuration)
   return length(c.occupations)
 end
 
-abstract type Observable end
-abstract type Energy <: Observable end
-abstract type Occupation <: Observable end
-
-abstract type UnitSystem end
-abstract type InternalUnits <: UnitSystem end
-abstract type HartreeUnits <: UnitSystem end
-abstract type SIUnits <: UnitSystem end
-
-abstract type Quantity{O<:Observable,U<:UnitSystem} end

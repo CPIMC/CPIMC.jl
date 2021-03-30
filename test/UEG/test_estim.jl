@@ -1,5 +1,6 @@
 include("../../src/UEG/estimators.jl")
-e = Ensemble(2,5.68089,7)
+
+e = CEnsemble(2,5.68089,7)
 
 @testset "Atomic_units" begin
     for _ in 1:100

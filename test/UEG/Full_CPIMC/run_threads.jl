@@ -3,7 +3,7 @@ using DelimitedFiles
 using DataFrames
 using CSV
 
-
+include("../../../src/Ensemble.jl")
 include("../../../src/Configuration.jl")
 include("../../../src/UEG/model.jl")
 #include("../../../src/Updates/Ideal-Updates.jl")
@@ -45,7 +45,7 @@ function main()
     println("rs: ", rs)
     println("N: ", N)
 
-    e = Ensemble_UEG(rs, β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
+    e = CEnsemble(λ(N,rs,d), β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
     updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#, change_type_B
 
 
@@ -125,8 +125,8 @@ function main()
     ΔE = ΔW + ΔT
     μWt_Ha = Et_Ha(μW, e::Ensemble)
     ΔWt_Ha = E_Ha(ΔW, e::Ensemble)
-    μT_Ha = E_Ha(μT,λ(e.N,e.rs))
-    ΔT_Ha = E_Ha(ΔT,λ(e.N,e.rs))
+    μT_Ha = E_Ha(μT,e.λ)
+    ΔT_Ha = E_Ha(ΔT,.λ)
     μE_Ha = μT_Ha + μWt_Ha
     ΔE_Ha = ΔT_Ha + ΔWt_Ha
 

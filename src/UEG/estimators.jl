@@ -57,7 +57,7 @@ function W_diag(e::Ensemble, c::Configuration)
             redundant = true
             for occ2 in c.occupations
                 if (!redundant & (occ1.spin == occ2.spin))
-                    W_diag += λ(e.N,e.rs) * kernel(occ1,occ2)
+                    W_diag += e.λ * kernel(occ1,occ2)
                 end
                 if occ1 == occ2
                     redundant = false
@@ -72,7 +72,7 @@ function W_diag(e::Ensemble, c::Configuration)
                 redundant = true
                 for occ2 in occs
                     if (!redundant & (occ1.spin == occ2.spin))
-                        W_diag += λ(e.N,e.rs) * kernel(occ1,occ2) * (τ-old_τ)
+                        W_diag += e.λ * kernel(occ1,occ2) * (τ-old_τ)
                     end
                     if occ1 == occ2
                         redundant = false
@@ -171,7 +171,7 @@ function E_int_from_Hartree(E_Ha::Float64, λ::Float64)
 end
 
 function E_int_from_Hartree(E_Ha::Float64, e::Ensemble)
-    return (E_Ha /(16/((2*pi)^4 * (λ(e.N, e.rs)/2)^2) * 0.5))
+    return (E_Ha /(16/((2*pi)^4 * (e.λ/2)^2) * 0.5))
 end
 
 function E_Ry(E_internal::Float64, λ::Float64)
@@ -179,7 +179,7 @@ function E_Ry(E_internal::Float64, λ::Float64)
 end
 
 function E_Ry(E_internal::Float64, e::Ensemble)
-    return (E_internal * 16/((2*pi)^4 * λ(e.N, e.rs)^2))
+    return (E_internal * 16/((2*pi)^4 * e.λ^2))
 end
 
 function E_Ha(E_internal::Float64, λ::Float64)
@@ -187,14 +187,14 @@ function E_Ha(E_internal::Float64, λ::Float64)
 end
 
 function E_Ha(E_internal::Float64, e::Ensemble)
-    return (E_internal * 16/((2*pi)^4 * λ(e.N, e.rs)^2) * 0.5)
+    return (E_internal * 16/((2*pi)^4 * e.λ^2) * 0.5)
 end
 
 
 function Et_Ry(E_internal::Float64, e::Ensemble)
-    return (E_Ry(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs)))
+    return (E_Ry(E_internal-abs_E_madelung(e.N, e.λ),e.λ))
 end
 
 function Et_Ha(E_internal::Float64, e::Ensemble)
-    return E_Ha(E_internal-abs_E_madelung(e.N, λ(e.N,e.rs)),λ(e.N,e.rs))
+    return E_Ha(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
 end

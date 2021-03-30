@@ -95,7 +95,7 @@ end
 
     calculate β in internal units
     """
-    function β_previus_version(θ::Float64, N::Int, ξ::Float64 = 1.0)
+    function β_previous_version(θ::Float64, N::Int, ξ::Float64 = 1.0)
         return (2*pi)^2/(((6*(pi^2) * N/2 * (1+abs(ξ)))^(2/3))*θ)
     end
 
@@ -112,13 +112,13 @@ end
         @test (β_old(θ, N) ≈ β(θ, N, ξ))
         @test (β_ref(θ, N) ≈ β(θ, N, ξ))
         ξ = rand()
-        @test (β_previus_version(θ, N, ξ) ≈ β(θ, N, ξ))
+        @test (β_previous_version(θ, N, ξ) ≈ β(θ, N, ξ))
     end
 
 end
 
 
-e = Ensemble(2,5.68089,7)
+e = CEnsemble(2,5.68089,7)
 
 S = sphere_with_same_spin(OrbitalHEG((0,0,0)),dk=1)
 a = OrbitalHEG((-2,0,0))

@@ -4,17 +4,6 @@ import LinearAlgebra: dot
 
 include("orbital.jl")
 
-#TODO: store λ instead of rs
-struct Ensemble_UEG <: Ensemble
-  "Brueckner parameter"
-  rs :: Float64
-  "reduced temperature"
-  β :: Float64
-  "particle number"
-  N :: Int
-end
-
-
 
 # the remark on the field may be removed if it considered to be clear that OrbitalHEG must always have a field spin, or if a function `spin(o::Orbital)` is used
 """
