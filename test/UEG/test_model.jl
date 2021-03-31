@@ -157,10 +157,84 @@ end
 end
 
 
-@testset "W_diag" begin
-    τ1 = ImgTime(0.8)
-    τ2 = ImgTime(0.2)
-    Δ = Step(Set{OrbitalHEG{3}}([c,d]), Configuration(Set{OrbitalHEG{3}}([a,b]), τ1 => T4(b,a,c,d), τ2 => T4(d,c,b,a)))
-    @test round(W_diag(e,apply_step(conf_pol, Δ)) - W_diag(e,conf_pol),digits = 11) == round(Δdiagonal_interaction(conf_pol, e, a::Orbital, b::Orbital, c::Orbital, d::Orbital, τ1, τ2),digits= 11)
-    @test round(W_diag(e,apply_step(conf, Δ)) - W_diag(e,conf),digits = 11) == round(Δdiagonal_interaction(conf, e, a::Orbital, b::Orbital, c::Orbital, d::Orbital, τ1, τ2), digits= 11)
+@testset "ΔW_diag for polarized occupation" begin
+    a = OrbitalHEG((-2,0,0))
+    b = OrbitalHEG((3,0,0))
+    c = OrbitalHEG((0,0,0))
+    d = OrbitalHEG((1,0,0))
+
+    ## occupation to be changed
+    occ = Set([a,b,c,d])
+
+    ### Test 2-particle excitation
+    # choose creator orbitals
+    i = OrbitalHEG((1,1,1))
+    j = OrbitalHEG((0,-1,-1))
+    # choose annihilator orbitals
+    k = c
+    l = d
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum not conserved for this excitation "
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+
+    # this functions sums all combinations of orbitals o ∈ occ with annihilated orbitals k (o ≠ k) and l (o ≠ l)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {k,l} ) ∪ {i,j} of the new occupation created with orbitals i (o ≠ i) and j (o ≠ j)
+    @test ΔW_diag(i, j, k, l, occ) ≈ ( w(a,k,k,a) + w(b,k,k,b) + w(a,l,l,a) + w(b,l,l,b) + w(k,l,l,k)
+                                      - w(a,i,i,a) - w(b,i,i,b) - w(a,j,j,a) - w(b,j,j,b) - w(i,j,j,i) )
+
+    ### Test 1-particle excitation
+    i = OrbitalHEG((-3,0,0))
+    j = b
+    # this functions sums all combinations of orbitals o ∈ occ with the annihilated orbital j (o ≠ j)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {j} ) ∪ {i} of the new occupation created with orbital i (o ≠ i)
+    @test ΔW_diag(i, j, occ) ≈ ( w(a,j,j,a) + w(c,j,j,c) + w(d,j,j,d)
+                                - w(a,i,i,a) - w(c,i,i,c) - w(d,i,i,d) )
+end
+
+
+@testset "ΔW_diag for unpolarized occupation" begin
+    a = OrbitalHEG((-2,0,0),Up)
+    b = OrbitalHEG((3,0,0),Down)
+    c = OrbitalHEG((0,0,0),Up)
+    d = OrbitalHEG((1,0,0),Down)
+
+    ## occupation to be changed
+    occ = Set([a,b,c,d])
+
+    ### Test 2-particle excitation
+    # choose creator orbitals
+    i = OrbitalHEG((1,1,1),Up)
+    j = OrbitalHEG((0,-1,-1),Down)
+    # choose annihilator orbitals
+    k = c
+    l = d
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum not conserved for this excitation "
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+
+    # this functions sums all combinations of orbitals o ∈ occ with annihilated orbitals k (o ≠ k) and l (o ≠ l)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {k,l} ) ∪ {i,j} of the new occupation created with orbitals i (o ≠ i) and j (o ≠ j)
+    @test ΔW_diag(i, j, k, l, occ) ≈ ( w(a,k,k,a) + w(b,k,k,b) + w(a,l,l,a) + w(b,l,l,b) + w(k,l,l,k)
+                                      - w(a,i,i,a) - w(b,i,i,b) - w(a,j,j,a) - w(b,j,j,b) - w(i,j,j,i) )
+
+    ## test for orbitals where a momentum vector of one creator orbital is equal to the momentum vector of one orbital in the occupation
+    # choose creator orbitals
+    i = OrbitalHEG((-2,0,0),Down)
+    j = OrbitalHEG((5,0,0),Up)
+    # choose annihilator orbitals
+    k = b
+    l = c
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum not conserved for this excitation "
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+
+    # the contribution w(a,i,i,a) does not occur here because a.vec == i.vec
+    @test ΔW_diag(i, j, k, l, occ) ≈ ( w(a,k,k,a) + w(d,k,k,d) + w(a,l,l,a) + w(d,l,l,d) + w(k,l,l,k)
+                                      # - w(a,i,i,a) does not occur here because a.vec == i.vec
+                                       - w(d,i,i,d) - w(a,j,j,a) - w(d,j,j,d) - w(i,j,j,i) )
+
+    ### Test 1-particle excitation
+    i = OrbitalHEG((-3,0,0),Down)
+    j = b
+    # this functions sums all combinations of orbitals o ∈ occ with the annihilated orbital j (o ≠ j)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {j} ) ∪ {i} of the new occupation created with orbital i (o ≠ i)
+    @test ΔW_diag(i, j, occ) ≈ ( w(a,j,j,a) + w(c,j,j,c) + w(d,j,j,d)
+                                - w(a,i,i,a) - w(c,i,i,c) - w(d,i,i,d) )
 end
