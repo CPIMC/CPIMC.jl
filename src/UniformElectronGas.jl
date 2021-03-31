@@ -1,9 +1,9 @@
 module UniformElectronGas
 
-using CPIMC
-using CPIMC.PlaneWaves
+using ..CPIMC
+using ..CPIMC.PlaneWaves
 
-import CPIMC: kernel, energy
+import ..CPIMC: kernel, energy
 
 
 import StaticArrays: StaticVector

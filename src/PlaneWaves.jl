@@ -2,7 +2,7 @@ module PlaneWaves
 
 export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin, shell, ξ, fractional_spin_polarization
 
-using CPIMC
+using ..CPIMC
 using StaticArrays
 
 @enum Spin Down Up

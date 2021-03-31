@@ -3,8 +3,9 @@ generic estimators for the CPIMC formalism
 """
 module Estimators
 
-using CPIMC
-import CPIMC: kernel, energy, excite!
+using ..CPIMC
+
+import ..CPIMC: kernel, energy, excite!
 
 export E, Ekin, W, W_off_diag, W_diag, K, occupations, signum, longest_type_1_chain_length, right_type_1_count    
 
