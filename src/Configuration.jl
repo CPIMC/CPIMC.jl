@@ -563,7 +563,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
     else
         ## calculate first interval from τ1 to next kink in between τ1 and τ2
         t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
-        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) left of τ2 if !isnothing(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
+        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) between τ1 and τ2 if !isempty(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
 
         # periodic difference of the times
         if τ1 < t2
@@ -613,7 +613,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
     else
         ## calculate first interval from τ1 to next kink in between τ1 and τ2
         t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
-        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) left of τ2 if !isnothing(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
+        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) between τ1 and τ2 if !isempty(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
 
         # periodic difference of the times
         if τ1 < t2
