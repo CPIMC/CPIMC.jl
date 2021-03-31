@@ -60,7 +60,6 @@ end
     @test isunaffected(conf.kinks, e)
 end
 
-
 @testset "time_ordered_orbs(::T4)" begin
     @test time_ordered_orbs(T4(a,b,c,d))[1] == a
     @test time_ordered_orbs(T4(a,b,c,d))[2] == b
@@ -74,6 +73,19 @@ end
     @test time_ordered_orbs(conf.kinks)[4] == d
     @test time_ordered_orbs(conf.kinks)[end] == a
     @test time_ordered_orbs(conf.kinks)[end-4] == c
+end
+
+@testset "kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)" begin
+    ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b), ImgTime(0.6) => T4(b,a,d,c), ImgTime(0.8) => T4(d,c,b,a)
+    @test kinks_from_periodic_interval(sd, 0.1, 0.6) == SortedDict(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b))
+    @test kinks_from_periodic_interval(sd, 0.7, 0.4) == SortedDict(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.8) => T4(d,c,b,a))
+    @test kinks_from_periodic_interval(sd, 0.5, 0.7) == SortedDict(ImgTime(0.6) => T4(b,a,d,c))
+
+    @test isempty(kinks_from_periodic_interval(sd, 0.3, 0.4))
+    @test kinks_from_periodic_interval(sd, 0.4, 0.3) == sd
+
+    @test isempty(kinks_from_periodic_interval(sd, 0.5, 0.5))
+    @test isempty(kinks_from_periodic_interval(SortedDict{ImgTime,T4}(), 0.1, 0.9))
 end
 
 @testset "Type_1_investigation" begin
