@@ -152,10 +152,3 @@ function β(Θ, N, ξ, d::Int)
 
     return (16/Θ) * (α / ((1 + ξ)^(1/d) * (2π)^2 * λ_rs_ratio))^2
 end
-
-
-" coulomb kernel for 3D plane wavevectors "
-kernel(i::StaticVector{N,Int}, k::StaticVector{N,Int}) where {N} = 1.0 / dot( i-k, i-k )
-
-" coulomb kernel in plane wave basis "
-kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
