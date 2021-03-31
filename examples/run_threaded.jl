@@ -1,20 +1,109 @@
-using OnlineStats
 using DelimitedFiles
 using DataFrames
 using CSV
 
-include("../../../src/Ensemble.jl")
-include("../../../src/Configuration.jl")
-include("../../../src/UEG/model.jl")
-#include("../../../src/Updates/Ideal-Updates.jl")
-include("../../../src/Updates/Other-Updates.jl")
-include("../../../src/Updates/Type-A-Updates.jl")
-include("../../../src/Updates/Type-B-Updates.jl")
-include("../../../src/Updates/Type-C-Updates.jl")
-include("../../../src/Updates/Type-D-Updates.jl")
-include("../../../src/Updates/Type-E-Updates.jl")
-include("../../../src/UEG/estimators.jl")
-include("../../../src/CPIMC.jl")
+using CPIMC
+using CPIMC.Estimators
+using CPIMC.ElectronGas
+
+import CPIMC: 
+
+function measure(measurements, e, c)
+    s = signum(c)
+    for (key,(stat,obs)) in measurements
+        if in(key,[:sign, :K, :T1c])
+            fit!(stat, obs(e,c))
+        else
+            fit!(stat, obs(e,c)*s)
+        end
+    end
+end
+
+function W_off_diag(e::Ensemble, avg_K::Float64)
+    return (-(avg_K/e.β))
+end
+
+function abs_E_madelung(N::Int, λ::Float64) #internal units
+    return 2.83729747948527 * pi/2.0 * N * λ
+end
+
+function E_int_from_Hartree(E_Ha::Float64, λ::Float64)
+    return (E_Ha /(16/((2*pi)^4 * (λ/2)^2) * 0.5))
+end
+
+function E_int_from_Hartree(E_Ha::Float64, e::Ensemble)
+    return (E_Ha /(16/((2*pi)^4 * (e.λ/2)^2) * 0.5))
+end
+
+function E_Ry(E_internal::Float64, λ::Float64)
+    return (E_internal * 16/((2*pi)^4 * λ^2))
+end
+
+function E_Ry(E_internal::Float64, e::Ensemble)
+    return (E_internal * 16/((2*pi)^4 * e.λ^2))
+end
+
+function E_Ha(E_internal::Float64, λ::Float64)
+    return (E_internal * 16/((2*pi)^4 * λ^2) * 0.5)
+end
+
+function E_Ha(E_internal::Float64, e::Ensemble)
+    return (E_internal * 16/((2*pi)^4 * e.λ^2) * 0.5)
+end
+
+
+function Et_Ry(E_internal::Float64, e::Ensemble)
+    return (E_Ry(E_internal-abs_E_madelung(e.N, e.λ),e.λ))
+end
+
+function Et_Ha(E_internal::Float64, e::Ensemble)
+    return E_Ha(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
+end
+
+
+function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
+    @assert(length(c.kinks) == 0)
+    c = Configuration(copy(c.occupations))# c should be a different object for each thread
+    " equilibration "
+    if (Threads.threadid() == 1)
+        println("\nstarting equilibration")
+    end
+    k = 1# progress counter
+    for i in 1:throwAway
+        if (i%(throwAway/100) == 0)
+            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100","; K: ",length(c.kinks))
+
+            k+=1
+        end
+        #TODO Use reentrantlook for Update counters?
+        update!(c, e, updates; kwargs...)
+    end
+    if (Threads.threadid() == 1)
+        println("\nstarting Simulation")
+    end
+    i = 0
+    k = 1#print progress
+    #global add_E_counter = 0
+    #global remove_E_counter = 0
+    while i < steps
+        #print progress
+        if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
+            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
+            k+=1
+        end
+
+        " MC step "
+        update!(c, e, updates; kwargs...)
+
+        "measurement"
+        if i % sampleEvery == 0
+            " calculate observables "
+            measure(measurements, e, c)
+        end
+        i += 1
+    end
+    println("\nThread",Threads.threadid(),"finished")
+end
 
 
 const ex_radius = 3 # maximum radius for exitation
@@ -186,3 +275,4 @@ function main()
 end
 
 main()
+

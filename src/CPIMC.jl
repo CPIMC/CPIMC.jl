@@ -1,3 +1,40 @@
+"""
+new implementation of the CPIMC method
+"""
+module CPIMC
+
+using DataStructures
+using FixedPointNumbers
+import LinearAlgebra: dot
+using OnlineStats
+
+export Group, Mean, Variance
+
+
+include("configuration.jl")
+include("ensemble.jl")
+include("model.jl")
+
+include("estimators.jl")
+
+include("PlaneWaves.jl")
+
+
+include("updates/type_a.jl")
+include("updates/type_b.jl")
+include("updates/type_c.jl")
+include("updates/type_d.jl")
+include("updates/type_e.jl")
+
+include("updates/auxiliary.jl")
+
+
+include("UniformElectronGas.jl")
+
+
+export Update, sweep!, print_results
+
+
 " a Monte Carlo update to the configuration with two counters "
 mutable struct Update
     update :: Function
@@ -14,6 +51,7 @@ end
 
 " outer constructor method for an empty Step "
 Step() = Step(nothing,nothing)
+
 
 # it is possible to define a general outer constructor method Step(d,a) = Step(Configuration(d),Configuration(a))
 # this might be bad style and is possibly more difficult to diagnose/debug
@@ -48,41 +86,13 @@ function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
     nothing
 end
 
-""" perform multiple MC steps on configuration c
-    not fully implemented, but to illustrate
-    the possibility to achieve this by
-    dispatching on the extra_kwarg chain_length """# TODO write function union!(Δ, δ) which combines two Step objects
-function update!(c::Configuration, e::Ensemble, updates::Array{Update,1}; chain_length)
-    @assert !isempty(updates)
-
-    Δ = Step()
-    p = 1
-
-    chain = zeros(UInt, chain_length)
-    for i in 1:chain_length
-        stp = rand(1:length(updates))
-        chain[i] = stp
-        dv, δ = updates[stp].update(apply_step(c, Δ), e)
-        #TODO write function union!(Δ, δ) which combines two Step objects
-        p *= dv
-    end
-
-    if rand() < dv
-        apply_step!(c, Δ)
-        for stp in chain
-            updates[stp].proposed += 1
-            updates[stp].accepted += 1
-        end
-    end
-end
-
-" perform an MC step on the configuration c "
-function update!(c::Configuration, e::Ensemble, updates::Array{Update,1})
+" perform a MC step on the configuration c "
+function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
     @assert !isempty(updates)
 
     up = rand(updates)
     up.proposed += 1
-    dv, Δ = up.update(c, e)
+    dv, Δ = up.update(m, e, c)
     if rand() < dv
         apply_step!(c, Δ)
         if Δ == Step()
@@ -94,85 +104,86 @@ function update!(c::Configuration, e::Ensemble, updates::Array{Update,1})
 end
 
 
-function sweep!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
+"""
+    sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
+
+Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
+After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
+"""
+function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
 
     println("starting equilibration")
     k = 1 # progress counter
     for i in 1:throwAway
         # print progress
-        if i%(throwAway/100) == 0
-            print("eq: ",k,"/100   ","K ",length(c.kinks), "    ")
-            k+=1
+        if i % (throwAway/100) == 0
+            print("eq: ", k, "/100   ", "K ", length(c.kinks), "\r")
+            k += 1
         end
-        update!(c, e, updates; kwargs...)
+        update!(m, e, c, updates)
     end
 
-    println("starting Simulation")
+    println("\n starting Simulation")
     i = 0
     k = 1 # progress counter
     while i < steps
-
         # print progress
-        if i%(steps/100) == 0
-            print(k,"/100   ","K: ", length(c.kinks), "    ")
+        if i % (steps/100) == 0
+            print(k, "/100   ", "K: ", length(c.kinks), "\r")
             k+=1
         end
 
         " MC step "
-        update!(c, e, updates; kwargs...)
+        update!(m, e, c, updates)
 
+        " calculate estimators "
         if i % sampleEvery == 0
-            " calculate estimators "
-            measure(measurements, e, c)
+            s = signum(c)
+            for (key, (stat, obs)) in measurements
+                if in(key, [:sign, :K, :T1c])
+                    fit!(stat, obs(m,e,c))
+                else
+                    fit!(stat, obs(m,e,c)*s)
+                end
+            end
         end
 
         i += 1
+    end
+
+    println("\n")
+end
+
+" print all measured observables and calculate further quantities "
+function print_results(measurements, e::Ensemble)
+    println("measurements:")
+    println("=============")
+
+    # calculate average sign
+    if haskey(measurements, :sign)
+        avg_sign = mean(first(measurements[:sign]))
+    else
+        avg_sign = 1.0
+    end
+
+    for (k,(f,m)) in measurements
+        if typeof(f) == Variance{Float64,Float64,EqualWeight}
+            if in(k,[:sign, :K])
+                println(k, "\t", mean(f), " +/- ", std(f)/sqrt(f.n - 1))
+            else
+                if typeof(f) == Variance{Float64,Float64,EqualWeight}
+                    println(k, "\t", mean(f)/avg_sign, " +/- ", std(f)/sqrt(f.n - 1)/avg_sign)
+                elseif typeof(f).name == typeof(Group()).name
+                    println(string(k))
+                    println("-------------")
+                    println("means : $(mean.(f.stats) ./ avg_sign)")
+                    println("errors : $(std.(f.stats) ./ sqrt(f.n - 1) ./ avg_sign))")
+                    println("-------------")
+                end
+            end
+        end
     end
 end
 
 
-# TODO: remove
-# Only use if all threads do not access any objekts in common
-function sweep_multithreaded!(steps::Int, sampleEvery::Int, throwAway::Int, updates::Array{Update,1}, measurements, e::Ensemble, c::Configuration; kwargs...)
-    @assert(length(c.kinks) == 0)
-    c = Configuration(copy(c.occupations))# c should be a different object for each thread
-    " equilibration "
-    if (Threads.threadid() == 1)
-        println("\nstarting equilibration")
-    end
-    k = 1# progress counter
-    for i in 1:throwAway
-        if (i%(throwAway/100) == 0)
-            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100","; K: ",length(c.kinks))
-
-            k+=1
-        end
-        #TODO Use reentrantlook for Update counters?
-        update!(c, e, updates; kwargs...)
-    end
-    if (Threads.threadid() == 1)
-        println("\nstarting Simulation")
-    end
-    i = 0
-    k = 1#print progress
-    #global add_E_counter = 0
-    #global remove_E_counter = 0
-    while i < steps
-        #print progress
-        if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
-            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
-            k+=1
-        end
-
-        " MC step "
-        update!(c, e, updates; kwargs...)
-
-        "measurement"
-        if i % sampleEvery == 0
-            " calculate observables "
-            measure(measurements, e, c)
-        end
-        i += 1
-    end
-    println("\nThread",Threads.threadid(),"finished")
 end

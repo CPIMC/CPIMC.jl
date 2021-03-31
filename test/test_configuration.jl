@@ -1,14 +1,17 @@
+using CPIMC, CPIMC.PlaneWaves, DataStructures
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count
 
-S = sphere_with_same_spin(OrbitalHEG((0,0,0)),dk=1)
-a = OrbitalHEG((-2,0,0))
-b = OrbitalHEG((3,0,0))
-c = OrbitalHEG((0,0,0))
-d = OrbitalHEG((1,0,0))
-e = OrbitalHEG((5,9,9))
-f = OrbitalHEG((1,1,1))
 
-g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
-h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
+S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
+a = PlaneWave((-2,0,0))
+b = PlaneWave((3,0,0))
+c = PlaneWave((0,0,0))
+d = PlaneWave((1,0,0))
+e = PlaneWave((5,9,9))
+f = PlaneWave((1,1,1))
+
+g = PlaneWave(a.vec + e.vec - f.vec, Up)
+h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
 
 
@@ -17,7 +20,7 @@ sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
                                            ImgTime(0.6) => T4(b,a,d,c),
                                            ImgTime(0.8) => T4(d,c,b,a) )
 
-conf = Configuration(sphere(OrbitalHEG((0,0,0),Up),dk=1),sd)
+conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 
 @testset "orbs" begin
     @test orbs(T4(a,b,c,d)) == Set([a,b,c,d])
@@ -77,20 +80,20 @@ end
 end
 
 @testset "Type_1_investigation" begin
-    g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
-    h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
+    g = PlaneWave(a.vec + e.vec - f.vec, Up)
+    h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
     Type_1_chain = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
                                                ImgTime(0.5) => T4(f,g,e,a),
                                                ImgTime(0.6) => T4(c,d,h,g),
                                                ImgTime(0.8) => T4(e,h,b,f) )
 
-    @test (a.vec + b.vec - c.vec - d.vec) == OrbitalHEG((0,0,0)).vec
-    @test (f.vec + g.vec - e.vec - a.vec) == OrbitalHEG((0,0,0)).vec
-    @test (c.vec + d.vec - h.vec - g.vec) == OrbitalHEG((0,0,0)).vec
-    @test (e.vec + h.vec - b.vec - f.vec) == OrbitalHEG((0,0,0)).vec
+    @test (a.vec + b.vec - c.vec - d.vec) == PlaneWave((0,0,0)).vec
+    @test (f.vec + g.vec - e.vec - a.vec) == PlaneWave((0,0,0)).vec
+    @test (c.vec + d.vec - h.vec - g.vec) == PlaneWave((0,0,0)).vec
+    @test (e.vec + h.vec - b.vec - f.vec) == PlaneWave((0,0,0)).vec
 
-    occs = setdiff!(union!(sphere(OrbitalHEG((0,0,0),Up),dk=1),
+    occs = setdiff!(union!(sphere(PlaneWave((0,0,0),Up),dk=1),
                         Set([e,h])),
                 Set([g,f]))
     conf_Type_1 = Configuration(occs,Type_1_chain)

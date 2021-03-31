@@ -1,3 +1,5 @@
+export Ensemble, CEnsemble, GCEnsemble
+
 abstract type Ensemble end
 
 struct CEnsemble <: Ensemble
@@ -18,5 +20,4 @@ struct GCEnsemble <: Ensemble
   "chemical potential"
   µ :: Float64
 end
-
 

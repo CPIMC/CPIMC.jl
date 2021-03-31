@@ -1,4 +1,6 @@
-function shuffle_indices(c::Configuration, e::Ensemble)
+export shuffle_indices, add_remove_kink_chain
+
+function shuffle_indices(m::Model, e::Ensemble, c::Configuration)
     if isempty(c.kinks)
         return 1.0, Step()
     end
@@ -16,7 +18,7 @@ end
 """ perform a number of subsequent updates
     first perform a number of updates which add kinks
     second perform the same number of updates which remove kinks """
-function add_remove_kink_chain(c::Configuration,e::Ensemble)
+function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     if isempty(c.kinks)
         return 1.0, Step()
     end

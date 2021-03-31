@@ -1,4 +1,4 @@
-
+export add_type_B, remove_type_B, change_type_B
 
 """Returns True if left_kink and right_kink are entangled in a Type-B way.
 This does not check wether the two kinks are neighbouring"""
@@ -12,9 +12,9 @@ function is_type_B(left_kink::T4, right_kink::T4)
 end
 
 
-"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld.
+"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangled.
 This function has no use in the current update set removability will therefore not be considered here.
-"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first. (for type-B-entanglement that always imples the
@@ -34,8 +34,8 @@ function get_left_type_B_pairs(c::Configuration)
 end
 
 
-"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld. Removablility will
-no be looked at. "neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangeld. Removablility will
+no be looked at. 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first. (for type-B-entanglement that always imples the
@@ -55,8 +55,8 @@ function get_right_type_B_pairs(c::Configuration)
 end
 
 
-"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-B-Entangeld AND removable.
-"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+"""Return a Tuple of 2 imaginary times of 'neighbouring' Kinks that are Type-B-Entangeld AND removable.
+'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first. (for type-B-entanglement that always imples the
@@ -80,7 +80,7 @@ function get_right_type_B_removable_pairs(c::Configuration)
 end
 
 
-function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
+function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     #sampling propability
     prop_prob = 1
     #get first τ
@@ -190,7 +190,7 @@ function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
 
 
     #calculate change in diagonal interaction energy
-    delta_di = Δdiagonal_interaction(c, e, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
+    delta_di = Δdiagonal_interaction(m, e, c, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
 
     #change configuration
     # c.kinks[firstτ] = T4(orb_a,orb_b,orb_c,orb_d)
@@ -231,9 +231,9 @@ function add_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
 
     # weight factor
     dw = ((e.β)^2) *
-            abs(offdiagonal_element(e,T4(orb_a,orb_b,orb_c,orb_d)))^2 *
-            exp(-((delta_τ)*e.β * (energy(orb_a) + energy(orb_b) -
-                energy(orb_c) - energy(orb_d)) + delta_di*e.β))
+            abs(offdiagonal_element(m, e, c, T4(orb_a,orb_b,orb_c,orb_d)))^2 *
+            exp(-((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) -
+                energy(m, orb_c) - energy(m, orb_d)) + delta_di*e.β))
 
 
     @assert (dv*dw) >= 0
@@ -309,14 +309,14 @@ function remove_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     dv = inverse_prop_prob/prop_prob
 
     # calculate change in diagonal interaction energy
-    delta_di = Δdiagonal_interaction(apply_step(c, Δ), e, last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
+    delta_di = Δdiagonal_interaction(m, e, apply_step(c, Δ), last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
 
 
     # weight factor
     dw = (1.0/(e.β)^2) *
-        (1.0/(abs(offdiagonal_element(e,last(kink1))))^2) *
-            exp((delta_τ)*e.β * (energy(orb_a) +
-                 energy(orb_b) - energy(orb_c) - energy(orb_d)) + e.β * delta_di)
+        (1.0/(abs(offdiagonal_element(m, e, last(kink1))))^2) *
+            exp((delta_τ)*e.β * (energy(m, orb_a) +
+                 energy(m, orb_b) - energy(m, orb_c) - energy(m, orb_d)) + e.β * delta_di)
 
 
     @assert (dv*dw) >= 0
@@ -325,7 +325,7 @@ function remove_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
 end
 
 
-function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #This update is redundant wif we have add- and remove-Type-C-Updates
+function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step} #This update is redundant wif we have add- and remove-Type-C-Updates
     if isempty(c.kinks)
         return 1.0, Step()
     end
@@ -359,7 +359,7 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
         return 1.0, Step()
     else
         #calculate change in diagonal interaction energy
-        delta_di = Δdiagonal_interaction(c, e, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
+        delta_di = Δdiagonal_interaction(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
 
         #See if occupations change
         if first(kink1) > first(kink2)
@@ -373,9 +373,9 @@ function change_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64,Step} #Th
         end
 
 
-        dw = exp(-(e.β*delta_τ*(energy(new_orb_i) + energy(new_orb_j) -
-                                    energy(last(kink1).i) - energy(last(kink1).j)) + e.β*delta_di)) *
-           (offdiagonal_element(e,T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/offdiagonal_element(e,last(kink1)))^2
+        dw = exp(-(e.β*delta_τ*(energy(m, new_orb_i) + energy(m, new_orb_j) -
+                                    energy(m, last(kink1).i) - energy(m, last(kink1).j)) + e.β*delta_di)) *
+           (offdiagonal_element(m, e, T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/offdiagonal_element(e,last(kink1)))^2
 
         #shuffle indices of the new orbs in the second kink
         drop_kinks = (kink1,kink2)

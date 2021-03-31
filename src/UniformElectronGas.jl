@@ -1,52 +1,26 @@
-using StaticArrays
+module ElectronGas
 
+using CPIMC
+using CPIMC.PlaneWaves
+
+import CPIMC: kernel, energy
+
+
+import StaticArrays: StaticVector
 import LinearAlgebra: dot
 
-include("orbital.jl")
+export UEG, β, EF, λ, β_Ha, rs, kF
 
 
-# the remark on the field may be removed if it considered to be clear that OrbitalHEG must always have a field spin, or if a function `spin(o::Orbital)` is used
-"""
-    fractional_spin_polarization(occ::Set{OrbitalHEG)
-calculate the fractional spin polarization from a set of Orbitals which each must have a field `spin` of type `@enum Spin Down Up`,
-the fractional spin polarization is defined as the ratio of the absolute difference of the number of particles which Spin Down and Spin Up and the particle number,
-thus here no convention is made as to which spin component should be occupied more often, as opposed to some literature where N↑ > N↓ is used
-"""
-function fractional_spin_polarization(occ::Set{<:OrbitalHEG})
-    N_up = length(filter(x -> x.spin == Up, occ))
-    N_down = length(filter(x -> x.spin == Down, occ))
-    N = length(occ)
-    return abs(N_up - N_down) / N
+struct UEG <: Model end
+
+" return the energy of a single diagonal single-particle matrix element "
+function energy(m::UEG, o::PlaneWave)
+    dot(o.vec,o.vec)
 end
 
-"""
-    ξ(occ::Set{OrbitalHEG})
-calculate the fractional spin polarization from a set of Orbitals which each must have a field `spin` of type `@enum Spin Down Up`,
-the fractional spin polarization is defined as the ratio of the absolute difference of the number of particles which Spin Down and Spin Up and the particle number,
-thus here no convention is made as to which spin component should be occupied more often, as opposed to some literature where N↑ > N↓ is used
-"""
-ξ(occ::Set{<:OrbitalHEG}) = fractional_spin_polarization(occ)
-
-
-"""
-    fractional_spin_polarization(c::Configuration{<:OrbitalHEG})
-calculate the fractional spin polarization from a set of Orbitals which each must have a field `spin` of type `@enum Spin Down Up`,
-the fractional spin polarization is defined as the ratio of the absolute difference of the number of particles which Spin Down and Spin Up and the particle number,
-thus here no convention is made as to which spin component should be occupied more often, as opposed to some literature where N↑ > N↓ is used
-"""
-function fractional_spin_polarization(c::Configuration{<:OrbitalHEG})# TODO: added {<:OrbitalHEG}
-    fractional_spin_polarization(c.occupations)
-end
-
-
-"""
-    ξ(c::Configuration{<:OrbitalHEG})
-calculate the fractional spin polarization from a set of Orbitals which each must have a field `spin` of type `@enum Spin Down Up`,
-the fractional spin polarization is defined as the ratio of the absolute difference of the number of particles which Spin Down and Spin Up and the particle number,
-thus here no convention is made as to which spin component should be occupied more often, as opposed to some literature where N↑ > N↓ is used
-"""
-ξ(c::Configuration{<:OrbitalHEG}) = fractional_spin_polarization(c)
-
+" coulomb kernel in plane wave basis "
+kernel(m::UEG, i::PlaneWave, k::PlaneWave) = 1.0 / dot(i.vec - k.vec, i.vec - k.vec)
 
 """
     λ(N, rs, d::Int)
@@ -154,8 +128,4 @@ function β(Θ, N, ξ, d::Int)
 end
 
 
-" coulomb kernel for 3D plane wavevectors "
-kernel(i::StaticVector{N,Int}, k::StaticVector{N,Int}) where {N} = 1.0 / dot( i-k, i-k )
-
-" coulomb kernel in plane wave basis "
-kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
+end
