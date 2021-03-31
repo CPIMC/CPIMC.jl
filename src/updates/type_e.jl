@@ -1,4 +1,3 @@
-export add_type_E, remove_type_E
 
 """If left kink and right_kink are type-E-entangled it returns a tuple of the two kinks whos orbs
 are sorted in a way that k an j of both kinks are the common orbitals.

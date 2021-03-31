@@ -13,12 +13,10 @@ abstract type Model end
 
 function energy(m::Model, o::Orbital)
     error("missing implementation of energy(::$(typeof(m)), ::$(typeof(o)))")
-    0.0
 end
 
 function kernel(m::Model, o1::Orbital, o2::Orbital)
     error("missing implementation of kernel(::$(typeof(m)), ::$(typeof(o1)), ::$(typeof(o2)))")
-    0.0
 end
 
 

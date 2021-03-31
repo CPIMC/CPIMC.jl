@@ -1,4 +1,3 @@
-export shuffle_indices, add_remove_kink_chain
 
 function shuffle_indices(m::Model, e::Ensemble, c::Configuration)
     if isempty(c.kinks)

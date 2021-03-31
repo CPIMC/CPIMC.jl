@@ -1,7 +1,7 @@
 using CPIMC
 using CPIMC.PlaneWaves
 
-import CPIMC: energy
+import CPIMC: energy, Step
 import CPIMC.UniformElectronGas: λ, β
 
 import LinearAlgebra: dot
@@ -38,7 +38,7 @@ end
 function occupations(m::Model, e::Ensemble, c::Configuration, emax::Int=100) :: Array{UInt,1}
     nk = zeros(UInt, emax)
 
-    ens = energy.(m, c.occupations)
+    ens = [ energy(m, n) for n in c.occupations ]
 
     for ε in ens[ens .< emax]
         nk[ε+1] = nk[ε+1] + 1
@@ -56,7 +56,7 @@ function main()
     θ = 1.0
     rs = 0.5
 
-    S = sphere_with_same_spin((0,0,0),dk=2)### use 33 particles
+    S = sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=2)### use 33 particles
     N = length(S)
     ξ = fractional_spin_polarization(S)
     c = Configuration(S)
@@ -76,10 +76,11 @@ function main()
     , :occs => (Group([Variance(UInt) for i in 1:100]), occupations))
 
     println("Start MC process ... ")
-    sweep!(NMC, cyc, NEquil, updates, measurements, e, c)
+    sweep!(FreeElectronGas(), e, c, updates, measurements, NMC, cyc, NEquil)
     println(" finished.")
 
     print_results(measurements, e)
+
 end
 
 main()

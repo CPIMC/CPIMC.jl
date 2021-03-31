@@ -138,8 +138,8 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1
 
         " calculate estimators "
         if i % sampleEvery == 0
-            s = signum(c)
-            for (key, (stat, obs)) in measurements
+            s = signum(m, c)
+            for (key, (stat, obs)) in estimators
                 if in(key, [:sign, :K, :T1c])
                     fit!(stat, obs(m,e,c))
                 else

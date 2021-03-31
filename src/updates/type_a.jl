@@ -1,5 +1,3 @@
-export move_particle
-
 function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     free_orbitals = filter(x -> isunaffected(c.kinks, x), c.occupations)
     if isempty(free_orbitals)
