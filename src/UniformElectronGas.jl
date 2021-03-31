@@ -1,4 +1,4 @@
-module ElectronGas
+module UniformElectronGas
 
 using CPIMC
 using CPIMC.PlaneWaves

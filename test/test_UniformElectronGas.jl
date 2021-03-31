@@ -1,5 +1,5 @@
 using CPIMC
-using CPIMC.ElectronGas
+using CPIMC.UniformElectronGas
 using CPIMC.Estimators
 
 import CPIMC: ImgTime, orbs, T2, T4, Step, wdiag, wminus, apply_step, Δdiagonal_interaction

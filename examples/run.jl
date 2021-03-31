@@ -2,7 +2,9 @@ using OnlineStats
 using DelimitedFiles
 
 using CPIMC
+using CPIMC.PlaneWaves
 using CPIMC.Estimators
+using CPIMC.UniformElectronGas
 
 const ex_radius = 3 # maximum radius for exitation
 

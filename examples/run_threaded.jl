@@ -4,7 +4,7 @@ using CSV
 
 using CPIMC
 using CPIMC.Estimators
-using CPIMC.ElectronGas
+using CPIMC.UniformElectronGas
 
 import CPIMC: 
 
