@@ -500,7 +500,7 @@ function w(i::Orbital, j::Orbital, k::Orbital, l::Orbital) # TODO: use type-decl
 end
 
 
-## This function can be redefined if the q=0 component is included
+## This function can be redefined if the q=0 component is included: w_aux(i, j, k, l) = w(i, j, k, l)
 """ helper function for the calculation of the many-body diagonal interaction matrix element
     return 0 for the (divergent) term of equal momenta of i and k """
 w_aux(i, j, k, l) = i.vec == k.vec ? 0.0 : w(i,j,k,l)
@@ -510,21 +510,23 @@ w_aux(i, j, k, l) = i.vec == k.vec ? 0.0 : w(i,j,k,l)
     in an periodic interval (τ1,τ2) where no kinks occur
     the change in the occupation is assumed to consist in a creation of two orbitals i, j
     and in the annihlation of two orbitals k, l """
-function ΔW_diag(c, i, j, k, l, occ)
+function ΔW_diag(i, j, k, l, occ)
+    @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum([ w_aux(ν,k,k,ν) for ν in drop(occ, k) ])# interactions of mean field with k
-    Δ += sum([ w_aux(ν,l,l,ν) for ν in drop(occ, l) ])# interactions of mean field with l
+    Δ = sum([ w_aux(ν,k,k,ν) + w_aux(ν,l,l,ν) for ν in drop(occ, Set([k,l])) ])# interactions of mean field with k and l
     Δ += w(k,l,l,k)# interaction between k and l
     # contributions due to mean field interactions of the created orbitals
-    @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
-    Δ -= sum([ w_aux(ν,i,i,ν) + w_aux(ν,j,j,ν) for ν in drop(occ, Set([k,l]))]) + w(i,j,j,i)
+    # the annihilator orbitals k, l are not in the new occupation
+    Δ -= sum([ w_aux(ν,i,i,ν) + w_aux(ν,j,j,ν) for ν in drop(occ, Set([k,l])) ])# interactions of mean field with i and j
+    Δ -= w(i,j,j,i)# interaction between i and j
+    return Δ
 end
 
 """ change in the diagonal interaction matrix element due to a change in the occupation occ
     in an periodic interval (τ1,τ2) where no kinks occur
     the change in the occupation is assumed to consist in a creation of one orbitals i
     and in the annihlation of one orbitals j """
-function ΔW_diag(c, i, j, occ)
+function ΔW_diag(i, j, occ)
     # contributions due to mean field interactions of the annihilated orbitals
     Δ = sum([ w_aux(ν,j,j,ν) for ν in drop(occ, j) ])# interactions of mean field with k
     # contributions due to mean field interactions of the created orbitals
@@ -534,10 +536,10 @@ end
 
 " return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2 "
 function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
-    if τ1 < τ2
-        filter(x -> τ1 < first(x) < τ2, ck)
-    else
+    if τ1 > τ2# interval is periodically continued
         filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
+    else# this also catches τ1 == τ2
+        filter(x -> τ1 < first(x) < τ2, ck)
     end
 end
 
@@ -557,7 +559,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
 
         # if no kinks occur in the interval where the occupations differ, the change occurs on the entire time-interval Δτ
         # the factor λ is the coupling constant
-        return ΔW_diag(c, i, j, k, l, occupations(c,τ1)) * e.λ * Δτ
+        return ΔW_diag(i, j, k, l, occupations(c,τ1)) * e.λ * Δτ
     else
         ## calculate first interval from τ1 to next kink in between τ1 and τ2
         t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
@@ -570,7 +572,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
             Δτ = 1 + τ1 - t2
         end
 
-        δ = ΔW_diag(c, i, j, k, l, occupations(c,τ1)) * Δτ
+        δ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δτ
 
         ## loop over the remaining intervals between τ1 and τ2
         for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
@@ -584,7 +586,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
                 Δτ = 1 + t1 - t2
             end
 
-            δ += ΔW_diag(c, i, j, k, l, occupations(c,τ)) * Δτ
+            δ += ΔW_diag(i, j, k, l, occupations(c,τ)) * Δτ
         end
         return δ * e.λ# the factor λ is the coupling constant
     end
@@ -607,7 +609,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
 
         # if no kinks occur in the interval where the occupations differ, the change occurs on the entire time-interval Δτ
         # the factor λ is the coupling constant
-        return ΔW_diag(c, i, j, occupations(c,τ1)) * e.λ * Δτ
+        return ΔW_diag(i, j, occupations(c,τ1)) * e.λ * Δτ
     else
         ## calculate first interval from τ1 to next kink in between τ1 and τ2
         t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
@@ -620,7 +622,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
             Δτ = 1 + τ1 - t2
         end
 
-        δ = ΔW_diag(c, i, j, occupations(c,τ1)) * Δτ
+        δ = ΔW_diag(i, j, occupations(c,τ1)) * Δτ
 
         ## loop over the remaining intervals between τ1 and τ2
         for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
@@ -634,7 +636,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
                 Δτ = 1 + t1 - t2
             end
 
-            δ += ΔW_diag(c, i, j, occupations(c,τ)) * Δτ
+            δ += ΔW_diag(i, j, occupations(c,τ)) * Δτ
         end
         return δ * e.λ # the factor λ is the coupling constant
     end
