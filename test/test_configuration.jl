@@ -446,6 +446,15 @@ end
 
     @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
 
+    # Test for different spin case
+    i = OrbitalHEG((1,1,1),Down)
+    k = OrbitalHEG((0,-1,0), Down)
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum is not conserved for this excitation "
+
+    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+
+
     ### Test 1-particle excitation
     i = OrbitalHEG((-3,0,0))
     j = OrbitalHEG((0,1,0))
