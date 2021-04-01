@@ -102,7 +102,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
         return 1.0, Step()
     end
     orb_a = rand(opportunities_orb_a)
-    orb_b = OrbitalHEG((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
+    orb_b = PlaneWave((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
     @assert !((orb_a == orb_d) | (orb_b == orb_c))
     if (!in(orb_b,opportunities_orb_b) | (orb_a == orb_b))
         return 1.0, Step()
@@ -230,7 +230,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
     # weight factor
     dw = ((e.β)^2) *
-            abs(offdiagonal_element(m, e, c, T4(orb_a,orb_b,orb_c,orb_d)))^2 *
+            abs(offdiagonal_element(m, e, T4(orb_a,orb_b,orb_c,orb_d)))^2 *
             exp(-((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) -
                 energy(m, orb_c) - energy(m, orb_d)) + delta_di*e.β))
 
@@ -241,7 +241,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     return dv*dw, Δ
 end
 
-function remove_type_B(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
+function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     if isempty(c.kinks)
         return 1.0, Step()
     end
@@ -350,7 +350,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         return 1.0, Step()
     end
     new_orb_i = rand(opportunities)
-    new_orb_j = OrbitalHEG(last(kink1).j.vec + last(kink1).i.vec - new_orb_i.vec, last(kink1).j.spin)
+    new_orb_j = PlaneWave(last(kink1).j.vec + last(kink1).i.vec - new_orb_i.vec, last(kink1).j.spin)
     if new_orb_i == new_orb_j
         return 1.0, Step()
     end

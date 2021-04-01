@@ -5,7 +5,7 @@ module Estimators
 
 using ..CPIMC
 
-import ..CPIMC: kernel, energy, excite!
+import ..CPIMC: kernel, energy, signum, excite!
 
 export E, Ekin, W, W_off_diag, W_diag, K, occupations, signum, longest_type_1_chain_length, right_type_1_count    
 
@@ -122,7 +122,7 @@ estimator for the occupations of the emax:Int lowest single particle energy eige
 function occupations(m::Model, e::Ensemble, c::Configuration, emax::Int=100) :: Array{Float64,1}
     nk = zeros(Float64, emax)
     if isempty(c.kinks)
-        for en in energy.(m, c.occupations)
+        for en in [ energy(m,n) for n in c.occupations ]
             if en < emax
                 nk[en+1] = nk[en+1] + 1.0
             end
@@ -131,7 +131,7 @@ function occupations(m::Model, e::Ensemble, c::Configuration, emax::Int=100) :: 
         occs = copy(c.occupations)
         old_τ = first(last(c.kinks)) - 1
         for (tau,k) in c.kinks
-            for en in energy.(m, occs)
+            for en in [ energy(m,n) for n in c.occupations ]
                 if en < emax
                     nk[en+1] = nk[en+1] + float(tau - old_τ)
                 end
@@ -148,7 +148,7 @@ end
 
 estimator for the sign of the weight function
 """
-signum(m::Model, e::Ensemble, c::Configuration) = signum(c)
+signum(m::Model, e::Ensemble, c::Configuration) = signum(m, c)
 
 
 longest_type_1_chain_length(m::Model, e::Ensemble, c::Configuration) = longest_type_1_chain_length(c.kinks)

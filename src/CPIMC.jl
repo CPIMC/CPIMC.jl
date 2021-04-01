@@ -15,10 +15,19 @@ include("configuration.jl")
 include("ensemble.jl")
 include("model.jl")
 
-include("estimators.jl")
-
+include("Estimators.jl")
 include("PlaneWaves.jl")
 
+
+"""
+    const ex_radius = 3
+
+radius of the sphere of orbitals which are considered for excitations
+"""
+const ex_radius = 3 # TODO: find better solution
+
+
+using .PlaneWaves
 
 include("updates/type_a.jl")
 include("updates/type_b.jl")

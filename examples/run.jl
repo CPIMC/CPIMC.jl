@@ -6,8 +6,7 @@ using CPIMC.PlaneWaves
 using CPIMC.Estimators
 using CPIMC.UniformElectronGas
 
-const ex_radius = 3 # maximum radius for exitation
-
+import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
 
 function main()
     # MC options
@@ -19,7 +18,7 @@ function main()
     rs = 2.0
 
     # use 7 particles
-    S = sphere_with_same_spin(OrbitalHEG((0,0,0)),dk=1)
+    S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
     N = length(S)
     ξ = fractional_spin_polarization(S)
     c = Configuration(S)
@@ -45,7 +44,7 @@ function main()
     )
 
     println("Start MC process ... ")
-    sweep!(NMC, cyc, NEquil, updates, measurements, e, c)
+    sweep!(UEG(), e, c, updates, measurements, NMC, cyc, NEquil)
     println(" finished.")
 
     println("parameters:")
@@ -59,8 +58,6 @@ function main()
 
 
     print_results(measurements, e)
-    #save_results("out/", measurements, e)
 end
 
-#Juno.@run(main())
 main()

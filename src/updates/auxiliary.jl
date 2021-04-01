@@ -27,7 +27,7 @@ function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     acc_prob = 1.0
     step_list = Array{Step,1}()
     for i in  1:chain_length
-        dv, Δ = rand(add_single_kinks)(apply_step(c,step_list),e)
+        dv, Δ = rand(add_single_kinks)(m,e,apply_step(c,step_list))
         acc_prob *= dv
         if iszero(acc_prob)
             return 0.0, Step()
@@ -35,7 +35,7 @@ function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
         push!(step_list, Δ)
     end
     for i in  1:chain_length
-        dv, Δ = rand(remove_single_kinks)(apply_step(c,step_list),e)
+        dv, Δ = rand(remove_single_kinks)(m,e,apply_step(c,step_list))
         acc_prob *= dv
         if iszero(acc_prob)
             return 0.0, Step()

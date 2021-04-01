@@ -57,7 +57,7 @@ function get_right_type_D_removable_pairs(c::Configuration)
 end
 
 function possible_new_orb1_D(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
-    return filter(new_orb_1 -> in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
+    return filter(new_orb_1 -> in(PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
                     intersect!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
 end
 
@@ -80,7 +80,7 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         end
         new_orb1 = rand(opportunities_new_orb1)
         prop_prob *= 1.0/length(opportunities_new_orb1)
-        new_orb2 = OrbitalHEG(last(old_kink).k.vec + (last(old_kink).l.vec - new_orb1.vec), last(old_kink).j.spin)
+        new_orb2 = PlaneWave(last(old_kink).k.vec + (last(old_kink).l.vec - new_orb1.vec), last(old_kink).j.spin)
         @assert(in(new_orb2, occs) & (new_orb1 != new_orb2))
         τ_Intervall = first(old_kink) - first(τ_borders(c, Set([last(old_kink).i, last(old_kink).j, new_orb1, new_orb2]), first(old_kink)))
 
@@ -157,7 +157,7 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         end
         new_orb1 = rand(opportunities_new_orb1)
         prop_prob *= 1.0/length(opportunities_new_orb1)
-        new_orb2 = OrbitalHEG(last(old_kink).i.vec + (last(old_kink).j.vec - new_orb1.vec), last(old_kink).l.spin)
+        new_orb2 = PlaneWave(last(old_kink).i.vec + (last(old_kink).j.vec - new_orb1.vec), last(old_kink).l.spin)
 
         @assert(in(new_orb2, occs) & (new_orb1 != new_orb2))
         τ_Intervall = last(τ_borders(c, Set([
