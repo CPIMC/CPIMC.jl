@@ -453,3 +453,21 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
     return count
 end
 
+
+function shuffle_annihilators(kink::T4)
+    if rand() < 0.5
+        # shuffle
+        return T4(kink.i,kink.j,kink.l,kink.k)
+    else
+        return T4(kink.i,kink.j,kink.k,kink.l)
+    end
+end
+
+function shuffle_creators(kink::T4)
+    if rand() < 0.5
+        # shuffle
+        return T4(kink.j,kink.i,kink.k,kink.l)
+    else
+        return T4(kink.i,kink.j,kink.k,kink.l)
+    end
+end
