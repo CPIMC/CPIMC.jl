@@ -57,7 +57,7 @@ function get_right_type_D_removable_pairs(c::Configuration)
 end
 
 function possible_new_orb1_D(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
-    opprtunities = filter(new_orb_1 -> in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
+    opprtunities = filter(new_orb_1 -> in(PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
                     intersect!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
 
     return setdiff!(opprtunities, Set([exite_orb1, exite_orb2, old_orb1, old_orb2]))

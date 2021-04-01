@@ -59,7 +59,7 @@ end
 
 
 function possible_new_orb1_C(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
-    opprtunities = filter(new_orb_1 -> !in(OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != OrbitalHEG(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
+    opprtunities = filter(new_orb_1 -> !in(PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
                     setdiff!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
 
     return setdiff!(opprtunities, Set([exite_orb1, exite_orb2, old_orb1, old_orb2]))

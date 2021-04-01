@@ -9,7 +9,7 @@ using CPIMC.UniformElectronGas
 
 using OnlineStats
 
-import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
+import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
 
 import CPIMC: measure!, update!
 
@@ -75,7 +75,7 @@ end
 #the Programm uses.
 function main()
     # MC options
-    NMC = 5*10^5
+    NMC = 2*10^5
     cyc = 50
     N_Runs = 24
     NEquil = 10^5
@@ -100,7 +100,6 @@ function main()
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
     updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])#, change_type_B
-
 
     measurements = Dict(
       :sign => (Variance(), signum)

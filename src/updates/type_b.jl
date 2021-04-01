@@ -78,6 +78,10 @@ function get_right_type_B_removable_pairs(c::Configuration)
   return pairs_right
 end
 
+function possible_new_orb_c_B(occs, orb_c, orb_d)
+    return(filter(orb_a -> !in(PlaneWave(orb_c.vec + orb_d.vec - orb_a.vec, orb_d.spin),occs) && (orb_a != PlaneWave((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)),
+                    setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs)))
+end
 
 function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     #sampling propability
@@ -91,23 +95,16 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     occs = occupations(c, τ1)
     orb_c = rand(occs)
     prop_prob *= 1.0/e.N
-    orb_d = rand(occs)
-    while orb_d == orb_c
-        orb_d = rand(occs)
-    end
+    orb_d = rand(drop(occs, orb_c))
     prop_prob *= 1.0/(e.N-1)
-    opportunities_orb_a = setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs)
-    opportunities_orb_b = setdiff!(sphere_with_same_spin(orb_d, dk = ex_radius), occs)
-    if isempty(opportunities_orb_a) | isempty(opportunities_orb_b)
+    opportunities_orb_a = possible_new_orb_c_B(occs, orb_c, orb_d)
+    if isempty(opportunities_orb_a)
         return 1.0, Step()
     end
     orb_a = rand(opportunities_orb_a)
     orb_b = PlaneWave((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
     @assert !((orb_a == orb_d) | (orb_b == orb_c))
-    if (!in(orb_b,opportunities_orb_b) | (orb_a == orb_b))
-        return 1.0, Step()
-    end
-
+    @assert (!in(orb_b,occs) & (orb_a != orb_b))
     #We will change the proposal probability after we get τ2
 
 
@@ -297,10 +294,12 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     orb_c = last(kink1).k
     orb_d = last(kink1).l
     #See how prop_prob changes in the function add_type_B to understand this expression
-    inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
-        (1.0/length(setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink1))
-            + 1/length(setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ_kink2))) *
-         1.0/float(possible_τ2_interval) * (1/4)
+     inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
+         (1.0/length(possible_new_orb_c_B(occs_τ_kink1, orb_c, orb_d))
+             + 1/length(possible_new_orb_c_B(occs_τ_kink2, orb_c, orb_d))) *
+          1.0/float(possible_τ2_interval) * (1/4)
+
+
     if borders[2] == 1
         inverse_prop_prob *= 0.5
     end
@@ -374,7 +373,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         dw = exp(-(e.β*delta_τ*(energy(m, new_orb_i) + energy(m, new_orb_j) -
                                     energy(m, last(kink1).i) - energy(m, last(kink1).j)) + e.β*delta_di)) *
-           (offdiagonal_element(m, e, T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/offdiagonal_element(e,last(kink1)))^2
+           (offdiagonal_element(m, e, T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/offdiagonal_element(m, e,last(kink1)))^2
 
         #shuffle indices of the new orbs in the second kink
         drop_kinks = (kink1,kink2)

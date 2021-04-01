@@ -81,9 +81,9 @@ end
 
 function new_kink_new_creator(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator)
     if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-        new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, new_kink_old_creator.spin)
+        new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, new_kink_old_creator.spin)
     else
-        new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, flip(new_kink_old_creator.spin))
+        new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, flip(new_kink_old_creator.spin))
     end
 end
 
@@ -134,7 +134,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         end
         #find occupied orb for creation of Type_E
         #opportunities_new_kink_new_annihilator = intersect!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-        #        sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
+        #        sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
 
 
         opportunities_new_kink_new_annihilator = possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
@@ -271,7 +271,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         end
         #find occupied orb for creation of Type_E
         #opportunities_new_kink_new_annihilator = setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-        #                                                         sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
+        #                                                         sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
 
         opportunities_new_kink_new_annihilator = possible_new_kink_new_unocc_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).k)
@@ -283,9 +283,9 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         prop_prob *= 1.0/length(opportunities_new_kink_new_annihilator)
 
         if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, new_kink_old_creator.spin)
+            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, new_kink_old_creator.spin)
         else
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, flip(new_kink_old_creator.spin))
+            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, flip(new_kink_old_creator.spin))
         end
 
         if (!in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).i) | (new_kink_new_creator == last(old_kink).j))
@@ -452,7 +452,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        #opportunities_occ_orb_E = intersect!(union!(sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Down), dk = ex_radius)), occs)
+        #opportunities_occ_orb_E = intersect!(union!(sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Down), dk = ex_radius)), occs)
         opportunities_occ_orb_E = possible_new_kink_new_occ_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
 
         delete!(opportunities_occ_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].i)
@@ -534,7 +534,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        #opportunities_unocc_orb_E = setdiff!(union!(sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Down), dk = ex_radius)), occs)
+        #opportunities_unocc_orb_E = setdiff!(union!(sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Down), dk = ex_radius)), occs)
         opportunities_unocc_orb_E = possible_new_kink_new_unocc_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
         delete!(opportunities_unocc_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].k)
         delete!(opportunities_unocc_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].l)
