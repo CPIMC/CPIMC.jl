@@ -1,6 +1,4 @@
 
-
-
 """If left kink and right_kink are type-E-entangled it returns a tuple of the two kinks whos orbs
 are sorted in a way that k an j of both kinks are the common orbitals.
 Otherwise it returns false.
@@ -24,8 +22,8 @@ function is_type_E(left_kink::T4, right_kink::T4)
   end
 end
 
-"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-E-Entangeld AND removable.
-"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-E-Entangeld AND removable.
+'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
@@ -51,8 +49,8 @@ function get_left_type_E_removable_pairs(c::Configuration)
 end
 
 
-"""Return a Tuple of 2 imaginaty times of "neighbouring" Kinks that are Type-E-Entangeld AND removable.
-"neighbouring" refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
+"""Return a Tuple of 2 imaginary times of 'neighbouring' Kinks that are Type-E-Entangeld AND removable.
+'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
@@ -82,7 +80,7 @@ end
 
 
 
-function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
+function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     #After the updates the i and l komponents of both kinks will contain the old kink, wile the j and k components contain the old orbitals
     prop_prob = 1.0
     if isempty(c.kinks)
@@ -114,7 +112,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         end
         #find occupied orb for creation of Type_E
         opportunities_new_kink_new_annihilator = intersect!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-                sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
+                sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
 
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).i)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).j)
@@ -125,9 +123,9 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         prop_prob *= 1.0/length(opportunities_new_kink_new_annihilator)
         #calculate new creator
         if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
+            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
         else
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), flip(new_kink_old_creator.spin))
+            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), flip(new_kink_old_creator.spin))
         end
         if (in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).k) | (new_kink_new_creator == last(old_kink).l))
             return 1.0, Step()
@@ -159,7 +157,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         prop_prob *= 1.0/Float64(τ_Intervall)
 
-        delta_di = Δdiagonal_interaction(c, e, new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator, τ_new_kink, first(old_kink))
+        delta_di = Δdiagonal_interaction(m, e, c, new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator, τ_new_kink, first(old_kink))
 
         #change_Configuration
         #see if c.occupations change
@@ -220,10 +218,10 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         @assert(is_type_E(apply_step(c,Δ).kinks[τ_new_kink], apply_step(c,Δ).kinks[first(old_kink)]) != false)
 
         #calculate weight difference
-        dw_off_diag = abs(offdiagonal_element(e,apply_step(c,Δ).kinks[τ_new_kink])) * abs(offdiagonal_element(e,apply_step(c,Δ).kinks[first(old_kink)])) /
-                                                abs(offdiagonal_element(e,last(old_kink)))
-        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(apply_step(c,Δ).kinks[τ_new_kink].i) + energy(apply_step(c,Δ).kinks[τ_new_kink].j)-
-                                                         energy(apply_step(c,Δ).kinks[τ_new_kink].k) - energy(apply_step(c,Δ).kinks[τ_new_kink].l)) + e.β * delta_di))
+        dw_off_diag = abs(offdiagonal_element(m, e, apply_step(c,Δ).kinks[τ_new_kink])) * abs(offdiagonal_element(m,e,apply_step(c,Δ).kinks[first(old_kink)])) /
+                                                abs(offdiagonal_element(m,e,last(old_kink)))
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m,apply_step(c,Δ).kinks[τ_new_kink].i) + energy(m,apply_step(c,Δ).kinks[τ_new_kink].j)-
+                                                         energy(m,apply_step(c,Δ).kinks[τ_new_kink].k) - energy(m,apply_step(c,Δ).kinks[τ_new_kink].l)) + e.β * delta_di))
 
         inverse_prop_prob = (1.0/length(get_right_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25
 
@@ -249,7 +247,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         end
         #find occupied orb for creation of Type_E
         opportunities_new_kink_new_annihilator = setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-                                                                 sphere_with_same_spin(OrbitalHEG(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
+                                                                 sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).k)
         delete!(opportunities_new_kink_new_annihilator, last(old_kink).l)
         if isempty(opportunities_new_kink_new_annihilator)
@@ -259,9 +257,9 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         prop_prob *= 1.0/length(opportunities_new_kink_new_annihilator)
 
         if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
+            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
         else
-            new_kink_new_creator = OrbitalHEG(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), flip(new_kink_old_creator.spin))
+            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), flip(new_kink_old_creator.spin))
         end
 
         if (!in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).i) | (new_kink_new_creator == last(old_kink).j))
@@ -296,7 +294,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         prop_prob *= 1.0/Float64(τ_Intervall)
                                                           #Inverse new kink
-        delta_di = Δdiagonal_interaction(c, e, new_kink_new_annihilator, new_kink_old_annihilator, new_kink_old_creator, new_kink_new_creator, first(old_kink), τ_new_kink)
+        delta_di = Δdiagonal_interaction(m, e, c, new_kink_new_annihilator, new_kink_old_annihilator, new_kink_old_creator, new_kink_new_creator, first(old_kink), τ_new_kink)
 
         #change_Configuration
         #see if c.occupations change
@@ -352,11 +350,11 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
         # MC Step generated by this update
         Δ = Step(Configuration(drop_orbs, drop_kinks), Configuration(add_orbs, add_kink1, add_kink2))
 
-        dw_off_diag = abs(offdiagonal_element(e,apply_step(c,Δ).kinks[τ_new_kink])) * abs(offdiagonal_element(e,apply_step(c,Δ).kinks[first(old_kink)])) /
-                                                abs(offdiagonal_element(e,last(old_kink)))
+        dw_off_diag = abs(offdiagonal_element(m,e,apply_step(c,Δ).kinks[τ_new_kink])) * abs(offdiagonal_element(m,e,apply_step(c,Δ).kinks[first(old_kink)])) /
+                                                abs(offdiagonal_element(m,e,last(old_kink)))
 
-        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(apply_step(c,Δ).kinks[τ_new_kink].k) + energy(apply_step(c,Δ).kinks[τ_new_kink].l) -
-                                                         energy(apply_step(c,Δ).kinks[τ_new_kink].i) - energy(apply_step(c,Δ).kinks[τ_new_kink].j)) + e.β * delta_di))
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m,apply_step(c,Δ).kinks[τ_new_kink].k) + energy(m,apply_step(c,Δ).kinks[τ_new_kink].l) -
+                                                         energy(m,apply_step(c,Δ).kinks[τ_new_kink].i) - energy(m,apply_step(c,Δ).kinks[τ_new_kink].j)) + e.β * delta_di))
 
         inverse_prop_prob = (1.0/length(get_left_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25
 
@@ -371,7 +369,7 @@ function add_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
     return ((inverse_prop_prob/prop_prob)*dw), Δ
 end
 
-function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
+function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     prop_prob = 0.5
     if rand() > 0.5
         #removed kink left of changed kink
@@ -428,7 +426,7 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_occ_orb_E = intersect!(union!(sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Down), dk = ex_radius)), occs)
+        opportunities_occ_orb_E = intersect!(union!(sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Down), dk = ex_radius)), occs)
         delete!(opportunities_occ_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].i)
         delete!(opportunities_occ_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].j)
         @assert(in(removed_kink.k,opportunities_occ_orb_E))
@@ -443,18 +441,18 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                                  (1.0/Float64(τ_Intervall)) * (1/4) * (1/16)
 
         #calculate weight change
-        delta_di = Δdiagonal_interaction(apply_step(c,Δ), e, removed_kink.i, removed_kink.j, removed_kink.k, removed_kink.l, removed_kink_τ, changed_kink_τ)
+        delta_di = Δdiagonal_interaction(m, e, apply_step(c,Δ), removed_kink.i, removed_kink.j, removed_kink.k, removed_kink.l, removed_kink_τ, changed_kink_τ)
 
-        dw_off_diag = abs(offdiagonal_element(e,removed_kink)) *
-                        abs(offdiagonal_element(e,changed_kink_old)) /
-                          abs(offdiagonal_element(e,apply_step(c,Δ).kinks[changed_kink_τ]))
+        dw_off_diag = abs(offdiagonal_element(m,e,removed_kink)) *
+                        abs(offdiagonal_element(m,e,changed_kink_old)) /
+                          abs(offdiagonal_element(m,e,apply_step(c,Δ).kinks[changed_kink_τ]))
 
         delta_τ = Float64(changed_kink_τ - removed_kink_τ)
         if delta_τ < 0
             delta_τ +=1
         end
-        dw = (1.0/e.β)* (1.0/dw_off_diag) * exp(e.β * delta_τ * (energy(removed_kink.i) + energy(removed_kink.j) -
-                                                                  energy(removed_kink.k) - energy(removed_kink.l)) + e.β * delta_di)
+        dw = (1.0/e.β)* (1.0/dw_off_diag) * exp(e.β * delta_τ * (energy(m,removed_kink.i) + energy(m,removed_kink.j) -
+                                                                  energy(m,removed_kink.k) - energy(m,removed_kink.l)) + e.β * delta_di)
 
     else
         #removed kink right of changed kink
@@ -508,7 +506,7 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        opportunities_unocc_orb_E = setdiff!(union!(sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(OrbitalHEG(removed_kink.i.vec, Down), dk = ex_radius)), occs)
+        opportunities_unocc_orb_E = setdiff!(union!(sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Down), dk = ex_radius)), occs)
         delete!(opportunities_unocc_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].k)
         delete!(opportunities_unocc_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].l)
         @assert(in(removed_kink.k,opportunities_unocc_orb_E))
@@ -521,18 +519,18 @@ function remove_type_E(c::Configuration, e::Ensemble) :: Tuple{Float64,Step}
                                  (1.0/Float64(τ_Intervall)) * (1/4) * (1/16)
 
         #calculate weight change
-        delta_di = Δdiagonal_interaction(apply_step(c,Δ), e, removed_kink.k, removed_kink.l, removed_kink.i,removed_kink.j, changed_kink_τ, removed_kink_τ)
+        delta_di = Δdiagonal_interaction(m, e, apply_step(c,Δ), removed_kink.k, removed_kink.l, removed_kink.i,removed_kink.j, changed_kink_τ, removed_kink_τ)
 
-        dw_off_diag = abs(offdiagonal_element(e,removed_kink)) *
-                        abs(offdiagonal_element(e,changed_kink_old)) /
-                          abs(offdiagonal_element(e,apply_step(c,Δ).kinks[changed_kink_τ]))
+        dw_off_diag = abs(offdiagonal_element(m, e, removed_kink)) *
+                        abs(offdiagonal_element(m, e, changed_kink_old)) /
+                          abs(offdiagonal_element(m, e, apply_step(c,Δ).kinks[changed_kink_τ]))
 
         delta_τ = Float64(removed_kink_τ - changed_kink_τ)
         if delta_τ < 0
             delta_τ +=1
         end
-        dw = (1.0/e.β)*(1.0/dw_off_diag) * exp(e.β * delta_τ*(energy(removed_kink.k) + energy(removed_kink.l) -
-                                                            energy(removed_kink.i) - energy(removed_kink.j)) + e.β * delta_di)
+        dw = (1.0/e.β)*(1.0/dw_off_diag) * exp(e.β * delta_τ*(energy(m, removed_kink.k) + energy(m, removed_kink.l) -
+                                                            energy(m, removed_kink.i) - energy(m, removed_kink.j)) + e.β * delta_di)
 
     end
 

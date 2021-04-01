@@ -1,23 +1,72 @@
-using OnlineStats
 using DelimitedFiles
 using DataFrames
 using CSV
 
-include("../../../src/Ensemble.jl")
-include("../../../src/Configuration.jl")
-include("../../../src/UEG/model.jl")
-#include("../../../src/Updates/Ideal-Updates.jl")
-include("../../../src/Updates/Other-Updates.jl")
-include("../../../src/Updates/Type-A-Updates.jl")
-include("../../../src/Updates/Type-B-Updates.jl")
-include("../../../src/Updates/Type-C-Updates.jl")
-include("../../../src/Updates/Type-D-Updates.jl")
-include("../../../src/Updates/Type-E-Updates.jl")
-include("../../../src/UEG/estimators.jl")
-include("../../../src/CPIMC.jl")
+using CPIMC
+using CPIMC.Estimators
+using CPIMC.PlaneWaves
+using CPIMC.UniformElectronGas
 
+using OnlineStats
 
-const ex_radius = 3 # maximum radius for exitation
+import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
+
+import CPIMC: measure!, update!
+
+W_off_diag(e::Ensemble, avg_K::Float64) = -avg_K/e.β
+abs_E_madelung(N::Int, λ::Float64) = 2.83729747948527 * pi/2.0 * N * λ
+E_int_from_Hartree(E_Ha::Float64, λ::Float64) = E_Ha /(16/((2*pi)^4 * (λ/2)^2) * 0.5)
+E_int_from_Hartree(E_Ha::Float64, e::Ensemble) = E_Ha /(16/((2*pi)^4 * (e.λ/2)^2) * 0.5)
+E_Ry(E_internal::Float64, λ::Float64) = E_internal * 16/((2*pi)^4 * λ^2)
+E_Ry(E_internal::Float64, e::Ensemble) = E_internal * 16/((2*pi)^4 * e.λ^2)
+E_Ha(E_internal::Float64, λ::Float64) = E_internal * 16/((2*pi)^4 * λ^2) * 0.5
+E_Ha(E_internal::Float64, e::Ensemble) = E_internal * 16/((2*pi)^4 * e.λ^2) * 0.5
+Et_Ry(E_internal::Float64, e::Ensemble) = E_Ry(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
+Et_Ha(E_internal::Float64, e::Ensemble) = E_Ha(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
+
+function sweep_multithreaded!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
+    @assert(length(c.kinks) == 0)
+    c = Configuration(copy(c.occupations))# c should be a different object for each thread
+    " equilibration "
+    if (Threads.threadid() == 1)
+        println("\nstarting equilibration")
+    end
+    k = 1# progress counter
+    for i in 1:throwAway
+        if (i%(throwAway/100) == 0)
+            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100","; K: ",length(c.kinks))
+
+            k+=1
+        end
+        #TODO Use reentrantlook for Update counters?
+        update!(m, e, c, updates)
+    end
+    if (Threads.threadid() == 1)
+        println("\nstarting Simulation")
+    end
+    i = 0
+    k = 1#print progress
+    #global add_E_counter = 0
+    #global remove_E_counter = 0
+    while i < steps
+        #print progress
+        if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
+            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
+            k+=1
+        end
+
+        " MC step "
+        update!(m, e, c, updates)
+
+        "measurement"
+        if i % sampleEvery == 0
+            " calculate observables "
+            measure!(m, e, c, measurements)
+        end
+        i += 1
+    end
+    println("\nThread",Threads.threadid(),"finished")
+end
 
 
 #To run on a Linux System use "julia --threads NT run_threads.jl", where NT is the
@@ -35,18 +84,22 @@ function main()
     rs = 2.0
 
     # use 7 particles
-    S = sphere_with_same_spin(OrbitalHEG((0,0,0),Up),dk=1)
-    #S = sphere(OrbitalHEG((0,0,0),Up),dk=2)
+    S = sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1)
+    #S = sphere(PlaneWave((0,0,0),Up),dk=2)
     N = length(S)
     c = Configuration(S)
+    d = dimension(c.occupations)
+    ξ = fractional_spin_polarization(S)
 
     println("parameters:")
     println("θ: ", θ)
     println("rs: ", rs)
     println("N: ", N)
+    println("ξ: ", ξ)
 
-    e = CEnsemble(λ(N,rs,d), β(θ,N,fractional_spin_polarization(c)), N) # get_β_internal only works for 3D
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices],0,0,0)#, change_type_B
+    e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
+
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])#, change_type_B
 
 
     measurements = Dict(
@@ -76,7 +129,7 @@ function main()
     Threads.@threads for t in 1:N_Runs
         m = deepcopy(measurements_Mean)
         push!(measurements_of_runs,m)
-        sweep_multithreaded!(NMC, cyc, NEquil, updates, m, e, c)
+        sweep_multithreaded!(UEG(), e, c, updates, m, NMC, cyc, NEquil)
     end
 
     println(" finished.")
@@ -89,7 +142,7 @@ function main()
     println("measurements:")
     println("=============")
 
-    # avarage over the uncorrelated mean values of the single runs
+    # average over the uncorrelated mean values of the single runs
     for m in measurements_of_runs
         for (key,(stat,obs)) in m
             if key == :occs
@@ -123,10 +176,10 @@ function main()
     ΔW = ΔW_diag + ΔW_off_diag
     μE = μW + μT
     ΔE = ΔW + ΔT
-    μWt_Ha = Et_Ha(μW, e::Ensemble)
-    ΔWt_Ha = E_Ha(ΔW, e::Ensemble)
+    μWt_Ha = Et_Ha(μW, e)
+    ΔWt_Ha = E_Ha(ΔW, e)
     μT_Ha = E_Ha(μT,e.λ)
-    ΔT_Ha = E_Ha(ΔT,.λ)
+    ΔT_Ha = E_Ha(ΔT,e.λ)
     μE_Ha = μT_Ha + μWt_Ha
     ΔE_Ha = ΔT_Ha + ΔWt_Ha
 
@@ -178,11 +231,12 @@ function main()
     df[!,:ΔE_Ha] .= ΔE_Ha
 
     # create occupation numbers file
-    open("test/UEG/Full_CPIMC/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*N_Runs/cyc)).dat", "w") do io
+    open("examples/out/occNums_$(N)_th$(replace(string(θ),"." => ""))_rs$(replace(string(rs),"." => ""))_steps$((NMC*N_Runs/cyc)).dat", "w") do io
         writedlm(io, zip(mean.(measurements[:occs][1].stats), std.(measurements[:occs][1].stats)/(NMC*N_Runs/cyc)))
     end
 
-    CSV.write("test/UEG/Full_CPIMC/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*N_Runs/cyc)).csv",df)
+    CSV.write("examples/out/results_N$(N)_th$(θ)_rs$(rs)_steps$((NMC*N_Runs/cyc)).csv",df)
 end
 
 main()
+
