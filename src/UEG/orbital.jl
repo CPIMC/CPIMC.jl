@@ -34,6 +34,22 @@ function energy(o::OrbitalHEG)
 end
 
 """
+    w(i::Orbital, j::Orbital, k::Orbital, l::Orbital)
+
+return the two-particle matrix element of the Coulomb interaction
+zero is returned if momentum or spin is not conserved, in consequence of the Bloch-theorem and the spin kronecker-delta in the plane-spin-wave basis
+an assertion catches the diverging contribution
+"""
+function w(i::Orbital, j::Orbital, k::Orbital, l::Orbital) # TODO: use type-declaration here in case multiple particle-species exist ?
+    if !iszero(i.vec + j.vec - k.vec - l.vec) | (i.spin != k.spin) | (j.spin != l.spin)# momentum and spin conservation
+        return 0.0
+    else
+        @assert i.vec != k.vec "Divergent contribution in two-particle matrix element for vectors i=$(i.vec), k=$(k.vec). Such contribution should not arise for the uniform electron gas."
+        return 1.0 / dot(i.vec - k.vec, i.vec - k.vec)
+    end
+end
+
+"""
     flip(o::OrbitalHEG)
 return an OrbitalHEG with the same momentum vector but opposite spin projection as the given o::OrbitalHEG """
 flip(o::OrbitalHEG) = OrbitalHEG(tuple(o.vec...),flip(o.spin))
