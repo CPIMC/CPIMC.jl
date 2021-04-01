@@ -52,6 +52,9 @@ mutable struct Update
     trivial :: UInt
 end
 
+Update(f::Function) = Update(f,0,0,0)
+
+
 " change to Configuration " # TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
 struct Step{S<:Union{Nothing,<:Orbital,Configuration},T<:Union{Nothing,<:Orbital,Configuration}}
     drop :: S
@@ -112,6 +115,22 @@ function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,
     end
 end
 
+"""
+    measure!(m::Model, e::Ensemble, c::Configuration, estimators)
+
+Perform measurements on a configuration. `estimators` needs to be a dictionary that contains tuples `(::OnlineStat, ::Function)`.
+"""
+function measure!(m, e, c, estimators)
+    s = signum(m, c)
+    for (key, (stat, obs)) in estimators
+        if in(key, [:sign, :K, :T1c])
+            fit!(stat, obs(m,e,c))
+        else
+            fit!(stat, obs(m,e,c)*s)
+        end
+    end
+end
+
 
 """
     sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
@@ -147,14 +166,7 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1
 
         " calculate estimators "
         if i % sampleEvery == 0
-            s = signum(m, c)
-            for (key, (stat, obs)) in estimators
-                if in(key, [:sign, :K, :T1c])
-                    fit!(stat, obs(m,e,c))
-                else
-                    fit!(stat, obs(m,e,c)*s)
-                end
-            end
+            measure!(m, e, c, estimators)
         end
 
         i += 1
