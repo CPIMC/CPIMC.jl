@@ -88,6 +88,26 @@ end
     @test isempty(kinks_from_periodic_interval(SortedDict{ImgTime,T4}(), 0.1, 0.9))
 end
 
+@testset "times_from_periodic_interval" begin
+    t1 = ImgTime(0.1)
+    t2 = ImgTime(0.3)
+    @test times_from_periodic_interval(sd, t1, t2) == [t1, ImgTime(0.2), t2]
+    @test times_from_periodic_interval(sd, t2, t1) == [t2,  ImgTime(0.5), ImgTime(0.6), ImgTime(0.8), t1]
+
+    # test for times with no kinks in between
+    t1 = ImgTime(0.3)
+    t2 = ImgTime(0.4)
+    @test times_from_periodic_interval(sd, t1, t2) == [t1,t2]
+end
+
+@testset "Δ(τ1::ImgTime,τ2::ImgTime)" begin
+    @test Δ(ImgTime(0.5),ImgTime(0.3)) == ImgTime(0.5) - ImgTime(0.3)
+    @test Δ(ImgTime(0.2),ImgTime(0.8)) == ImgTime(1) + ImgTime(0.2) - ImgTime(0.8)
+    @test iszero( Δ(ImgTime(0.8),ImgTime(0.8)) )
+
+    @test float(Δ(ImgTime(0.5),ImgTime(0.3))) ≈ float(ImgTime(0.2))
+end
+
 @testset "Type_1_investigation" begin
     g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
     h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
@@ -329,30 +349,73 @@ function Δdiagonal_interaction_old(c::Configuration, e::Ensemble, orb_a::Orbita
     return Δdi
 end
 
+function Δdiagonal_interaction_old(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, τ1, τ2)
+    Δτ12 = τ2 - τ1
+    if Δτ12 < 0
+        Δτ12 += 1
+    end
+    Δdi = 0
+    occs = occupations(c, τ1)
+    @assert !in(orb_a, occs)
+    for occ in occs
+        if occ.vec in [ orb_a.vec, orb_b.vec ]
+            continue
+        else
+            Δdi += Δτ12 * e.λ * wdiag(occ,orb_a)
+            Δdi -= Δτ12 * e.λ * wdiag(occ,orb_b)
+        end
+    end
+    if isempty(c.kinks)
+        return Δdi
+    end
+    kink_semi_token = searchsortedfirst(c.kinks,τ1)
+    if kink_semi_token == pastendsemitoken(c.kinks)
+        kink_semi_token = startof(c.kinks)
+    end
+    τ_kink,kink = deref((c.kinks,kink_semi_token))
+
+    # The kink at τ1 is already considered in occs.
+    if τ_kink == τ1
+        kink_semi_token = advance((c.kinks,kink_semi_token))
+        if kink_semi_token == pastendsemitoken(c.kinks)
+            kink_semi_token = startof(c.kinks)
+        end
+        τ_kink,kink = deref((c.kinks,kink_semi_token))
+    end
+
+    loop_counter = 0
+
+    while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
+        Δτ = τ2 - τ_kink
+        if Δτ < 0
+            Δτ += 1
+        end
+
+        for occ in [kink.i, kink.j]
+            Δdi += Δτ * e.λ * wdiag(occ,orb_a)
+            Δdi -= Δτ * e.λ * wdiag(occ,orb_b)
+        end
+        for occ in [kink.k, kink.l]
+            Δdi += Δτ * e.λ * wdiag(occ,orb_b)
+            Δdi -= Δτ * e.λ * wdiag(occ,orb_a)
+        end
+
+
+        kink_semi_token = advance((c.kinks,kink_semi_token))
+        if kink_semi_token == pastendsemitoken(c.kinks)
+            kink_semi_token = startof(c.kinks)
+        end
+        τ_kink,kink = deref((c.kinks,kink_semi_token))
+        loop_counter += 1
+    end
+
+    return Δdi
+end
+
+
 @testset "Δdiagonal_interaction: compare with previous implementation" begin
 
     ens = CEnsemble(2.0, 5.680898543560106, 7)# θ: 0.125, λ: 0.09945178864947428
-
-
-    # S = sphere_with_same_spin(OrbitalHEG((0,0,0)),dk=1)
-    # a = OrbitalHEG((-2,0,0))
-    # b = OrbitalHEG((3,0,0))
-    # c = OrbitalHEG((0,0,0))
-    # d = OrbitalHEG((1,0,0))
-    # e = OrbitalHEG((5,9,9))
-    # f = OrbitalHEG((1,1,1))
-    #
-    # g = OrbitalHEG(a.vec + e.vec - f.vec, Up)
-    # h = OrbitalHEG(c.vec + d.vec - g.vec, Up)
-
-    # sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
-    # ImgTime(0.5) => T4(c,d,a,b),
-    # ImgTime(0.6) => T4(b,a,d,c),
-    # ImgTime(0.8) => T4(d,c,b,a) )
-    #
-    #
-    # conf = Configuration(sphere(OrbitalHEG((0,0,0),Up),dk=1),sd)
-
 
     # choose creator orbitals
     i = OrbitalHEG((1,1,1))
@@ -379,14 +442,46 @@ end
 
     @assert all( Set([k,l]) .∈ (occupations(conf,τ1),) ) & all( Set([k,l]) .∈ (occupations(conf,τ2),) ) " the orbitals \n i=$i,\n j=$j,\n k=$k,\n l=$l cannot form a type B kink pair at times ($(float(τ1)), $(float(τ2))) "
 
-
     @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
 
     @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
 
     ### Test 1-particle excitation
     i = OrbitalHEG((-3,0,0))
-    j = b
+    j = OrbitalHEG((0,1,0))
+
+    @test Δdiagonal_interaction(conf, ens, i, j, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ1, τ2)
+
+    @test Δdiagonal_interaction(conf, ens, i, j, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ2, τ1)
 
 
+end
+
+
+@testset "Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)" begin
+
+    i = OrbitalHEG((0,-4,0))
+    j = OrbitalHEG((0,3,1))
+    k = OrbitalHEG((0,0,1))
+    l = OrbitalHEG((0,-1,0))
+
+    τ1 = ImgTime(0.1)
+    τ2 = ImgTime(0.3)
+    τ3 = ImgTime(0.4)
+
+    λ = 0.8
+    β = 0.02
+    N = length(conf.occupations)
+
+    @test Δdiagonal_interaction(conf, CEnsemble(λ, β, N), i, j, k, l, τ2, τ3) ≈ ΔW_diag(i, j, k, l, occupations(conf,τ2)) * (τ3 - τ2) * λ
+
+    @test Δdiagonal_interaction(conf, CEnsemble(λ, β, N), i, j, k, l, τ1, τ3) ≈ ( ΔW_diag(i, j, k, l, occupations(conf,τ1)) * (ImgTime(0.2) - τ1)
+                                                                                + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.2))) * (τ3 - ImgTime(0.2))
+                                                                                ) * λ
+
+    @test Δdiagonal_interaction(conf, CEnsemble(λ, β, N), i, j, k, l, τ3, τ1) ≈ ( ΔW_diag(i, j, k, l, occupations(conf,τ3)) * (ImgTime(0.5) - τ3)
+                                                                                + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.5))) * (ImgTime(0.6) - ImgTime(0.5))
+                                                                                + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.6))) * (ImgTime(0.8) - ImgTime(0.6))
+                                                                                + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.8))) * (ImgTime(1) + τ1 - ImgTime(0.8))
+                                                                                ) * λ
 end

@@ -459,37 +459,29 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
 end
 
 
-
-
-" anti-symmetrized interaction matrix element "
-function wminus(i::Orbital, j::Orbital, k::Orbital, l::Orbital) where {D}
-    @assert ((i != k) && (i != l))
-    @assert ((i.spin == j.spin) == (k.spin == l.spin))
-    @assert(in(i.spin,[k.spin,l.spin]))
-    @assert(i.vec + j.vec == k.vec + l.vec)
-    if i.spin == j.spin
-        @assert(!isinf(abs(kernel(i, k) - kernel(i, l))))
-        return kernel(i, k) - kernel(i, l)
-    elseif i.spin == k.spin
-        @assert(!isinf(abs(kernel(i, k))))
-        return kernel(i, k)
-    elseif i.spin == l.spin
-        @assert(!isinf(abs(kernel(i, l))))
-        return -kernel(i, l)
-    end
-end
-
-wminus(kink::T4) = wminus(kink.i, kink.j, kink.k, kink.l)
-
-
 function offdiagonal_element(e::Ensemble, kink::T4)
     # We sample with the weight of antisymmetrized matrix element but we do not restrict
     # the order of indices of our possible kinks. We therefor need an extra factor 1/4 in the weight-function
-    return 1/4 * e.λ * wminus(kink)
+    # TODO: this function should get explicit arguments i, j, k, l as arguments
+    #       1) to be consistent with Δdiagonal_interaction
+    #       2) method extension to ::T4 is more straightforward with such a function than vice versa
+    # thus, the indices are already passed here so the following lines can be deleted
+    # if the arguments are changed from "kink::T4" to "i, j, k, l"
+    i = kink.i
+    j = kink.j
+    k = kink.k
+    l = kink.l
+    return 1/4 * e.λ * (w(i,j,k,l) - w(i,j,l,k))
 end
 
 
+"""
+    w(i::Orbital, j::Orbital, k::Orbital, l::Orbital)
 
+return the two-particle matrix element of the Coulomb interaction
+zero is returned if momentum or spin is not conserved, in consequence of the Bloch-theorem and the spin kronecker-delta in the plane-spin-wave basis
+an assertion catches the diverging contribution
+"""
 function w(i::Orbital, j::Orbital, k::Orbital, l::Orbital) # TODO: use type-declaration here in case multiple particle-species exist ?
     if !iszero(i.vec + j.vec - k.vec - l.vec) | (i.spin != k.spin) | (j.spin != l.spin)# momentum and spin conservation
         return 0.0
@@ -543,103 +535,59 @@ function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
     end
 end
 
+"""
+return a list of all times of kinks with τ ∈ (τ1,τ2) if τ1 < τ2 or τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2
+in the periodic ordering suggested by the relation of the first time-argument τ1 to the second time-argument τ2
+"""
+function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTime, τ2::ImgTime)
+    if τ1 > τ2# interval is periodically continued
+        vcat([τ1],
+            collect(keys( filter(x -> τ1 < first(x), ck) )),
+            collect(keys( filter(x -> first(x) < τ2, ck) )),
+            [τ2])
+    else# this also catches τ1 == τ2
+        vcat([τ1], collect(keys( filter(x -> τ1 < first(x) < τ2, ck) )), [τ2])
+    end
+end
+
+" periodic difference of two imaginary times "
+Δ(τ1::ImgTime,τ2::ImgTime) = τ1 < τ2 ? ImgTime(1) + τ1 - τ2 : τ1 - τ2
+
+
+"""
+    Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)
+
+calculate the change in the diagonal interaction many-body matrix element
+due to a change in the occupations given by creating two orbitals i and j
+and annihilating two orbitals k, l in the interval (τ1, τ2)
+This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
+i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
+"""
 function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
 
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
 
-    kinks_in_τ1_τ2 = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+    τs = times_from_periodic_interval(c.kinks, τ1, τ2)
 
-    if isempty(kinks_in_τ1_τ2) # if there are no kinks in between τ1, τ2 or if c.kinks is empty
-        # periodic difference of the times
-        if τ1 < τ2
-            Δτ = τ2 - τ1
-        elseif τ1 > τ2
-            Δτ = 1 + τ1 - τ2
-        end
-
-        # if no kinks occur in the interval where the occupations differ, the change occurs on the entire time-interval Δτ
-        # the factor λ is the coupling constant
-        return ΔW_diag(i, j, k, l, occupations(c,τ1)) * e.λ * Δτ
-    else
-        ## calculate first interval from τ1 to next kink in between τ1 and τ2
-        t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
-        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) between τ1 and τ2 if !isempty(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
-
-        # periodic difference of the times
-        if τ1 < t2
-            Δτ = t2 - τ1
-        elseif τ1 > t2
-            Δτ = 1 + τ1 - t2
-        end
-
-        δ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δτ
-
-        ## loop over the remaining intervals between τ1 and τ2
-        for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
-            t1 = τ
-            t2 = first(next(c.kinks,t1))# get time of the next kink. for the last τ in the loop, this will be τ2
-
-            # periodic difference of the times
-            if t1 < t2
-                Δτ = t2 - t1
-            elseif τ1 > τ2
-                Δτ = 1 + t1 - t2
-            end
-
-            δ += ΔW_diag(i, j, k, l, occupations(c,τ)) * Δτ
-        end
-        return δ * e.λ# the factor λ is the coupling constant
-    end
+    e.λ * sum([ ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) ])
 end
 
+"""
+    Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)
 
+calculate the change in the diagonal interaction many-body matrix element
+due to a change in the occupations given by creating an orbital i
+and annihilating an orbital j in the interval (τ1, τ2)
+This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
+i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
+"""
 function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
 
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
 
-    kinks_in_τ1_τ2 = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+    τs = times_from_periodic_interval(c.kinks, τ1, τ2)
 
-    if isempty(kinks_in_τ1_τ2) # if there are no kinks in between τ1, τ2 or if c.kinks is empty
-        # periodic difference of the times
-        if τ1 < τ2
-            Δτ = τ2 - τ1
-        elseif τ1 > τ2
-            Δτ = 1 + τ1 - τ2
-        end
-
-        # if no kinks occur in the interval where the occupations differ, the change occurs on the entire time-interval Δτ
-        # the factor λ is the coupling constant
-        return ΔW_diag(i, j, occupations(c,τ1)) * e.λ * Δτ
-    else
-        ## calculate first interval from τ1 to next kink in between τ1 and τ2
-        t2 = first(first(kinks_in_τ1_τ2))# time of the first kink next to τ1
-        @assert (τ1 < t2) | (t2 < τ2)# this must be (periodically) between τ1 and τ2 if !isempty(kinks_in_τ1_τ2) (no kinks in between) TODO: is there a better expression to "assert" this?
-
-        # periodic difference of the times
-        if τ1 < t2
-            Δτ = t2 - τ1
-        elseif τ1 > t2
-            Δτ = 1 + τ1 - t2
-        end
-
-        δ = ΔW_diag(i, j, occupations(c,τ1)) * Δτ
-
-        ## loop over the remaining intervals between τ1 and τ2
-        for τ in keys(kinks_in_τ1_τ2)# does NOT contain τ1 and neither τ2
-            t1 = τ
-            t2 = first(next(c.kinks,t1))# get time of the next kink. for the last τ in the loop, this will be τ2
-
-            # periodic difference of the times
-            if t1 < t2
-                Δτ = t2 - t1
-            elseif τ1 > τ2
-                Δτ = 1 + t1 - t2
-            end
-
-            δ += ΔW_diag(i, j, occupations(c,τ)) * Δτ
-        end
-        return δ * e.λ # the factor λ is the coupling constant
-    end
+    e.λ * sum([ ΔW_diag(i, j, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) ])
 end
 
 
@@ -653,8 +601,8 @@ used for the calculation the sign of the weight function
 """
 function sign_offdiagonal_product(c::Configuration)
     sign_ofd_prod = 1
-    for kink in values(c.kinks)
-        sign_ofd_prod *= sign(wminus(kink))
+    for ϰ in values(c.kinks)
+        sign_ofd_prod *= sign(w(ϰ.i, ϰ.j, ϰ.k, ϰ.l) - w(ϰ.i, ϰ.j, ϰ.l, ϰ.k))
     end
     return sign_ofd_prod
 end
