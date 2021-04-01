@@ -488,11 +488,11 @@ w_aux(i, j, k, l) = i.vec == k.vec ? 0.0 : w(i,j,k,l)
 function ΔW_diag(i, j, k, l, occ)
     @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum([ w_aux(ν,k,k,ν) + w_aux(ν,l,l,ν) for ν in drop(occ, Set([k,l])) ])# interactions of mean field with k and l
+    Δ = sum( w_aux(ν,k,k,ν) + w_aux(ν,l,l,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with k and l
     Δ += w(k,l,l,k)# interaction between k and l
     # contributions due to mean field interactions of the created orbitals
     # the annihilator orbitals k, l are not in the new occupation
-    Δ -= sum([ w_aux(ν,i,i,ν) + w_aux(ν,j,j,ν) for ν in drop(occ, Set([k,l])) ])# interactions of mean field with i and j
+    Δ -= sum( w_aux(ν,i,i,ν) + w_aux(ν,j,j,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with i and j
     Δ -= w(i,j,j,i)# interaction between i and j
     return Δ
 end
@@ -503,10 +503,10 @@ end
     and in the annihlation of one orbitals j """
 function ΔW_diag(i, j, occ)
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum([ w_aux(ν,j,j,ν) for ν in drop(occ, j) ])# interactions of mean field with k
+    Δ = sum( w_aux(ν,j,j,ν) for ν in drop(occ, j) )# interactions of mean field with k
     # contributions due to mean field interactions of the created orbitals
     @assert (i ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
-    Δ -= sum([ w_aux(ν,i,i,ν) for ν in drop(occ, j) ])
+    Δ -= sum( w_aux(ν,i,i,ν) for ν in drop(occ, j) )
 end
 
 " return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2 "
@@ -552,7 +552,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
 
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
 
-    e.λ * sum([ ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) ])
+    e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
 end
 
 """
@@ -570,7 +570,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# 
 
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
 
-    e.λ * sum([ ΔW_diag(i, j, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) ])
+    e.λ * sum( ΔW_diag(i, j, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
 end
 
 
