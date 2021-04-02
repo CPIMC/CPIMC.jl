@@ -1,5 +1,17 @@
 export Configuration, Orbital, Kink, T2, T4, ImgTime
 
+@doc raw"""
+    T2{T}
+
+Parametric type representing a 1-particle excitation by specifying
+a transition from one state (annihilator) to another (creator).
+In the occupation number representation, this reads
+
+    `a^{\dagger}_i a_j`
+
+with a creator orbital `i` and an annihilator orbital `j`.
+The single-particle basis is represented by the type parameter T.
+"""
 struct T2{T}
   " creator "
   i :: T
@@ -8,6 +20,18 @@ struct T2{T}
   j :: T
 end
 
+@doc raw"""
+    T4{T}
+
+Parametric type representing a 2-particle excitation by specifying
+a transition from two state (annihilators) to two other (creator) states.
+In the occupation number representation, this reads
+
+    `a^{\dagger}_i a^{\dagger}_j a_k a_l`
+
+with creator orbitals `i`,`j` and an annihilator orbitals `k`, `l`.
+The single-particle basis is represented by the type parameter T.
+"""
 struct T4{T}
   " creator "
   i :: T
@@ -18,6 +42,19 @@ struct T4{T}
   l :: T
 end
 
+"""
+    const Kink{T}
+
+Parametric type representing either a one- or a two-particle scattering event
+given by types 'T2{T}' and 'T4{T}', respectively.
+This term is motivated by the geometrical interpretation of a path
+in Configuration Path Integral Monte Carlo formulation of the partition function
+in occupation number representation.
+Discrete occupations are given by horizontal lines of (quasi-)particles
+occupying the corresponding single-particle states and where transitions between
+these states are thus indicated by vertical 'kinks' connecting the orbital lines
+that are part of the transition.
+"""
 const Kink{T} = Union{T2{T},T4{T}}
 
 " outer constructor method to construct a T2 kink, inferring the type parameter from the arguments "
@@ -28,16 +65,31 @@ Kink(i,j,k,l) = T4(i,j,k,l)
     This is useful for automatic conversion when looping over SortedDict{S,Kink{T}} """
 Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
 
-" return a set of all orbitals which are affected by a T2 kink "
+"""
+    orbs(::T2)
+
+return a set of all orbitals which are affected by a T2 kink
+"""
 orbs(x::T2) = Set([k.i, k.j])
 
-" return a set of all orbitals which are affected by a T4 kink "
+"""
+    orbs(x::T4)
+
+return a set of all orbitals which are affected by a T4 kink """
 orbs(x::T4) = Set([x.i, x.j, x.k, x.l])
 
-" return a set of the two creators which are affected by a T4 kink "
+"""
+    creators(::T4)
+
+return a set of the two creators which are affected by a T4 kink
+"""
 creators(x::T4) = Set([x.i, x.j])
 
-" return a set of the two annihilators which are affected by a T4 kink "
+"""
+    annihilators(x::T4)
+
+return a set of the two annihilators which are affected by a T4 kink
+"""
 annihilators(x::T4) = Set([x.k, x.l])
 
 """ type alias for imaginary time
@@ -78,10 +130,29 @@ basis(c::Configuration{T}) where T = T
 " abstract type for single-particle basis states, implementation is required for each model "
 abstract type Orbital end
 
-" apply a T4 kink to a set of basis states "
+@doc raw"""
+    excite(::Set{T}, ::T4{T}) where T
+
+'Apply a T4 kink to a set of basis states', i.e.
+return a set of basis states where the states specified by the creators of the kink are added
+and the states specified by the annihilators of the kink are dropped from the given set of basis states.
+This has the physical meaning of a two-particle scattering event where
+two (quasi-)particles in a many-body state change the single-particle states they occupy.
+In occupation number representation this reads
+
+    `a^{\dagger}_i a^{\dagger}_j a_k a_l |\{n\}\rangle`
+
+for creator orbitals `i` and `j` and annihilator orbitals `k` and `l`.
+This function assumes fermionic particle statistics,
+
+    `a^{\dagger}_i a^{\dagger}_i = a_i a_i = 0` (Pauli principle)
+
+i.e. the target (creator) states must not be occupied and
+the initial (annihilator) states must be occupied in the given set of states.
+"""
 function excite(o::Set{T}, κ::T4{T}) where T
-  @assert ( in(κ.k, o) & in(κ.l, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied. (Pauli-Principle)"
-  @assert ( !in(κ.i, o) & !in(κ.j, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the creators $(κ.i), $(κ.j) is already occupied. (Pauli-Principle)"
+  @assert ( in(κ.k, o) & in(κ.l, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied."
+  @assert ( !in(κ.i, o) & !in(κ.j, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the creators $(κ.i), $(κ.j) is already occupied. (Pauli principle)"
   union(setdiff(o, Set([κ.k,κ.l])), Set([κ.i, κ.j]))
 end
 
