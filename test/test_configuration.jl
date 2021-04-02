@@ -224,7 +224,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
 
     # collect diagonal interaction energy at τ1
     for occ in occs
-        if occ.vec in [ orb_a.vec, orb_b.vec, orb_c.vec, orb_d.vec ]
+        if occ in [ orb_a, orb_b, orb_c, orb_d ]
             continue
         else
             for orb in [orb_a, orb_b]
@@ -378,6 +378,7 @@ end
     # chose times with no kink in between
     τ1 = ImgTime(0.3)
     τ2 = ImgTime(0.4)
+    @test ΔWdiag_element(conf, ens, i, k, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, k, τ1, τ2)
 
     @assert all( Set([k,l]) .∈ (occupations(conf,τ1),) ) & all( Set([k,l]) .∈ (occupations(conf,τ2),) ) " the orbitals \n i=$i,\n j=$j,\n k=$k,\n l=$l cannot form a type B kink pair at times ($(float(τ1)), $(float(τ2))) "
 
@@ -395,12 +396,24 @@ end
 
     @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1)
 
+    @test ΔWdiag_element(conf, ens, i, k, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, k, τ1, τ2)
     # Test for different spin case
     i = OrbitalHEG((1,1,1),Down)
     k = OrbitalHEG((0,-1,0), Down)
     @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
     @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum is not conserved for this excitation "
 
+    @test ΔWdiag_element(conf, ens, i, k, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, k, τ1, τ2)
+
+    @test ΔWdiag_element(conf, ens, j, l, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, j, l, τ1, τ2)
+
+    @test wdiag(i,j) == 0
+    @test wdiag(k,l) == 0
+    @test w(i,j,j,i) == 0
+    @test w(k,l,l,k) == 0
+
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ (ΔWdiag_element(conf, ens, i, k, τ1, τ2) + ΔWdiag_element(conf, ens, j, l, τ1, τ2))
+    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2) ≈ (ΔWdiag_element(conf, ens, i, k, τ1, τ2) + ΔWdiag_element(conf, ens, j, l, τ1, τ2))
     @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2)
 
 

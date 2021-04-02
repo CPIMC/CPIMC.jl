@@ -585,6 +585,46 @@ end
 """ change in the kinetic many body matrix element due to creating i, j and annihilating k,l """
 ΔT_element(i,j,k,l) = energy(i) + energy(j) - energy(k) - energy(l)
 
+
+#Old Versions of ΔWdiag_element
+# """
+#     ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)
+#
+# calculate the change in the diagonal interaction many-body matrix element
+# due to a change in the occupations given by creating two orbitals i and j
+# and annihilating two orbitals k, l in the interval (τ1, τ2)
+# This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
+# i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
+# """# TODO: ΔWdiag_element
+# function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
+#
+#     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
+#
+#     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
+#
+#     e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
+# end
+#
+# """
+#     ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)
+#
+# calculate the change in the diagonal interaction many-body matrix element
+# due to a change in the occupations given by creating an orbital i
+# and annihilating an orbital j in the interval (τ1, τ2)
+# This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
+# i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
+# """
+# function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
+#
+#     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
+#
+#     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
+#
+#     e.λ * sum( ΔW_diag(i, j, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
+# end
+
+
+
 """
     ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)
 
@@ -594,13 +634,17 @@ and annihilating two orbitals k, l in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
 """# TODO: ΔWdiag_element
-function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
-
+function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that i, j are creators and k, l are annihilators. Use Step instead ?
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
-
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
-
-    e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
+    Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+    ΔWdiag_τ1_occ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δ(τ2,τ1)
+    if isempty(Ks)
+        return e.λ * ΔWdiag_τ1_occ
+    else
+        ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(τ2,t1) for t1 in τs[2:end-1])
+        return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
+    end
 end
 
 """
@@ -613,12 +657,16 @@ This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
 """
 function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
-
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
-
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
-
-    e.λ * sum( ΔW_diag(i, j, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
+    Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+    ΔWdiag_τ1_occ = ΔW_diag(i, j, occupations(c,τ1)) * Δ(τ2,τ1)
+    if isempty(Ks)
+        return e.λ * ΔWdiag_τ1_occ
+    else
+        ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(τ2,t1) for t1 in τs[2:end-1])
+        return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
+    end
 end
 
 
