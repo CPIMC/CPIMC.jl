@@ -91,7 +91,7 @@ end
 apply_step(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
 
 " change configuration c as given by a list of subsequent Steps "
-apply_step(c::Configuration, Δ::Array{Step,1}) = reduce(apply_step, Δ, init=c)
+apply_step(c::Configuration, Δ::Array{Step,1}) = foldl(apply_step, Δ, init=c)
 
 " empty Step: do nothing "
 function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})

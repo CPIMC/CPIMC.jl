@@ -101,7 +101,7 @@ end
 
 " Return the occupied orbitals after applying all kinks to initial occupation. "
 function occupations(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
-  reduce(excite, kinks; init=o)
+  foldl(excite, kinks; init=o)
 end
 
 " Return the occupied orbitals to the right of τ ."
