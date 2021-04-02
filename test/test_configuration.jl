@@ -205,11 +205,11 @@ wminus(kink::T4) = wminus(kink.i, kink.j, kink.k, kink.l)# for comparison of Δd
 
 
 """
-    Δdiagonal_interaction_old(c::Configuration, e::Ensemble, left_kink::T4, τ1, τ2)
+    Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, orb_c::Orbital, orb_d::Orbital, τ1, τ2)
 
 old implementation of this function
 """
-function Δdiagonal_interaction_old(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, orb_c::Orbital, orb_d::Orbital, τ1, τ2)
+function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, orb_c::Orbital, orb_d::Orbital, τ1, τ2)
     Δτ12 = τ2 - τ1
 
     if Δτ12 < 0
@@ -298,70 +298,7 @@ function Δdiagonal_interaction_old(c::Configuration, e::Ensemble, orb_a::Orbita
 end
 
 " old implementation of this function "
-function Δdiagonal_interaction_old(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, τ1, τ2)
-    Δτ12 = τ2 - τ1
-    if Δτ12 < 0
-        Δτ12 += 1
-    end
-    Δdi = 0
-    occs = occupations(c, τ1)
-    @assert !in(orb_a, occs)
-    for occ in occs
-        if occ.vec in [ orb_a.vec, orb_b.vec ]
-            continue
-        else
-            Δdi += Δτ12 * e.λ * wdiag(occ,orb_a)
-            Δdi -= Δτ12 * e.λ * wdiag(occ,orb_b)
-        end
-    end
-    if isempty(c.kinks)
-        return Δdi
-    end
-    kink_semi_token = searchsortedfirst(c.kinks,τ1)
-    if kink_semi_token == pastendsemitoken(c.kinks)
-        kink_semi_token = startof(c.kinks)
-    end
-    τ_kink,kink = deref((c.kinks,kink_semi_token))
-
-    # The kink at τ1 is already considered in occs.
-    if τ_kink == τ1
-        kink_semi_token = advance((c.kinks,kink_semi_token))
-        if kink_semi_token == pastendsemitoken(c.kinks)
-            kink_semi_token = startof(c.kinks)
-        end
-        τ_kink,kink = deref((c.kinks,kink_semi_token))
-    end
-
-    loop_counter = 0
-
-    while ((τ1 < τ_kink < τ2) | (τ_kink < τ2 < τ1) | (τ2 < τ1 < τ_kink)) & (loop_counter < length(c.kinks))
-        Δτ = τ2 - τ_kink
-        if Δτ < 0
-            Δτ += 1
-        end
-
-        for occ in [kink.i, kink.j]
-            Δdi += Δτ * e.λ * wdiag(occ,orb_a)
-            Δdi -= Δτ * e.λ * wdiag(occ,orb_b)
-        end
-        for occ in [kink.k, kink.l]
-            Δdi += Δτ * e.λ * wdiag(occ,orb_b)
-            Δdi -= Δτ * e.λ * wdiag(occ,orb_a)
-        end
-
-
-        kink_semi_token = advance((c.kinks,kink_semi_token))
-        if kink_semi_token == pastendsemitoken(c.kinks)
-            kink_semi_token = startof(c.kinks)
-        end
-        τ_kink,kink = deref((c.kinks,kink_semi_token))
-        loop_counter += 1
-    end
-
-    return Δdi
-end
-
-function Δdiagonal_interaction_old(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, τ1, τ2)
+function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, τ1, τ2)
     Δτ12 = τ2 - τ1
     if Δτ12 < 0
         Δτ12 += 1
@@ -444,9 +381,9 @@ end
 
     @assert all( Set([k,l]) .∈ (occupations(conf,τ1),) ) & all( Set([k,l]) .∈ (occupations(conf,τ2),) ) " the orbitals \n i=$i,\n j=$j,\n k=$k,\n l=$l cannot form a type B kink pair at times ($(float(τ1)), $(float(τ2))) "
 
-    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2)
 
-    @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1)
 
     # choose times with one kink in between
     τ1 = ImgTime(0.1)
@@ -454,9 +391,9 @@ end
 
     @assert all( Set([k,l]) .∈ (occupations(conf,τ1),) ) & all( Set([k,l]) .∈ (occupations(conf,τ2),) ) " the orbitals \n i=$i,\n j=$j,\n k=$k,\n l=$l cannot form a type B kink pair at times ($(float(τ1)), $(float(τ2))) "
 
-    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2)
 
-    @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1)
 
     # Test for different spin case
     i = OrbitalHEG((1,1,1),Down)
@@ -464,16 +401,16 @@ end
     @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
     @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum is not conserved for this excitation "
 
-    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2)
 
 
     ### Test 1-particle excitation
     i = OrbitalHEG((-3,0,0))
     j = OrbitalHEG((0,1,0))
 
-    @test ΔWdiag_element(conf, ens, i, j, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, τ1, τ2)
 
-    @test ΔWdiag_element(conf, ens, i, j, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, i, j, τ2, τ1) ≈ Δdiagonal_interaction(conf, ens, i, j, τ2, τ1)
 
 
 end
