@@ -28,16 +28,31 @@ Kink(i,j,k,l) = T4(i,j,k,l)
     This is useful for automatic conversion when looping over SortedDict{S,Kink{T}} """
 Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
 
-" return a set of all orbitals which are affected by a T2 kink "
+"""
+    orbs(::T2)
+
+return a set of all orbitals which are affected by a T2 kink
+"""
 orbs(x::T2) = Set([k.i, k.j])
 
-" return a set of all orbitals which are affected by a T4 kink "
+"""
+    orbs(x::T4)
+
+return a set of all orbitals which are affected by a T4 kink """
 orbs(x::T4) = Set([x.i, x.j, x.k, x.l])
 
-" return a set of the two creators which are affected by a T4 kink "
+"""
+    creators(::T4)
+
+return a set of the two creators which are affected by a T4 kink
+"""
 creators(x::T4) = Set([x.i, x.j])
 
-" return a set of the two annihilators which are affected by a T4 kink "
+"""
+    annihilators(x::T4)
+
+return a set of the two annihilators which are affected by a T4 kink
+"""
 annihilators(x::T4) = Set([x.k, x.l])
 
 """ type alias for imaginary time
@@ -78,10 +93,29 @@ basis(c::Configuration{T}) where T = T
 " abstract type for single-particle basis states, implementation is required for each model "
 abstract type Orbital end
 
-" apply a T4 kink to a set of basis states "
+@doc raw"""
+    excite(::Set{T}, ::T4{T}) where T
+
+'Apply a T4 kink to a set of basis states', i.e.
+return a set of basis states where the states specified by the creators of the kink are added
+and the states specified by the annihilators of the kink are dropped from the given set of basis states.
+This has the physical meaning of a two-particle scattering event where
+two (quasi-)particles in a many-body state change the single-particle states they occupy.
+In occupation number representation this reads
+
+    `a^{\dagger}_i a^{\dagger}_j a_k a_l |\{n\}\rangle`
+
+for creator orbitals `i` and `j` and annihilator orbitals `k` and `l`.
+This function assumes fermionic particle statistics,
+
+    `a^{\dagger}_i a^{\dagger}_i = a_i a_i = 0` (Pauli principle)
+
+i.e. the target (creator) states must not be occupied and
+the initial (annihilator) states must be occupied in the given set of states.
+"""
 function excite(o::Set{T}, κ::T4{T}) where T
-  @assert ( in(κ.k, o) & in(κ.l, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied. (Pauli-Principle)"
-  @assert ( !in(κ.i, o) & !in(κ.j, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the creators $(κ.i), $(κ.j) is already occupied. (Pauli-Principle)"
+  @assert ( in(κ.k, o) & in(κ.l, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied."
+  @assert ( !in(κ.i, o) & !in(κ.j, o) ) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the creators $(κ.i), $(κ.j) is already occupied. (Pauli principle)"
   union(setdiff(o, Set([κ.k,κ.l])), Set([κ.i, κ.j]))
 end
 
