@@ -51,6 +51,15 @@ ImgTime(t::Tuple{Nothing,Nothing}) = (ImgTime(0), ImgTime(1))
 " outer constructor method for a Tuple{ImgTime,ImgTime} from Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}} which returns the ImgTimes of the Pairs as Tuple{ImgTime,ImgTime} "
 ImgTime(t::Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}}) = (first(first(t)), first(last(t)))
 
+@doc raw"""
+    Δ(::ImgTime,::ImgTime)
+
+return the periodic difference of two imaginary times
+    `Δ(τ1,τ2) = τ1 - τ2` if `τ1 >= τ2` and
+    `Δ(τ1,τ2) = 1 - (τ2 - τ1) = 1 + τ1 - τ2` else
+"""
+Δ(τ1::ImgTime,τ2::ImgTime) = τ1 < τ2 ? ImgTime(1) + τ1 - τ2 : τ1 - τ2
+
 " multi-particle trajectory using single particle states with type T "
 mutable struct Configuration{T}
   " set of orbitals occupied at τ=0 "
@@ -388,6 +397,7 @@ ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_o
 
 """
     is_type_1(left_kink::T4, right_kink::T4)
+
 Returns True if left_kink and right_kink are entangled in a Type-1 way.
 This does not check wether the two kinks are neighbouring."""
 function is_type_1(left_kink::T4, right_kink::T4)
@@ -395,14 +405,15 @@ function is_type_1(left_kink::T4, right_kink::T4)
         (length(intersect(Set([left_kink.k, left_kink.l]), Set([right_kink.i, right_kink.j]))) == 0)) ||
     ((length(intersect(Set([left_kink.i, left_kink.j]),Set([right_kink.k, right_kink.l]))) == 0) &
           (length(intersect(Set([left_kink.k, left_kink.l]), Set([right_kink.i, right_kink.j]))) == 1))
-    return(true)
+    return true
   else
-    return(false)
+    return false
   end
 end
 
 """
     right_type_1_chain_length(ck, τ, count = 0)
+
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the right.
 """
 function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
@@ -418,6 +429,7 @@ end
 
 """
     left_type_1_chain_length(ck, τ, count = 0)
+
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
 """
 function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
@@ -432,10 +444,11 @@ function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τ
 end
 
 """
-    longest_type_1_chain_length(ck) where T
+    longest_type_1_chain_length(ck)
+
 Returns the longest chain of type-1-entaglements in ck.
 """
-function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T
+function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink})
     longest_length = 0
     for (τ, kink) in ck
         longest_length = max(right_type_1_chain_length(ck, τ),
@@ -445,10 +458,11 @@ function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T
 end
 
 """
-    longest_type_1_chain_length(ck) where T
+    longest_type_1_chain_length(ck)
+
 Returns the longest chain of type-1-entaglements in ck.
 """
-function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
+function right_type_1_count(ck::SortedDict{ImgTime,<:Kink})
     count = 0
     for (τ, kink) in ck
         if is_type_1(kink, last(next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])),τ)))
@@ -459,26 +473,57 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
 end
 
 
-function offdiagonal_element(e::Ensemble, kink::T4)
+@doc raw"""
+    wminus(i,j,k,l)
+
+return the difference of the two-particle matrix element with the same but the last two indices transposed
+antisymmetric difference of the two-particle matrix elements:
+    `w^-_{ijkl} = w_{ijkl} - w_{ijlk}`
+This is called the antisymmetrized two-particle matrix element.
+This is an abbreviation for these terms arising in the
+Slater-Condon rules for the calculation of the many-body matrix elements
+via the one- and two-particle matrix elements of the underlying single-particle basis.
+"""
+wminus(i,j,k,l) = w(i,j,k,l) - w(i,j,l,k)
+
+
+@doc raw"""
+    Woffdiag_element(::Ensemble, ::Orbital, ::Orbital, ::Orbital, ::Orbital)
+
+Return the offdiagonal many body matrix element of the interaction operator
+
+    `\frac{1}{4} ( w_{ijkl} - w_{ijlk} ) ( \pm \braket{\tilde{\onvv} | \onvv^{ij}_{kl}} )`
+
+for an excitation given by creating orbitals i,j and annihilating orbitals k, l
+as given by the Slater-Condon rules
+"""
+function Woffdiag_element(e::Ensemble, i::Orbital, j::Orbital, k::Orbital, l::Orbital)
     # We sample with the weight of antisymmetrized matrix element but we do not restrict
     # the order of indices of our possible kinks. We therefor need an extra factor 1/4 in the weight-function
-    # TODO: this function should get explicit arguments i, j, k, l as arguments
-    #       1) to be consistent with Δdiagonal_interaction
-    #       2) method extension to ::T4 is more straightforward with such a function than vice versa
-    # thus, the indices are already passed here so the following lines can be deleted
-    # if the arguments are changed from "kink::T4" to "i, j, k, l"
-    i = kink.i
-    j = kink.j
-    k = kink.k
-    l = kink.l
-    return 1/4 * e.λ * (w(i,j,k,l) - w(i,j,l,k))
+    1/4 * e.λ * wminus(i,j,k,l)
 end
 
+Woffdiag_element(e::Ensemble, kink::T4) = Woffdiag_element(e, kink.i, kink.j, kink.k, kink.l)
 
-## This function can be redefined if the q=0 component is included: w_aux(i, j, k, l) = w(i, j, k, l)
-""" helper function for the calculation of the many-body diagonal interaction matrix element
-    return 0 for the (divergent) term of equal momenta of i and k """
-w_aux(i, j, k, l) = i.vec == k.vec ? 0.0 : w(i,j,k,l)
+"""
+    ΔWoffdiag_element(e::Ensemble, itr, itr)
+
+return the change in the offdiagonal many body matrix element of the interaction operator
+given by adding the kinks in the first iterable and removing the kinks in the second iterable
+
+both arguments `itr` are required to be iterables containing kinks
+"""
+function ΔWoffdiag_element(e::Ensemble, add_kinks, drop_kinks)
+    if isempty(drop_kinks)
+        prod(Woffdiag_element(e, k) for k in add_kinks)
+    elseif isempty(add_kinks)
+        1.0 / prod(Woffdiag_element(e, k) for k in drop_kinks)
+    else
+        prod(Woffdiag_element(e, k) for k in add_kinks) / prod(Woffdiag_element(e, k) for k in drop_kinks)
+    end
+end
+
+ΔWoffdiag_element(e::Ensemble, add_kinks::SortedDict{ImgTime,<:Kink}, drop_kinks::SortedDict{ImgTime,<:Kink}) = ΔWoffdiag_element(e, values(add_kinks), values(drop_kinks))
 
 
 """ change in the diagonal interaction matrix element due to a change in the occupation occ
@@ -488,11 +533,11 @@ w_aux(i, j, k, l) = i.vec == k.vec ? 0.0 : w(i,j,k,l)
 function ΔW_diag(i, j, k, l, occ)
     @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum( w_aux(ν,k,k,ν) + w_aux(ν,l,l,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with k and l
+    Δ = sum( w(ν,k,k,ν) + w(ν,l,l,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with k and l
     Δ += w(k,l,l,k)# interaction between k and l
     # contributions due to mean field interactions of the created orbitals
     # the annihilator orbitals k, l are not in the new occupation
-    Δ -= sum( w_aux(ν,i,i,ν) + w_aux(ν,j,j,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with i and j
+    Δ -= sum( w(ν,i,i,ν) + w(ν,j,j,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with i and j
     Δ -= w(i,j,j,i)# interaction between i and j
     return Δ
 end
@@ -502,14 +547,16 @@ end
     the change in the occupation is assumed to consist in a creation of one orbitals i
     and in the annihlation of one orbitals j """
 function ΔW_diag(i, j, occ)
-    # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum( w_aux(ν,j,j,ν) for ν in drop(occ, j) )# interactions of mean field with k
-    # contributions due to mean field interactions of the created orbitals
     @assert (i ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
-    Δ -= sum( w_aux(ν,i,i,ν) for ν in drop(occ, j) )
+    # contributions due to mean field interactions of the annihilated orbitals
+    Δ = sum( w(ν,j,j,ν) for ν in drop(occ, j) )# interactions of mean field with k
+    # contributions due to mean field interactions of the created orbitals
+    Δ -= sum( w(ν,i,i,ν) for ν in drop(occ, j) )
 end
 
-" return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2 "
+"""
+return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2
+"""
 function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
     if τ1 > τ2# interval is periodically continued
         filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
@@ -533,20 +580,21 @@ function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTi
     end
 end
 
-" periodic difference of two imaginary times "
-Δ(τ1::ImgTime,τ2::ImgTime) = τ1 < τ2 ? ImgTime(1) + τ1 - τ2 : τ1 - τ2
+### convention: all Δelement represent only the difference in the matrix elements will be used as exp(-Δ) for the weight change
 
+""" change in the kinetic many body matrix element due to creating i, j and annihilating k,l """
+ΔT_element(i,j,k,l) = energy(i) + energy(j) - energy(k) - energy(l)
 
 """
-    Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)
+    ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)
 
 calculate the change in the diagonal interaction many-body matrix element
 due to a change in the occupations given by creating two orbitals i and j
 and annihilating two orbitals k, l in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
-"""
-function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
+"""# TODO: ΔWdiag_element
+function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
 
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
 
@@ -556,7 +604,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, 
 end
 
 """
-    Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)
+    ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)
 
 calculate the change in the diagonal interaction many-body matrix element
 due to a change in the occupations given by creating an orbital i
@@ -564,7 +612,7 @@ and annihilating an orbital j in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
 """
-function Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
+function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
 
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
 
@@ -585,7 +633,7 @@ used for the calculation the sign of the weight function
 function sign_offdiagonal_product(c::Configuration)
     sign_ofd_prod = 1
     for ϰ in values(c.kinks)
-        sign_ofd_prod *= sign(w(ϰ.i, ϰ.j, ϰ.k, ϰ.l) - w(ϰ.i, ϰ.j, ϰ.l, ϰ.k))
+        sign_ofd_prod *= sign(wminus(ϰ.i, ϰ.j, ϰ.k, ϰ.l))
     end
     return sign_ofd_prod
 end

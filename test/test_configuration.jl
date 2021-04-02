@@ -150,6 +150,18 @@ end
 end
 
 
+@testset "ΔWoffdiag_element" begin
+
+    ens = CEnsemble(2.0, 5.680898543560106, 7)# θ: 0.125, λ: 0.09945178864947428
+
+    t1 = ImgTime(0.3)
+    t2 = ImgTime(0.7)
+    τ3 = ImgTime(0.9)
+
+    @test ΔWoffdiag_element(ens, kinks_from_periodic_interval(sd, ImgTime(0.3), ImgTime(0.9)), kinks_from_periodic_interval(sd, ImgTime(0.3), ImgTime(0.7))) ≈ Woffdiag_element(ens, d,c,b,a)
+end
+
+
 
 
 
@@ -432,9 +444,9 @@ end
 
     @assert all( Set([k,l]) .∈ (occupations(conf,τ1),) ) & all( Set([k,l]) .∈ (occupations(conf,τ2),) ) " the orbitals \n i=$i,\n j=$j,\n k=$k,\n l=$l cannot form a type B kink pair at times ($(float(τ1)), $(float(τ2))) "
 
-    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
 
-    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
 
     # choose times with one kink in between
     τ1 = ImgTime(0.1)
@@ -442,9 +454,9 @@ end
 
     @assert all( Set([k,l]) .∈ (occupations(conf,τ1),) ) & all( Set([k,l]) .∈ (occupations(conf,τ2),) ) " the orbitals \n i=$i,\n j=$j,\n k=$k,\n l=$l cannot form a type B kink pair at times ($(float(τ1)), $(float(τ2))) "
 
-    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
 
-    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ2, τ1)
 
     # Test for different spin case
     i = OrbitalHEG((1,1,1),Down)
@@ -452,22 +464,22 @@ end
     @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
     @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum is not conserved for this excitation "
 
-    @test Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, k, l, τ1, τ2)
 
 
     ### Test 1-particle excitation
     i = OrbitalHEG((-3,0,0))
     j = OrbitalHEG((0,1,0))
 
-    @test Δdiagonal_interaction(conf, ens, i, j, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, i, j, τ1, τ2) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ1, τ2)
 
-    @test Δdiagonal_interaction(conf, ens, i, j, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, i, j, τ2, τ1) ≈ Δdiagonal_interaction_old(conf, ens, i, j, τ2, τ1)
 
 
 end
 
 
-@testset "Δdiagonal_interaction(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)" begin
+@testset "ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)" begin
 
     i = OrbitalHEG((0,-4,0))
     j = OrbitalHEG((0,3,1))
@@ -482,13 +494,13 @@ end
     β = 0.02
     N = length(conf.occupations)
 
-    @test Δdiagonal_interaction(conf, CEnsemble(λ, β, N), i, j, k, l, τ2, τ3) ≈ ΔW_diag(i, j, k, l, occupations(conf,τ2)) * (τ3 - τ2) * λ
+    @test ΔWdiag_element(conf, CEnsemble(λ, β, N), i, j, k, l, τ2, τ3) ≈ ΔW_diag(i, j, k, l, occupations(conf,τ2)) * (τ3 - τ2) * λ
 
-    @test Δdiagonal_interaction(conf, CEnsemble(λ, β, N), i, j, k, l, τ1, τ3) ≈ ( ΔW_diag(i, j, k, l, occupations(conf,τ1)) * (ImgTime(0.2) - τ1)
+    @test ΔWdiag_element(conf, CEnsemble(λ, β, N), i, j, k, l, τ1, τ3) ≈ ( ΔW_diag(i, j, k, l, occupations(conf,τ1)) * (ImgTime(0.2) - τ1)
                                                                                 + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.2))) * (τ3 - ImgTime(0.2))
                                                                                 ) * λ
 
-    @test Δdiagonal_interaction(conf, CEnsemble(λ, β, N), i, j, k, l, τ3, τ1) ≈ ( ΔW_diag(i, j, k, l, occupations(conf,τ3)) * (ImgTime(0.5) - τ3)
+    @test ΔWdiag_element(conf, CEnsemble(λ, β, N), i, j, k, l, τ3, τ1) ≈ ( ΔW_diag(i, j, k, l, occupations(conf,τ3)) * (ImgTime(0.5) - τ3)
                                                                                 + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.5))) * (ImgTime(0.6) - ImgTime(0.5))
                                                                                 + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.6))) * (ImgTime(0.8) - ImgTime(0.6))
                                                                                 + ΔW_diag(i, j, k, l, occupations(conf,ImgTime(0.8))) * (ImgTime(1) + τ1 - ImgTime(0.8))

@@ -14,7 +14,7 @@ function move_particle(c::Configuration, e::Ensemble) :: Tuple{Float64, Step}
     y = rand(oe)
     @assert x != y "same Configuration proposed."
 
-    delta_di = Δdiagonal_interaction(c, e, y, x, ImgTime(0), ImgTime(1))
+    delta_di = ΔWdiag_element(c, e, y, x, ImgTime(0), ImgTime(1))
     @assert delta_di != Inf
     # weight change
     dw = exp(-(e.β*(energy(y)-energy(x)) + e.β*delta_di))

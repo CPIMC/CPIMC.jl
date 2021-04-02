@@ -38,13 +38,18 @@ end
 
 return the two-particle matrix element of the Coulomb interaction
 zero is returned if momentum or spin is not conserved, in consequence of the Bloch-theorem and the spin kronecker-delta in the plane-spin-wave basis
-an assertion catches the diverging contribution
+
+the singular contribution (i.vec == k.vec) is also removed, i.e. set to zero
+this property is not a result of the Bloch theorem for the two-particle Coulomb matrix element in the plane wave basis
+but is added here to allow for straightforward summation over all combination of orbitals without explictly excluding this component
 """
-function w(i::Orbital, j::Orbital, k::Orbital, l::Orbital) # TODO: use type-declaration here in case multiple particle-species exist ?
+function w(i::Orbital, j::Orbital, k::Orbital, l::Orbital)
     if !iszero(i.vec + j.vec - k.vec - l.vec) | (i.spin != k.spin) | (j.spin != l.spin)# momentum and spin conservation
         return 0.0
+    elseif i.vec == k.vec
+        # here return 0 in order to remove this term from sums over all occupations since it is canceled by the uniform background in the TD-Limes
+        0.0
     else
-        @assert i.vec != k.vec "Divergent contribution in two-particle matrix element for vectors i=$(i.vec), k=$(k.vec). Such contribution should not arise for the uniform electron gas."
         return 1.0 / dot(i.vec - k.vec, i.vec - k.vec)
     end
 end
