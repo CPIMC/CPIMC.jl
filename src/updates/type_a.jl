@@ -30,6 +30,6 @@ function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     dv = length(oe)/length(oe2)
     @assert dv >= 0
     @assert dw >= 0 "dw=$(dw), x=$(x), y=$(y), delta_di=$(delta_di)"
-    @assert (dv*dw) >= 0
+    
     return dv*dw, Δ
 end
