@@ -571,12 +571,12 @@ in the periodic ordering suggested by the relation of the first time-argument τ
 """
 function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTime, τ2::ImgTime)
     if τ1 > τ2# interval is periodically continued
-        vcat([τ1],
+        vcat(
             collect(keys( filter(x -> τ1 < first(x), ck) )),
-            collect(keys( filter(x -> first(x) < τ2, ck) )),
-            [τ2])
+            collect(keys( filter(x -> first(x) < τ2, ck) ))
+            )
     else# this also catches τ1 == τ2
-        vcat([τ1], collect(keys( filter(x -> τ1 < first(x) < τ2, ck) )), [τ2])
+        collect(keys( filter(x -> τ1 < first(x) < τ2, ck) ))
     end
 end
 
@@ -612,7 +612,7 @@ function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# T
         return e.λ * ΔWdiag_τ1_occ
     else
         #Calculate contrubutions to Wdiag of the orbitals changed by kinks in the intervall.
-        ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs[2:end-1])
+        ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs)
         return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
     end
 end
@@ -644,7 +644,7 @@ function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: a
         # remove a contribution if an orbital is annilated
         # this is more efficient than calculating the occupation for each consecutive time-interval
         # via `occupation(occ,t)` since this function applies all kinks up to t::ImgTime
-        ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs[2:end-1])
+        ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs)
         return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
     end
 end

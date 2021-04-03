@@ -91,13 +91,13 @@ end
 @testset "times_from_periodic_interval" begin
     t1 = ImgTime(0.1)
     t2 = ImgTime(0.3)
-    @test times_from_periodic_interval(sd, t1, t2) == [t1, ImgTime(0.2), t2]
-    @test times_from_periodic_interval(sd, t2, t1) == [t2,  ImgTime(0.5), ImgTime(0.6), ImgTime(0.8), t1]
+    @test times_from_periodic_interval(sd, t1, t2) == [ImgTime(0.2)]
+    @test times_from_periodic_interval(sd, t2, t1) == [ImgTime(0.5), ImgTime(0.6), ImgTime(0.8)]
 
     # test for times with no kinks in between
     t1 = ImgTime(0.3)
     t2 = ImgTime(0.4)
-    @test times_from_periodic_interval(sd, t1, t2) == [t1,t2]
+    @test times_from_periodic_interval(sd, t1, t2) == []
 end
 
 @testset "Δ(τ1::ImgTime,τ2::ImgTime)" begin
@@ -339,7 +339,7 @@ function Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, o
 end
 
 
-@testset "Δdiagonal_interaction: compare with previous implementation" begin
+@testset "ΔWdiag_element: compare with previous implementation" begin
 
     ens = CEnsemble(2.0, 5.680898543560106, 7)# θ: 0.125, λ: 0.09945178864947428
 
@@ -413,7 +413,7 @@ end
 
     function ΔWdiag_element_old(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
         @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
-        τs = times_from_periodic_interval(c.kinks, τ1, τ2)
+        τs = vcat([τ1], times_from_periodic_interval(c.kinks, τ1, τ2), [τ2])# vcat with interval bounds to match old version
         e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t1,t2) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
     end
 
