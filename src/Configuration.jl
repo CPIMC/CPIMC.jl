@@ -595,7 +595,7 @@ due to a change in the occupations given by creating two orbitals i and j
 and annihilating two orbitals k, l in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
-In contrast to the estmiator we do not need to evaluate the diagonal interaction
+We do not need to evaluate the diagonal interaction
 between all obritals in all time-intervalls, but it is sufficient to evaluate
 the full diagonal interaction with the occupations at the start of the Intervall
 and then consider only contrubations of orbitals that are changed by kinks in the intervall.
@@ -623,7 +623,7 @@ due to a change in the occupations given by creating an orbital i
 and annihilating an orbital j in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
-In contrast to the estmiator we do not need to evaluate the diagonal interaction
+We do not need to evaluate the diagonal interaction
 between all obritals in all time-intervalls, but it is sufficient to evaluate
 the full diagonal interaction with the occupations at the start of the Intervall
 and then consider only contrubations of orbitals that are changed by kinks in the intervall.
