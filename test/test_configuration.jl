@@ -101,11 +101,11 @@ end
 end
 
 @testset "Δ(τ1::ImgTime,τ2::ImgTime)" begin
-    @test Δ(ImgTime(0.5),ImgTime(0.3)) == ImgTime(0.5) - ImgTime(0.3)
-    @test Δ(ImgTime(0.2),ImgTime(0.8)) == ImgTime(1) + ImgTime(0.2) - ImgTime(0.8)
+    @test Δ(ImgTime(0.3), ImgTime(0.5)) == ImgTime(0.5) - ImgTime(0.3)
+    @test Δ(ImgTime(0.8), ImgTime(0.2)) == ImgTime(1) + ImgTime(0.2) - ImgTime(0.8)
     @test iszero( Δ(ImgTime(0.8),ImgTime(0.8)) )
 
-    @test float(Δ(ImgTime(0.5),ImgTime(0.3))) ≈ float(ImgTime(0.2))
+    @test float(Δ(ImgTime(0.3), ImgTime(0.5))) ≈ float(ImgTime(0.2))
 end
 
 @testset "Type_1_investigation" begin
@@ -172,25 +172,6 @@ kernel(i::StaticVector{N,Int}, k::StaticVector{N,Int}) where {N} = 1.0 / dot( i-
 " coulomb kernel in plane wave basis "# for comparison of Δdiagonal_interaction
 kernel(i::OrbitalHEG,k::OrbitalHEG) = kernel(i.vec,k.vec)
 
-
-" anti-symmetrized interaction matrix element "# for comparison of Δdiagonal_interaction
-function wminus(i::Orbital, j::Orbital, k::Orbital, l::Orbital) where {D}
-    @assert ((i != k) && (i != l))
-    @assert ((i.spin == j.spin) == (k.spin == l.spin))
-    @assert(in(i.spin,[k.spin,l.spin]))
-    @assert(i.vec + j.vec == k.vec + l.vec)
-    if i.spin == j.spin
-        @assert(!isinf(abs(kernel(i, k) - kernel(i, l))))
-        return kernel(i, k) - kernel(i, l)
-    elseif i.spin == k.spin
-        @assert(!isinf(abs(kernel(i, k))))
-        return kernel(i, k)
-    elseif i.spin == l.spin
-        @assert(!isinf(abs(kernel(i, l))))
-        return -kernel(i, l)
-    end
-end
-
 " diagonal interaction matrix element "# for comparison Δdiagonal_interaction
 function wdiag(a::Orbital, b::Orbital) where {D}
     if a.spin != b.spin
@@ -199,10 +180,6 @@ function wdiag(a::Orbital, b::Orbital) where {D}
         return -kernel(a, b)
     end
 end
-
-
-wminus(kink::T4) = wminus(kink.i, kink.j, kink.k, kink.l)# for comparison of Δdiagonal_interaction
-
 
 """
     Δdiagonal_interaction(c::Configuration, e::Ensemble, orb_a::Orbital, orb_b::Orbital, orb_c::Orbital, orb_d::Orbital, τ1, τ2)
@@ -437,7 +414,7 @@ end
     function ΔWdiag_element_old(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
         @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
         τs = times_from_periodic_interval(c.kinks, τ1, τ2)
-        e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
+        e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t1,t2) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
     end
 
     @test (ΔWdiag_element(conf2, ens, i, j, k, l, τ1, τ2)) ≈ (ΔWdiag_element_old(conf2, ens, i, j, k, l, τ1, τ2))

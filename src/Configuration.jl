@@ -55,10 +55,10 @@ ImgTime(t::Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}}) = (first(first(t)),
     Δ(::ImgTime,::ImgTime)
 
 return the periodic difference of two imaginary times
-    `Δ(τ1,τ2) = τ1 - τ2` if `τ1 >= τ2` and
-    `Δ(τ1,τ2) = 1 - (τ2 - τ1) = 1 + τ1 - τ2` else
+    `Δ(τ1,τ2) = τ2 - τ1` if `τ2 >= τ1` and
+    `Δ(τ1,τ2) = 1 - (τ1 - τ2) = 1 + τ2 - τ1` else
 """
-Δ(τ1::ImgTime,τ2::ImgTime) = τ1 < τ2 ? ImgTime(1) + τ1 - τ2 : τ1 - τ2
+Δ(τ1::ImgTime,τ2::ImgTime) = τ1 > τ2 ? ImgTime(1) + τ2 - τ1 : τ2 - τ1
 
 " multi-particle trajectory using single particle states with type T "
 mutable struct Configuration{T}
@@ -533,12 +533,12 @@ end
 function ΔW_diag(i, j, k, l, occ)
     @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum( w(ν,k,k,ν) + w(ν,l,l,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with k and l
-    Δ += w(k,l,l,k)# interaction between k and l
+    Δ = sum( wminus(ν,k,k,ν) + wminus(ν,l,l,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with k and l
+    Δ += wminus(k,l,l,k)# interaction between k and l
     # contributions due to mean field interactions of the created orbitals
-    # the annihilator orbitals k, l are not in the new occupation
-    Δ -= sum( w(ν,i,i,ν) + w(ν,j,j,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with i and j
-    Δ -= w(i,j,j,i)# interaction between i and j
+    # note: the annihilator orbitals k, l are not in the new occupation
+    Δ -= sum( wminus(ν,i,i,ν) + wminus(ν,j,j,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with i and j
+    Δ -= wminus(i,j,j,i)# interaction between i and j
     return Δ
 end
 
@@ -549,9 +549,9 @@ end
 function ΔW_diag(i, j, occ)
     @assert (i ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum( w(ν,j,j,ν) for ν in drop(occ, j) )# interactions of mean field with k
+    Δ = sum( wminus(ν,j,j,ν) for ν in drop(occ, j) )# interactions of mean field with k
     # contributions due to mean field interactions of the created orbitals
-    Δ -= sum( w(ν,i,i,ν) for ν in drop(occ, j) )
+    Δ -= sum( wminus(ν,i,i,ν) for ν in drop(occ, j) )
 end
 
 """
@@ -580,7 +580,9 @@ function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTi
     end
 end
 
-### convention: all Δelement represent only the difference in the matrix elements will be used as exp(-Δ) for the weight change
+### convention: all ΔX_element represent only the difference in the matrix elements will be used as exp(-Δ) for the weight change
+###             thus, contributions from the new (proposed) configuration (creators) appear positive (+)
+###             and the contributions from the old configuration (annihilators) appear negative (-)
 
 """ change in the kinetic many body matrix element due to creating i, j and annihilating k,l """
 ΔT_element(i,j,k,l) = energy(i) + energy(j) - energy(k) - energy(l)
@@ -599,18 +601,18 @@ We do not need to evaluate the diagonal interaction
 between all obritals in all time-intervalls, but it is sufficient to evaluate
 the full diagonal interaction with the occupations at the start of the Intervall
 and then consider only contrubations of orbitals that are changed by kinks in the intervall.
-"""# TODO: ΔWdiag_element
+"""
 function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that i, j are creators and k, l are annihilators. Use Step instead ?
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
     #Calculate Wdiag with occupation at the start of the Intervall.
-    ΔWdiag_τ1_occ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δ(τ2,τ1)
+    ΔWdiag_τ1_occ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δ(τ1,τ2)
     if isempty(Ks)
         return e.λ * ΔWdiag_τ1_occ
     else
         #Calculate contrubutions to Wdiag of the orbitals changed by kinks in the intervall.
-        ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(τ2,t1) for t1 in τs[2:end-1])
+        ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs[2:end-1])
         return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
     end
 end
@@ -632,13 +634,17 @@ function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: a
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
-    #Calculate Wdiag with occupation at the start of the Intervall.
-    ΔWdiag_τ1_occ = ΔW_diag(i, j, occupations(c,τ1)) * Δ(τ2,τ1)
+    # calculate Wdiag with the occupation at the start of the intervall
+    ΔWdiag_τ1_occ = ΔW_diag(i, j, occupations(c,τ1)) * Δ(τ1,τ2)
     if isempty(Ks)
         return e.λ * ΔWdiag_τ1_occ
     else
-        #Calculate contrubutions to Wdiag of the orbitals changed by kinks in the intervall.
-        ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(τ2,t1) for t1 in τs[2:end-1])
+        # calculate contrubutions to Wdiag from the orbitals changed by kinks in the intervall
+        # add a contribution if an orbital is created and
+        # remove a contribution if an orbital is annilated
+        # this is more efficient than calculating the occupation for each consecutive time-interval
+        # via `occupation(occ,t)` since this function applies all kinks up to t::ImgTime
+        ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs[2:end-1])
         return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
     end
 end
@@ -654,8 +660,8 @@ used for the calculation the sign of the weight function
 """
 function sign_offdiagonal_product(c::Configuration)
     sign_ofd_prod = 1
-    for ϰ in values(c.kinks)
-        sign_ofd_prod *= sign(wminus(ϰ.i, ϰ.j, ϰ.k, ϰ.l))
+    for κ in values(c.kinks)
+        sign_ofd_prod *= sign(wminus(κ.i, κ.j, κ.k, κ.l))
     end
     return sign_ofd_prod
 end
