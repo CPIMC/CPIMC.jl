@@ -4,9 +4,9 @@ This does not check wether the two kinks are neighbouring"""
 function is_type_B(left_kink::T4, right_kink::T4)
   if (Set([left_kink.i, left_kink.j]) == Set([right_kink.k, right_kink.l])) &
         (Set([left_kink.k, left_kink.l]) == Set([right_kink.i, right_kink.j]))
-    return(true)
+    return true
   else
-    return(false)
+    return false
   end
 end
 
@@ -78,10 +78,10 @@ function get_right_type_B_removable_pairs(c::Configuration)
   return pairs_right
 end
 
-function possible_new_orb_a(occs, orb_c, orb_d)
-    return(filter(orb_a -> !in(PlaneWave(orb_c.vec + orb_d.vec - orb_a.vec, orb_d.spin),occs) && (orb_a != PlaneWave((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)),
-                    setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs)))
-end
+possible_new_orb_a(occs, orb_c, orb_d) = filter(orb_a ->
+                !in(PlaneWave(orb_c.vec + orb_d.vec - orb_a.vec, orb_d.spin),occs)
+                && (orb_a != PlaneWave( orb_c.vec - orb_a.vec + orb_d.vec, orb_d.spin))
+                        , setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs) )
 
 function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     #sampling propability
@@ -181,17 +181,6 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     @assert !isempty(opportunities_orb_a_τ2)
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
 
-
-
-
-
-    #calculate change in diagonal interaction energy
-    delta_di = ΔWdiag_element(m, e, c, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
-
-    #change configuration
-    # c.kinks[firstτ] = T4(orb_a,orb_b,orb_c,orb_d)
-    #shuffle index order of the second kink
-
     add_kinks = (firstτ => T4(orb_a,orb_b,orb_c,orb_d), lastτ => shuffle_creators(shuffle_annihilators(T4(orb_d,orb_c,orb_b,orb_a))))
     prop_prob *= 1/4
 
@@ -210,15 +199,14 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     # quotient of proposal probabilities
     dv = (1.0/length(get_right_type_B_removable_pairs(apply_step(c,Δ))))/prop_prob
 
+    #calculate change in diagonal interaction energy
+    delta_di = ΔWdiag_element(m, e, c, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
     # weight factor
-    dw = ((e.β)^2) *
-            abs(Woffdiag_element(m, e, T4(orb_a,orb_b,orb_c,orb_d)))^2 *
-            exp(-((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) -
-                energy(m, orb_c) - energy(m, orb_d)) + delta_di*e.β))
+    dw = ((e.β)^2) * abs(Woffdiag_element(m, e, orb_a,orb_b,orb_c,orb_d))^2 * exp(-((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) - energy(m, orb_c) - energy(m, orb_d)) + delta_di*e.β))
 
 
     @assert (dv*dw) >= 0
-    @assert (dv*dw) != Inf
+    @assert !isinf(dv*dw)
     @assert !isnan(dv*dw)
     return dv*dw, Δ
 end
@@ -243,11 +231,6 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     prop_prob = 1.0/length(opportunities)
 
-    #change configuration
-    # delete!(c.kinks, first(kink1))
-    # delete!(c.kinks, first(kink2))
-
-
     #see if occupations at τ=0 are modified
     if first(kink1) > first(kink2)
         # change_occupations(c.occupations, last(kink2))
@@ -265,7 +248,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     @assert(delta_τ > 0)
     @assert(delta_τ <= 1)
 
-    #calculate inverse prop_prob (see  add_type_B)
+    # calculate inverse prop_prob (see add_type_B)
     ijkl = Set([last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l])
     borders = τ_borders(apply_step(c,Δ), ijkl ,first(kink1))
     possible_τ2_interval = borders[2]-borders[1]
@@ -278,11 +261,9 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     orb_b = last(kink1).j
     orb_c = last(kink1).k
     orb_d = last(kink1).l
+
     #See how prop_prob changes in the function add_type_B to understand this expression
-     inverse_prop_prob = (1/e.N)*(1/(e.N-1)) *
-         (1.0/length(possible_new_orb_a(occs_τ_kink1, orb_c, orb_d))
-             + 1/length(possible_new_orb_a(occs_τ_kink2, orb_c, orb_d))) *
-          1.0/float(possible_τ2_interval) * (1/4)
+    inverse_prop_prob = (1/e.N)*(1/(e.N-1)) * (1.0/length(possible_new_orb_a(occs_τ_kink1, orb_c, orb_d)) + 1/length(possible_new_orb_a(occs_τ_kink2, orb_c, orb_d))) * 1.0/float(possible_τ2_interval) * (1/4)
 
 
     if borders[2] == 1
@@ -293,17 +274,12 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     # calculate change in diagonal interaction energy
     delta_di = ΔWdiag_element(m, e, apply_step(c, Δ), last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
-
-
     # weight factor
-    dw = (1.0/(e.β)^2) *
-        (1.0/(abs(Woffdiag_element(m, e, last(kink1))))^2) *
-            exp((delta_τ)*e.β * (energy(m, orb_a) +
-                 energy(m, orb_b) - energy(m, orb_c) - energy(m, orb_d)) + e.β * delta_di)
+    dw = (1.0/(e.β)^2) * (1.0/(abs(Woffdiag_element(m, e, last(kink1))))^2) * exp((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) - energy(m, orb_c) - energy(m, orb_d)) + e.β * delta_di)
 
 
     @assert (dv*dw) >= 0
-    @assert (dv*dw) != Inf
+    @assert !isinf(dv*dw)
     return dv*dw, Δ
 end
 
@@ -323,16 +299,15 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     occs = occupations(c, first(kink1))
 
     opportunities = filter( x -> isunaffected_in_interval(c.kinks, x, first(kink1), first(kink2))
-                        ,setdiff!(
-                            sphere_with_same_spin(last(kink1).i, dk = ex_radius
-                            ), occs
-                        )
-                    )
+                            , setdiff!( sphere_with_same_spin(last(kink1).i, dk = ex_radius), occs) )
+
     delete!(opportunities, last(kink1).k)
     delete!(opportunities, last(kink1).l)
+
     if isempty(opportunities)
         return 1.0, Step()
     end
+
     new_orb_i = rand(opportunities)
     new_orb_j = PlaneWave(last(kink1).j.vec + last(kink1).i.vec - new_orb_i.vec, last(kink1).j.spin)
     if new_orb_i == new_orb_j
@@ -340,48 +315,47 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     end
     if !isunaffected_in_interval(c.kinks,new_orb_j,first(kink1),first(kink2)) | in(new_orb_j,occs)
         return 1.0, Step()
-    else
-        #calculate change in diagonal interaction energy
-        delta_di = ΔWdiag_element(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
-
-        #See if occupations change
-        if first(kink1) > first(kink2)
-            drop_orbs = Set([last(kink1).i, last(kink1).j])
-            add_orbs = Set([new_orb_i, new_orb_j])
-            delta_τ = first(kink2)-first(kink1) + 1.0
-        else
-            add_orbs = Set{basis(c)}()
-            drop_orbs = Set{basis(c)}()
-            delta_τ = first(kink2)-first(kink1)
-        end
-
-
-        dw = exp(-(e.β*delta_τ*(energy(m, new_orb_i) + energy(m, new_orb_j) -
-                                    energy(m, last(kink1).i) - energy(m, last(kink1).j)) + e.β*delta_di)) *
-           (Woffdiag_element(m, e,T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/Woffdiag_element(m, e, last(kink1)))^2
-
-        #shuffle indices of the new orbs in the second kink
-        drop_kinks = (kink1,kink2)
-        add_kinks = (
-                    first(kink1) => T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l),
-                    first(kink2) => shuffle_creators(shuffle_annihilators(T4(last(kink2).i, last(kink2).j, new_orb_i, new_orb_j)))
-                    )
-        excite!(occs, T4(new_orb_i, new_orb_j, last(kink1).i, last(kink1).j))
-        # MC Step generated by this update
-        Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
-
-        kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ))
-        opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ).kinks, x, first(kink1), first(kink2))
-                                    ,setdiff!(
-                                        sphere_with_same_spin(new_orb_i, dk = ex_radius), occs
-                                    )
-                                )
-        delete!(opportunities_reverse, last(kink1).k)
-        delete!(opportunities_reverse, last(kink1).l)
-
-        dv = length(opportunities)*length(kink_opportunities)/(length(opportunities_reverse)*length(kink_opportunities_reverse))
-        @assert ((dw * dv) >= 0)
-        @assert (!isinf(dw * dv))
-        return (dw * dv), Δ
     end
+
+    # see if occupations change
+    if first(kink1) > first(kink2)
+        drop_orbs = Set([last(kink1).i, last(kink1).j])
+        add_orbs = Set([new_orb_i, new_orb_j])
+        delta_τ = first(kink2)-first(kink1) + 1.0
+    else
+        add_orbs = Set{basis(c)}()
+        drop_orbs = Set{basis(c)}()
+        delta_τ = first(kink2)-first(kink1)
+    end
+
+
+    #shuffle indices of the new orbs in the second kink
+    drop_kinks = (kink1,kink2)
+    add_kinks = (
+                first(kink1) => T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l),
+                first(kink2) => shuffle_creators(shuffle_annihilators(T4(last(kink2).i, last(kink2).j, new_orb_i, new_orb_j)))
+                )
+
+    excite!(occs, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j)
+
+    # MC Step generated by this update
+    Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
+
+    kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ))
+    opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ).kinks, x, first(kink1), first(kink2))
+                                , setdiff!( sphere_with_same_spin(new_orb_i, dk = ex_radius), occs ) )
+    delete!(opportunities_reverse, last(kink1).k)
+    delete!(opportunities_reverse, last(kink1).l)
+
+    # quotient of proposal probabilities
+    dv = length(opportunities)*length(kink_opportunities)/(length(opportunities_reverse)*length(kink_opportunities_reverse))
+
+    #calculate change in diagonal interaction energy
+    delta_di = ΔWdiag_element(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
+    # weight factor
+    dw = exp(-(e.β*delta_τ*(energy(m, new_orb_i) + energy(m, new_orb_j) - energy(m, last(kink1).i) - energy(m, last(kink1).j)) + e.β*delta_di)) * ( Woffdiag_element(m, e, new_orb_i, new_orb_j, last(kink1).k, last(kink1).l ) / Woffdiag_element(m, e, last(kink1)) )^2
+
+    @assert (dw * dv) >= 0
+    @assert !isinf(dw * dv)
+    return dw*dv, Δ
 end
