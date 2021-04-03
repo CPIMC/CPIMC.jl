@@ -417,14 +417,30 @@ end
     @test ΔWdiag_element(conf, ens, i, j, k, l, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, k, l, τ1, τ2)
 
 
+
+
     ### Test 1-particle excitation
-    i = OrbitalHEG((-3,0,0))
-    j = OrbitalHEG((0,1,0))
+    a = OrbitalHEG((-3,0,0))
+    b = OrbitalHEG((0,1,0))
 
-    @test ΔWdiag_element(conf, ens, i, j, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, i, j, τ1, τ2)
+    @test ΔWdiag_element(conf, ens, a, b, τ1, τ2) ≈ Δdiagonal_interaction(conf, ens, a, b, τ1, τ2)
 
-    @test ΔWdiag_element(conf, ens, i, j, τ2, τ1) ≈ Δdiagonal_interaction(conf, ens, i, j, τ2, τ1)
+    @test ΔWdiag_element(conf, ens, a, b, τ2, τ1) ≈ Δdiagonal_interaction(conf, ens, a, b, τ2, τ1)
 
+    global ex_radius = 3
+    conf2 = deepcopy(conf)
+    for i in 1:10
+        dv, diff = add_type_C(conf2, ens)
+        apply_step!(conf2, diff)
+    end
+
+    function ΔWdiag_element_old(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that a, b are creators and c, d are annihilators. Use Step instead ?
+        @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
+        τs = times_from_periodic_interval(c.kinks, τ1, τ2)
+        e.λ * sum( ΔW_diag(i, j, k, l, occupations(c,t1)) * Δ(t2,t1) for (t1,t2) in zip(τs[1:end-1],τs[2:end]) )
+    end
+
+    @test (ΔWdiag_element(conf2, ens, i, j, k, l, τ1, τ2)) ≈ (ΔWdiag_element_old(conf2, ens, i, j, k, l, τ1, τ2))
 
 end
 
