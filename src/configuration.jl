@@ -172,15 +172,26 @@ end
     This is useful for iteration of a SortedDict{ImgTime, T4{T}}."""
 excite(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = excite(o, last(κ))
 
-" Apply a T4 kink in-place to a set of basis states. "
-function excite!(o::Set{T}, κ::T4{T}) where T
-  @assert (in(κ.k, o) & in(κ.l, o)) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the annihilators $(κ.k), $(κ.l) is not occupied. (Pauli-Principle)"
-  @assert (!in(κ.i, o) & !in(κ.j, o)) "Kink ($(κ.i),$(κ.j),$(κ.k),$(κ.l)) cannot be applied: one or two of the creators $(κ.i), $(κ.j) is already occupied. (Pauli-Principle)"
-  delete!(o, κ.k)
-  delete!(o, κ.l)
-  push!(o, κ.i)
-  push!(o, κ.j)
+
+"""
+    excite!(::Set{T}, i::T, j::T, k::T, l::T) where {T}
+
+Apply an excitation in-place to a set of basis states,
+that is given by creating orbitals i, j
+and annihilating the orbitals k, l
+"""
+function excite!(o::Set{T}, i::T, j::T, k::T, l::T) where {T}
+    @assert (in(k, o) & in(l, o)) "Kink ($(i),$(j),$(k),$(l)) cannot be applied: one or two of the annihilators $(k), $(l) is not occupied. (Pauli-Principle)"
+    @assert (!in(i, o) & !in(j, o)) "Kink ($(i),$(j),$(k),$(l)) cannot be applied: one or two of the creators $(i), $(j) is already occupied. (Pauli-Principle)"
+    delete!(o, k)
+    delete!(o, l)
+    push!(o, i)
+    push!(o, j)
 end
+
+" Apply a T4 kink in-place to a set of basis states. "
+excite!(o::Set{T}, κ::T4{T}) where T = excite!(o, κ.i, κ.j, κ.k, κ.l)
+
 
 " Return the occupied orbitals after applying all kinks to initial occupation. "
 function occupations(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
