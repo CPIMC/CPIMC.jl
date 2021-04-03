@@ -54,7 +54,10 @@ ImgTime(t::Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}}) = (first(first(t)),
 @doc raw"""
     Δ(::ImgTime,::ImgTime)
 
-return the periodic difference of two imaginary times
+return the length of the periodic interval between the two ::ImgTimes
+
+the periodic distance of two imaginary times:
+
     `Δ(τ1,τ2) = τ2 - τ1` if `τ2 >= τ1` and
     `Δ(τ1,τ2) = 1 - (τ1 - τ2) = 1 + τ2 - τ1` else
 """
@@ -598,23 +601,29 @@ and annihilating two orbitals k, l in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
 We do not need to evaluate the diagonal interaction
-between all obritals in all time-intervalls, but it is sufficient to evaluate
-the full diagonal interaction with the occupations at the start of the Intervall
-and then consider only contrubations of orbitals that are changed by kinks in the intervall.
+between all orbitals in all time-intervalls, but it is sufficient to evaluate
+the full diagonal interaction with the occupations at the start of the intervall
+and then consider only contributions of orbitals that are changed by kinks in the intervall.
 """
 function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# TODO: assuming that i, j are creators and k, l are annihilators. Use Step instead ?
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
-    τs = times_from_periodic_interval(c.kinks, τ1, τ2)
+
+    # get all kinks between τ1 and τ2
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
-    #Calculate Wdiag with occupation at the start of the Intervall.
-    ΔWdiag_τ1_occ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δ(τ1,τ2)
-    if isempty(Ks)
-        return e.λ * ΔWdiag_τ1_occ
-    else
-        #Calculate contrubutions to Wdiag of the orbitals changed by kinks in the intervall.
-        ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs)
-        return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
+
+    # calculate Wdiag with the occupation at the start of the interval
+    ΔWdiag = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δ(τ1,τ2)
+
+    if !isempty(Ks)
+        # calculate contrubutions to ΔWdiag from the orbitals changed by kinks in the intervall:
+        # add a contribution if an orbital is created and
+        # remove a contribution if an orbital is annilated
+        # this is more efficient than calculating the occupation for each consecutive time-interval
+        # via `occupation(occ,t)` since this function applies all kinks up to t::ImgTime
+        τs = times_from_periodic_interval(c.kinks, τ1, τ2)# get a time-ordered list of the times of the kinks between τ1 and τ2
+        ΔWdiag += sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs)
     end
+    e.λ * ΔWdiag
 end
 
 """
@@ -626,27 +635,27 @@ and annihilating an orbital j in the interval (τ1, τ2)
 This interval may be periodically extended over the bounds (0,1) if τ1 > τ2,
 i.e. the change in the occupation is considered for (τ1,1] ∪ [0,τ2) in that case.
 We do not need to evaluate the diagonal interaction
-between all obritals in all time-intervalls, but it is sufficient to evaluate
-the full diagonal interaction with the occupations at the start of the Intervall
-and then consider only contrubations of orbitals that are changed by kinks in the intervall.
+between all orbitals in all time-intervalls, but it is sufficient to evaluate
+the full diagonal interaction with the occupations at the start of the intervall
+and then consider only contributions of orbitals that are changed by kinks in the intervall.
 """
 function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: assuming that i is creator and j is annihilator. Use Step instead ?
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
-    τs = times_from_periodic_interval(c.kinks, τ1, τ2)
+
+    # get all kinks between τ1 and τ2
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
-    # calculate Wdiag with the occupation at the start of the intervall
-    ΔWdiag_τ1_occ = ΔW_diag(i, j, occupations(c,τ1)) * Δ(τ1,τ2)
-    if isempty(Ks)
-        return e.λ * ΔWdiag_τ1_occ
-    else
-        # calculate contrubutions to Wdiag from the orbitals changed by kinks in the intervall
+    # calculate Wdiag with the occupation at the start of the interval
+    ΔWdiag = ΔW_diag(i, j, occupations(c,τ1)) * Δ(τ1,τ2)
+    if !isempty(Ks)
+        # calculate contrubutions to ΔWdiag from the orbitals changed by kinks in the intervall:
         # add a contribution if an orbital is created and
         # remove a contribution if an orbital is annilated
         # this is more efficient than calculating the occupation for each consecutive time-interval
         # via `occupation(occ,t)` since this function applies all kinks up to t::ImgTime
-        ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs)
-        return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
+        τs = times_from_periodic_interval(c.kinks, τ1, τ2)# get a time-ordered list of the times of the kinks between τ1 and τ2
+        ΔWdiag += sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(t1,τ2) for t1 in τs)
     end
+    e.λ * ΔWdiag
 end
 
 
