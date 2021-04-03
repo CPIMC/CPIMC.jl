@@ -166,7 +166,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
     #We do consider states that differ only threw the order off indices of kinks
     #as different states, that contribute all with the same weight with is already
-    #blocked over all permutations (see function “get_abs_offdiagonal_element”),
+    #blocked over all permutations (see function “get_abs_Woffdiag_element”),
     #therefore the updates where we end up with the same kinks but start building
     #the kink with a different Excitation will result in a different order off indices
     #and therefore considered a different Update (to compensate that we use a factor ¼
@@ -186,7 +186,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
 
     #calculate change in diagonal interaction energy
-    delta_di = Δdiagonal_interaction(m, e, c, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
+    delta_di = ΔWdiag_element(m, e, c, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
 
     #change configuration
     # c.kinks[firstτ] = T4(orb_a,orb_b,orb_c,orb_d)
@@ -212,7 +212,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
     # weight factor
     dw = ((e.β)^2) *
-            abs(offdiagonal_element(m, e, T4(orb_a,orb_b,orb_c,orb_d)))^2 *
+            abs(Woffdiag_element(m, e, T4(orb_a,orb_b,orb_c,orb_d)))^2 *
             exp(-((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) -
                 energy(m, orb_c) - energy(m, orb_d)) + delta_di*e.β))
 
@@ -292,12 +292,12 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     dv = inverse_prop_prob/prop_prob
 
     # calculate change in diagonal interaction energy
-    delta_di = Δdiagonal_interaction(m, e, apply_step(c, Δ), last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
+    delta_di = ΔWdiag_element(m, e, apply_step(c, Δ), last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
 
 
     # weight factor
     dw = (1.0/(e.β)^2) *
-        (1.0/(abs(offdiagonal_element(m, e, last(kink1))))^2) *
+        (1.0/(abs(Woffdiag_element(m, e, last(kink1))))^2) *
             exp((delta_τ)*e.β * (energy(m, orb_a) +
                  energy(m, orb_b) - energy(m, orb_c) - energy(m, orb_d)) + e.β * delta_di)
 
@@ -342,7 +342,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         return 1.0, Step()
     else
         #calculate change in diagonal interaction energy
-        delta_di = Δdiagonal_interaction(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
+        delta_di = ΔWdiag_element(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
 
         #See if occupations change
         if first(kink1) > first(kink2)
@@ -358,7 +358,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         dw = exp(-(e.β*delta_τ*(energy(m, new_orb_i) + energy(m, new_orb_j) -
                                     energy(m, last(kink1).i) - energy(m, last(kink1).j)) + e.β*delta_di)) *
-           (offdiagonal_element(m, e, T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/offdiagonal_element(m, e,last(kink1)))^2
+           (Woffdiag_element(m, e,T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l))/Woffdiag_element(m, e, last(kink1)))^2
 
         #shuffle indices of the new orbs in the second kink
         drop_kinks = (kink1,kink2)

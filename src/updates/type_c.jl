@@ -112,7 +112,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 
         prop_prob *= 1.0/Float64(τ_Intervall)
 
-        delta_di = Δdiagonal_interaction(m, e, c, new_orb1, new_orb2, last(old_kink).k, last(old_kink).l, τ_new_kink, first(old_kink))
+        delta_di = ΔWdiag_element(m, e, c, new_orb1, new_orb2, last(old_kink).k, last(old_kink).l, τ_new_kink, first(old_kink))
 
         #change_Configuration
         #see if c.occupations change
@@ -135,10 +135,10 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         #calculate weight differance
-        dw_off_diag = abs(offdiagonal_element(m, e, apply_step(c,Δ).kinks[τ_new_kink])) * abs(offdiagonal_element(m, e, apply_step(c,Δ).kinks[first(old_kink)])) /
-                                                abs(offdiagonal_element(m,e,last(old_kink)))
-        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m,new_orb1) + energy(m,new_orb2) -
-                                    energy(m,last(old_kink).k) - energy(m,last(old_kink).l)) + e.β * delta_di))
+        dw_off_diag = abs(Woffdiag_element(m, e, apply_step(c,Δ).kinks[τ_new_kink])) * abs(Woffdiag_element(m, e,apply_step(c,Δ).kinks[first(old_kink)])) /
+                                                abs(Woffdiag_element(m, e,last(old_kink)))
+        dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m, new_orb1) + energy(m, new_orb2) -
+                                    energy(m, last(old_kink).k) - energy(m, last(old_kink).l)) + e.β * delta_di))
 
         inverse_prop_prob = (1.0/length(get_right_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
 
@@ -184,7 +184,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 
         prop_prob *= 1.0/Float64(τ_Intervall)
 
-        delta_di = Δdiagonal_interaction(m, e, c, new_orb1, new_orb2, last(old_kink).i, last(old_kink).j, first(old_kink), τ_new_kink)
+        delta_di = ΔWdiag_element(m, e, c, new_orb1, new_orb2, last(old_kink).i, last(old_kink).j, first(old_kink), τ_new_kink)
 
         #change_Configuration
         #see if c.occupations change
@@ -209,8 +209,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 
 
 
-        dw_off_diag = abs(offdiagonal_element(m,e,apply_step(c,Δ).kinks[τ_new_kink])) * abs(offdiagonal_element(m,e,apply_step(c,Δ).kinks[first(old_kink)])) /
-                                                abs(offdiagonal_element(m,e,last(old_kink)))
+        dw_off_diag = abs(Woffdiag_element(m, e, apply_step(c,Δ).kinks[τ_new_kink])) * abs(Woffdiag_element(m, e, apply_step(c,Δ).kinks[first(old_kink)])) / abs(Woffdiag_element(m, e, last(old_kink)))
 
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m, new_orb1) + energy(m, new_orb2) -
                                     energy(m, last(old_kink).i) - energy(m, last(old_kink).j)) + e.β * delta_di))
@@ -281,11 +280,11 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
                                  (1.0/Float64(τ_Intervall)) * (1.0/2.0)# TODO: (1.0/2.0) = 0.5
 
         #calculate weight change
-        delta_di = Δdiagonal_interaction(m, e, apply_step(c,Δ), removed_orb1,removed_orb2, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l, removed_kink_τ, changed_kink_τ)
+        delta_di = ΔWdiag_element(m, e, apply_step(c,Δ), removed_orb1,removed_orb2, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l, removed_kink_τ, changed_kink_τ)
 
-        dw_off_diag = abs(offdiagonal_element(m,e,T4(removed_orb1, removed_orb2, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l))) *
-                        abs(offdiagonal_element(m,e,T4(apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2))) /
-                            abs(offdiagonal_element(m, e, apply_step(c,Δ).kinks[changed_kink_τ]))
+        dw_off_diag = abs(Woffdiag_element(m, e, T4(removed_orb1, removed_orb2, apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l))) *
+                        abs(Woffdiag_element(m, e, T4(apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2))) /
+                            abs(Woffdiag_element(m, e, apply_step(c,Δ).kinks[changed_kink_τ]))
 
         delta_τ = Float64(changed_kink_τ - removed_kink_τ)
         if delta_τ < 0
@@ -344,11 +343,11 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
                                  (1.0/Float64(τ_Intervall)) * (1/2)# TODO: (1/2) = 0.5
 
         #calculate weight change
-        delta_di = Δdiagonal_interaction(m, e, apply_step(c,Δ), removed_orb1,removed_orb2, apply_step(c,Δ).kinks[changed_kink_τ].i,apply_step(c,Δ).kinks[changed_kink_τ].j, changed_kink_τ, removed_kink_τ)
+        delta_di = ΔWdiag_element(m, e, apply_step(c,Δ), removed_orb1,removed_orb2, apply_step(c,Δ).kinks[changed_kink_τ].i,apply_step(c,Δ).kinks[changed_kink_τ].j, changed_kink_τ, removed_kink_τ)
 
-        dw_off_diag = abs(offdiagonal_element(m, e, T4(removed_orb1, removed_orb2,  apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l))) *
-                        abs(offdiagonal_element(m, e, T4(apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2))) /
-                            abs(offdiagonal_element(m, e, apply_step(c,Δ).kinks[changed_kink_τ]))
+        dw_off_diag = abs(Woffdiag_element(m, e, T4(removed_orb1, removed_orb2,  apply_step(c,Δ).kinks[changed_kink_τ].k, apply_step(c,Δ).kinks[changed_kink_τ].l))) *
+                        abs(Woffdiag_element(m, e, T4(apply_step(c,Δ).kinks[changed_kink_τ].i, apply_step(c,Δ).kinks[changed_kink_τ].j, removed_orb1, removed_orb2))) /
+                            abs(Woffdiag_element(m, e, apply_step(c,Δ).kinks[changed_kink_τ]))
 
         delta_τ = Float64(removed_kink_τ - changed_kink_τ)
         if delta_τ < 0

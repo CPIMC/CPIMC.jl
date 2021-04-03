@@ -1,5 +1,5 @@
-using CPIMC, CPIMC.PlaneWaves, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count
+using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, DataStructures
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -63,7 +63,6 @@ end
     @test isunaffected(conf.kinks, e)
 end
 
-
 @testset "time_ordered_orbs(::T4)" begin
     @test time_ordered_orbs(T4(a,b,c,d))[1] == a
     @test time_ordered_orbs(T4(a,b,c,d))[2] == b
@@ -77,6 +76,39 @@ end
     @test time_ordered_orbs(conf.kinks)[4] == d
     @test time_ordered_orbs(conf.kinks)[end] == a
     @test time_ordered_orbs(conf.kinks)[end-4] == c
+end
+
+@testset "kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)" begin
+    ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b), ImgTime(0.6) => T4(b,a,d,c), ImgTime(0.8) => T4(d,c,b,a)
+    @test kinks_from_periodic_interval(sd, 0.1, 0.6) == SortedDict(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b))
+    @test kinks_from_periodic_interval(sd, 0.7, 0.4) == SortedDict(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.8) => T4(d,c,b,a))
+    @test kinks_from_periodic_interval(sd, 0.5, 0.7) == SortedDict(ImgTime(0.6) => T4(b,a,d,c))
+
+    @test isempty(kinks_from_periodic_interval(sd, 0.3, 0.4))
+    @test kinks_from_periodic_interval(sd, 0.4, 0.3) == sd
+
+    @test isempty(kinks_from_periodic_interval(sd, 0.5, 0.5))
+    @test isempty(kinks_from_periodic_interval(SortedDict{ImgTime,T4}(), 0.1, 0.9))
+end
+
+@testset "times_from_periodic_interval" begin
+    t1 = ImgTime(0.1)
+    t2 = ImgTime(0.3)
+    @test times_from_periodic_interval(sd, t1, t2) == [ImgTime(0.2)]
+    @test times_from_periodic_interval(sd, t2, t1) == [ImgTime(0.5), ImgTime(0.6), ImgTime(0.8)]
+
+    # test for times with no kinks in between
+    t1 = ImgTime(0.3)
+    t2 = ImgTime(0.4)
+    @test times_from_periodic_interval(sd, t1, t2) == []
+end
+
+@testset "Δ(τ1::ImgTime,τ2::ImgTime)" begin
+    @test Δ(ImgTime(0.3), ImgTime(0.5)) == ImgTime(0.5) - ImgTime(0.3)
+    @test Δ(ImgTime(0.8), ImgTime(0.2)) == ImgTime(1) + ImgTime(0.2) - ImgTime(0.8)
+    @test iszero( Δ(ImgTime(0.8),ImgTime(0.8)) )
+
+    @test float(Δ(ImgTime(0.3), ImgTime(0.5))) ≈ float(ImgTime(0.2))
 end
 
 @testset "Type_1_investigation" begin
@@ -118,4 +150,49 @@ end
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 3
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
+end
+
+
+@testset "ΔWoffdiag_element" begin
+
+    mod = UEG()
+
+    ens = CEnsemble(2.0, 5.680898543560106, 7)# θ: 0.125, λ: 0.09945178864947428
+
+    t1 = ImgTime(0.3)
+    t2 = ImgTime(0.7)
+    τ3 = ImgTime(0.9)
+
+    @test ΔWoffdiag_element(mod, ens, kinks_from_periodic_interval(sd, ImgTime(0.3), ImgTime(0.9)), kinks_from_periodic_interval(sd, ImgTime(0.3), ImgTime(0.7))) ≈ Woffdiag_element(mod, ens, d,c,b,a)
+end
+
+
+@testset "ΔWdiag_element(::Model, ::Ensemble, ::Configuration, i, j, k, l, τ1, τ2)" begin
+
+    mod = UEG()
+
+    i = PlaneWave((0,-4,0))
+    j = PlaneWave((0,3,1))
+    k = PlaneWave((0,0,1))
+    l = PlaneWave((0,-1,0))
+
+    τ1 = ImgTime(0.1)
+    τ2 = ImgTime(0.3)
+    τ3 = ImgTime(0.4)
+
+    λ = 0.8
+    β = 0.02
+    N = length(conf.occupations)
+
+    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ2, τ3) ≈ ΔW_diag(mod, i, j, k, l, occupations(conf,τ2)) * (τ3 - τ2) * λ
+
+    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ1, τ3) ≈ ( ΔW_diag(mod, i, j, k, l, occupations(conf,τ1)) * (ImgTime(0.2) - τ1)
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.2))) * (τ3 - ImgTime(0.2))
+                                                                                ) * λ
+
+    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ3, τ1) ≈ ( ΔW_diag(mod, i, j, k, l, occupations(conf,τ3)) * (ImgTime(0.5) - τ3)
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.5))) * (ImgTime(0.6) - ImgTime(0.5))
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.6))) * (ImgTime(0.8) - ImgTime(0.6))
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.8))) * (ImgTime(1) + τ1 - ImgTime(0.8))
+                                                                                ) * λ
 end

@@ -1,8 +1,8 @@
 using CPIMC
 using CPIMC.UniformElectronGas
-using CPIMC.Estimators
+import CPIMC.UniformElectronGas: w
 
-import CPIMC: ImgTime, orbs, T2, T4, Step, wdiag, wminus, apply_step, Δdiagonal_interaction
+import CPIMC: ImgTime, orbs, T2, T4
 
 @testset "λ(N, rs, d) and rs(N::Int, λ::Float64, d) are consistent" begin
     N = 18
@@ -38,37 +38,95 @@ sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.5) => T4(a,b,c,d),
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 conf_pol = Configuration(sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1),sd)
 
-m = UEG()
 
-@testset "wminus" begin
-    r = 1:5
 
-    for _ in 1:10000
-        orb1 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
-        orb2 = orb1
-        while orb1 == orb2
-            orb2 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
-        end
-        orb3 = orb1
-        while (orb3 == orb2) || (orb3 == orb1)
-            orb3 = PlaneWave((rand(r),rand(r),rand(r)),rand([orb1.spin,orb2.spin]))
-        end
 
-        if orb1.spin == orb2.spin
-            orb4 = PlaneWave((orb1.vec + orb2.vec - orb3.vec), orb3.spin)
-        else
-            orb4 = PlaneWave((orb1.vec + orb2.vec - orb3.vec), flip(orb3.spin))
-        end
 
-        @test !isinf(abs(wminus(m, orb1, orb2, orb3, orb4)))
-        @test !isnan(abs(wminus(m, orb1, orb2, orb3, orb4)))
-    end
+
+@testset "ΔW_diag for polarized occupation" begin
+
+    mod = UEG()
+
+    a = PlaneWave((-2,0,0))
+    b = PlaneWave((3,0,0))
+    c = PlaneWave((0,0,0))
+    d = PlaneWave((1,0,0))
+
+    ## occupation to be changed
+    occ = Set([a,b,c,d])
+
+    ### Test 2-particle excitation
+    # choose creator orbitals
+    i = PlaneWave((1,1,1))
+    j = PlaneWave((0,-1,-1))
+    # choose annihilator orbitals
+    k = c
+    l = d
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum not conserved for this excitation "
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+
+    # this functions sums all combinations of orbitals o ∈ occ with annihilated orbitals k (o ≠ k) and l (o ≠ l)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {k,l} ) ∪ {i,j} of the new occupation created with orbitals i (o ≠ i) and j (o ≠ j)
+    @test ΔW_diag(mod, i, j, k, l, occ) ≈ ( w(mod, a,k,k,a) + w(mod, b,k,k,b) + w(mod, a,l,l,a) + w(mod, b,l,l,b) + w(mod, k,l,l,k)
+                                      - w(mod, a,i,i,a) - w(mod, b,i,i,b) - w(mod, a,j,j,a) - w(mod, b,j,j,b) - w(mod, i,j,j,i) )
+
+    ### Test 1-particle excitation
+    i = PlaneWave((-3,0,0))
+    j = b
+    # this functions sums all combinations of orbitals o ∈ occ with the annihilated orbital j (o ≠ j)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {j} ) ∪ {i} of the new occupation created with orbital i (o ≠ i)
+    @test ΔW_diag(mod, i, j, occ) ≈ ( w(mod, a,j,j,a) + w(mod, c,j,j,c) + w(mod, d,j,j,d)
+                                - w(mod, a,i,i,a) - w(mod, c,i,i,c) - w(mod, d,i,i,d) )
 end
 
-@testset "wdiag" begin
-    τ1 = ImgTime(0.8)
-    τ2 = ImgTime(0.2)
-    Δ = Step(Set{PlaneWave{3}}([c,d]), Configuration(Set{PlaneWave{3}}([a,b]), τ1 => T4(b,a,c,d), τ2 => T4(d,c,b,a)))
-    @test round(W_diag(m, e, apply_step(conf_pol, Δ)) - W_diag(m, e,conf_pol),digits = 11) == round(Δdiagonal_interaction(m, e, conf_pol, a::Orbital, b::Orbital, c::Orbital, d::Orbital, τ1, τ2),digits= 11)
-    @test round(W_diag(m, e, apply_step(conf, Δ)) - W_diag(m, e, conf),digits = 11) == round(Δdiagonal_interaction(m, e, conf, a::Orbital, b::Orbital, c::Orbital, d::Orbital, τ1, τ2), digits= 11)
+
+@testset "ΔW_diag for unpolarized occupation" begin
+
+    mod = UEG()
+
+    a = PlaneWave((-2,0,0),Up)
+    b = PlaneWave((3,0,0),Down)
+    c = PlaneWave((0,0,0),Up)
+    d = PlaneWave((1,0,0),Down)
+
+    ## occupation to be changed
+    occ = Set([a,b,c,d])
+
+    ### Test 2-particle excitation
+    # choose creator orbitals
+    i = PlaneWave((1,1,1),Up)
+    j = PlaneWave((0,-1,-1),Down)
+    # choose annihilator orbitals
+    k = c
+    l = d
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum not conserved for this excitation "
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+
+    # this functions sums all combinations of orbitals o ∈ occ with annihilated orbitals k (o ≠ k) and l (o ≠ l)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {k,l} ) ∪ {i,j} of the new occupation created with orbitals i (o ≠ i) and j (o ≠ j)
+    @test ΔW_diag(mod, i, j, k, l, occ) ≈ ( w(mod, a,k,k,a) + w(mod, b,k,k,b) + w(mod, a,l,l,a) + w(mod, b,l,l,b) + w(mod, k,l,l,k)
+                                      - w(mod, a,i,i,a) - w(mod, b,i,i,b) - w(mod, a,j,j,a) - w(mod, b,j,j,b) - w(mod, i,j,j,i) )
+
+    ## test for orbitals where a momentum vector of one creator orbital is equal to the momentum vector of one orbital in the occupation
+    # choose creator orbitals
+    i = PlaneWave((-2,0,0),Down)
+    j = PlaneWave((5,0,0),Up)
+    # choose annihilator orbitals
+    k = b
+    l = c
+    @assert iszero( i.vec + j.vec - k.vec - l.vec ) " momentum not conserved for this excitation "
+    @assert (i.spin == k.spin) & (j.spin == l.spin) " spin is not conserved for this excitation "
+
+    # the contribution w(a,i,i,a) does not occur here because a.vec == i.vec
+    @test ΔW_diag(mod, i, j, k, l, occ) ≈ ( w(mod, a,k,k,a) + w(mod, d,k,k,d) + w(mod, a,l,l,a) + w(mod, d,l,l,d) + w(mod, k,l,l,k)
+                                      # - w(a,i,i,a) does not occur here because a.vec == i.vec
+                                       - w(mod, d,i,i,d) - w(mod, a,j,j,a) - w(mod, d,j,j,d) - w(mod, i,j,j,i) )
+
+    ### Test 1-particle excitation
+    i = PlaneWave((-3,0,0),Down)
+    j = b
+    # this functions sums all combinations of orbitals o ∈ occ with the annihilated orbital j (o ≠ j)
+    # and substracts the sum of all combinations of orbitals o ∈ ( occ ̸ {j} ) ∪ {i} of the new occupation created with orbital i (o ≠ i)
+    @test ΔW_diag(mod, i, j, occ) ≈ ( w(mod, a,j,j,a) + w(mod, c,j,j,c) + w(mod, d,j,j,d)
+                                - w(mod, a,i,i,a) - w(mod, c,i,i,c) - w(mod, d,i,i,d) )
 end

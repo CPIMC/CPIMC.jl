@@ -25,6 +25,8 @@ include("PlaneWaves.jl")
 radius of the sphere of orbitals which are considered for excitations
 """
 const ex_radius = 3 # TODO: find better solution
+# ex_radius could be kwarg to each update function
+# and passed to `sweep!` via anonymous function with local variable ex_radius
 
 
 using .PlaneWaves

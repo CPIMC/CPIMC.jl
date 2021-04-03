@@ -5,9 +5,9 @@ module Estimators
 
 using ..CPIMC
 
-import ..CPIMC: kernel, energy, signum, excite!, right_type_1_count, longest_type_1_chain_length
+import ..CPIMC: energy, w, signum, excite!, right_type_1_count, longest_type_1_chain_length
 
-export E, Ekin, W, W_off_diag, W_diag, K, occupations, signum, longest_type_1_chain_length, right_type_1_count    
+export E, Ekin, W, W_off_diag, W_diag, K, occupations, signum, longest_type_1_chain_length, right_type_1_count
 
 """
     Ekin(m::Model, e::Ensemble, c::Configuration)
@@ -55,7 +55,7 @@ function W_diag(m::Model, e::Ensemble, c::Configuration)
             redundant = true
             for occ2 in c.occupations
                 if !redundant & (occ1.spin == occ2.spin)
-                    W_diag += e.λ * kernel(m, occ1, occ2)
+                    W_diag += e.λ * w(m, occ1, occ2, occ2, occ1)
                 end
                 if occ1 == occ2
                     redundant = false
@@ -70,7 +70,7 @@ function W_diag(m::Model, e::Ensemble, c::Configuration)
                 redundant = true
                 for occ2 in occs
                     if !redundant & (occ1.spin == occ2.spin)
-                        W_diag += e.λ * kernel(m, occ1, occ2) * (τ-old_τ)
+                        W_diag += e.λ * w(m, occ1, occ2, occ2, occ1) * (τ-old_τ)
                     end
                     if occ1 == occ2
                         redundant = false

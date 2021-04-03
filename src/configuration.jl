@@ -102,6 +102,18 @@ ImgTime(t::Tuple{Nothing,Nothing}) = (ImgTime(0), ImgTime(1))
 " outer constructor method for a Tuple{ImgTime,ImgTime} from Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}} which returns the ImgTimes of the Pairs as Tuple{ImgTime,ImgTime} "
 ImgTime(t::Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}}) = (first(first(t)), first(last(t)))
 
+@doc raw"""
+    Δ(::ImgTime,::ImgTime)
+
+return the length of the periodic interval between the two ::ImgTimes
+
+the periodic distance of two imaginary times:
+
+    `Δ(τ1,τ2) = τ2 - τ1` if `τ2 >= τ1` and
+    `Δ(τ1,τ2) = 1 - (τ1 - τ2) = 1 + τ2 - τ1` else
+"""
+Δ(τ1::ImgTime,τ2::ImgTime) = τ1 > τ2 ? ImgTime(1) + τ2 - τ1 : τ2 - τ1
+
 " multi-particle trajectory using single particle states with type T "
 mutable struct Configuration{T}
   " set of orbitals occupied at τ=0 "
@@ -422,7 +434,6 @@ end
 time_ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
 
 
-#TODO change Name to orbs_time_ordered
 """ get a list of orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l """
 function time_ordered_orbs(ck::SortedDict{ImgTime,<:Kink{T}}) where T time_ordered_orbs
     if isempty(ck)
@@ -449,6 +460,7 @@ function ladder_operator_order_factor(sortedlist::Array{<:Orbital,1})
     return phase_factor
 end
 
+
 """ returns 1 or -1 depending on the order of all ladder operators as given by the orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l,
 used in the sign estimator."""
 ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_order_factor(time_ordered_orbs(ck))
@@ -458,6 +470,7 @@ ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_o
 
 """
     is_type_1(left_kink::T4, right_kink::T4)
+
 Returns True if left_kink and right_kink are entangled in a Type-1 way.
 This does not check wether the two kinks are neighbouring."""
 function is_type_1(left_kink::T4, right_kink::T4)
@@ -465,14 +478,15 @@ function is_type_1(left_kink::T4, right_kink::T4)
         (length(intersect(Set([left_kink.k, left_kink.l]), Set([right_kink.i, right_kink.j]))) == 0)) ||
     ((length(intersect(Set([left_kink.i, left_kink.j]),Set([right_kink.k, right_kink.l]))) == 0) &
           (length(intersect(Set([left_kink.k, left_kink.l]), Set([right_kink.i, right_kink.j]))) == 1))
-    return(true)
+    return true
   else
-    return(false)
+    return false
   end
 end
 
 """
     right_type_1_chain_length(ck, τ, count = 0)
+
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the right.
 """
 function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
@@ -488,6 +502,7 @@ end
 
 """
     left_type_1_chain_length(ck, τ, count = 0)
+
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
 """
 function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
@@ -502,10 +517,11 @@ function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τ
 end
 
 """
-    longest_type_1_chain_length(ck) where T
+    longest_type_1_chain_length(ck)
+
 Returns the longest chain of type-1-entaglements in ck.
 """
-function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T
+function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink})
     longest_length = 0
     for (τ, kink) in ck
         longest_length = max(right_type_1_chain_length(ck, τ),
@@ -514,7 +530,12 @@ function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}) where T
     return longest_length
 end
 
-function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
+"""
+    longest_type_1_chain_length(ck)
+
+Returns the longest chain of type-1-entaglements in ck.
+"""
+function right_type_1_count(ck::SortedDict{ImgTime,<:Kink})
     count = 0
     for (τ, kink) in ck
         if is_type_1(kink, last(next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])),τ)))
@@ -523,7 +544,6 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
     end
     return count
 end
-
 
 function shuffle_annihilators(kink::T4)
     if rand() < 0.5
@@ -540,5 +560,36 @@ function shuffle_creators(kink::T4)
         return T4(kink.j,kink.i,kink.k,kink.l)
     else
         return T4(kink.i,kink.j,kink.k,kink.l)
+    end
+end
+
+
+"""
+    kinks_from_periodic_interval(::SortedDict{ImgTime,<:Kink}, τ1, τ2)
+
+return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2
+"""
+function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
+    if τ1 > τ2# interval is periodically continued
+        filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
+    else# this also catches τ1 == τ2
+        filter(x -> τ1 < first(x) < τ2, ck)
+    end
+end
+
+"""
+    times_from_periodic_interval(::SortedDict{ImgTime,<:Kink}, ::ImgTime, ::ImgTime)
+
+return a list of all times of kinks with τ ∈ (τ1,τ2) if τ1 < τ2 or τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2
+in the periodic ordering suggested by the relation of the first time-argument τ1 to the second time-argument τ2
+"""
+function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTime, τ2::ImgTime)
+    if τ1 > τ2# interval is periodically continued
+        vcat(
+            collect(keys( filter(x -> τ1 < first(x), ck) )),
+            collect(keys( filter(x -> first(x) < τ2, ck) ))
+            )
+    else# this also catches τ1 == τ2
+        collect(keys( filter(x -> τ1 < first(x) < τ2, ck) ))
     end
 end
