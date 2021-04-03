@@ -638,10 +638,12 @@ function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, k, l, τ1, τ2)# T
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+    #Calculate Wdiag with occupation at the start of the Intervall.
     ΔWdiag_τ1_occ = ΔW_diag(i, j, k, l, occupations(c,τ1)) * Δ(τ2,τ1)
     if isempty(Ks)
         return e.λ * ΔWdiag_τ1_occ
     else
+        #Calculate contrubutions to Wdiag of the orbitals changed by kinks in the intervall.
         ΔWdiag_kinks = sum( (ΔW_diag(i, j, k, l, creators(Ks[t1])) - ΔW_diag(i, j, k, l, annihilators(Ks[t1]))) * Δ(τ2,t1) for t1 in τs[2:end-1])
         return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
     end
@@ -660,10 +662,12 @@ function ΔWdiag_element(c::Configuration, e::Ensemble, i, j, τ1, τ2)# TODO: a
     @assert τ1 != τ2 " The diagonal interaction matrix element changes when kinks are added at different times and thus the occupations between the kinks are altered. It has no meaning to calculate this matrix element (or to add kinks) at equal times τ1=$(τ1), τ2=$(τ2). "
     τs = times_from_periodic_interval(c.kinks, τ1, τ2)
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
+    #Calculate Wdiag with occupation at the start of the Intervall.
     ΔWdiag_τ1_occ = ΔW_diag(i, j, occupations(c,τ1)) * Δ(τ2,τ1)
     if isempty(Ks)
         return e.λ * ΔWdiag_τ1_occ
     else
+        #Calculate contrubutions to Wdiag of the orbitals changed by kinks in the intervall.
         ΔWdiag_kinks = sum( (ΔW_diag(i, j, creators(Ks[t1])) - ΔW_diag(i, j, annihilators(Ks[t1]))) * Δ(τ2,t1) for t1 in τs[2:end-1])
         return e.λ * (ΔWdiag_τ1_occ + ΔWdiag_kinks)
     end
