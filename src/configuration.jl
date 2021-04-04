@@ -556,6 +556,7 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink})
     return count
 end
 
+# TODO: write this for varargs of orbitals
 function shuffle_annihilators(kink::T4)
     if rand() < 0.5
         # shuffle
@@ -565,6 +566,7 @@ function shuffle_annihilators(kink::T4)
     end
 end
 
+# TODO: write this for varargs of orbitals
 function shuffle_creators(kink::T4)
     if rand() < 0.5
         # shuffle
