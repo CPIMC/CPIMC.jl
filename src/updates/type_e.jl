@@ -15,25 +15,25 @@ function is_type_E(left_kink::T4, right_kink::T4)
         noncommon_orb_rightk_left = first(setdiff!(Set([right_kink.k,right_kink.l]), Set([left_kink.i, left_kink.j])))
         @assert length(Set([noncommon_orb_leftk_left, noncommon_orb_rightk_right, noncommon_orb_leftk_right, noncommon_orb_rightk_left])) == 4 " The given orbitals are not pairwise distinct. "
         @assert noncommon_orb_leftk_right.vec - noncommon_orb_leftk_left.vec == noncommon_orb_rightk_left.vec - noncommon_orb_rightk_right.vec
-        return (T4(noncommon_orb_leftk_right, c_orb1, c_orb2, noncommon_orb_leftk_left), T4(noncommon_orb_rightk_right, c_orb2, c_orb1, noncommon_orb_rightk_left))
+        return T4(noncommon_orb_leftk_right, c_orb1, c_orb2, noncommon_orb_leftk_left), T4(noncommon_orb_rightk_right, c_orb2, c_orb1, noncommon_orb_rightk_left)
     else
         return false
     end
 end
 
-"""Return a Tuple of two imaginary times of 'neighbouring' kinks that are Type-E-Entangeld AND removable.
+"""Return a Tuple of two imaginary times of 'neighbouring' kinks that are Type-E entangled AND removable.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-E-entanglement is oriented
 #to the left of the first τ."""
-function get_left_type_E_removable_pairs(c::Configuration)
+function get_left_type_E_removable_pairs(ck)
     pairs_left = Set{}()
-    for (τ,kink) in c.kinks
+    for (τ,kink) in ck
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
-        sorted_kinks = is_type_E(c.kinks[τ_left], kink)
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
+        sorted_kinks = is_type_E(ck[τ_left], kink)
         if sorted_kinks == false
             continue
         end
@@ -47,20 +47,20 @@ function get_left_type_E_removable_pairs(c::Configuration)
 end
 
 
-"""Return a Tuple of 2 imaginary times of 'neighbouring' Kinks that are Type-E-Entangeld AND removable.
+"""Return a Tuple of 2 imaginary times of 'neighbouring' Kinks that are Type-E entangled AND removable.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-E-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_E_removable_pairs(c::Configuration)
+function get_right_type_E_removable_pairs(ck)
     pairs_right = Set{}()
-    for (τ,kink) in c.kinks
+    for (τ,kink) in ck
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
 
-        sorted_kinks = is_type_E(kink, c.kinks[τ_right])
+        sorted_kinks = is_type_E(kink, ck[τ_right])
         if sorted_kinks == false
             continue
         end
@@ -149,7 +149,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             return 1.0, Step()
         end
 
-        τ_Intervall = first(old_kink) - first(τ_borders(c, Set([new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator]), first(old_kink)))# TODO: write function returning only `prev` instead of picking first from tuple (`prev`,`next`)
+        τ_Intervall = first(old_kink) - τ_prev_affecting( c.kinks, Set([new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator]), first(old_kink) )
 
         if τ_Intervall < 0
             τ_Intervall +=1
@@ -204,7 +204,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw_off_diag = abs( Woffdiag_element(m, e, last(add_kink2)) * Woffdiag_element(m, e, last(add_kink1)) / Woffdiag_element(m, e, last(old_kink)) )
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m, last(add_kink2).i) + energy(m, last(add_kink2).j)- energy(m, last(add_kink2).k) - energy(m, last(add_kink2).l)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_right_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25# TODO: is there a faster way than to explicitly calculate all these pairs in order to get their number?
+        inverse_prop_prob = 0.5 * 0.25 / length( get_right_type_E_removable_pairs( apply_step(c,Δ).kinks ) )# TODO: is there a faster way than to explicitly calculate all these pairs in order to get their number?
 
         @assert !isinf(inverse_prop_prob)
     else
@@ -246,7 +246,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             return 1.0, Step()
         end
 
-        τ_Intervall = last(τ_borders(c, Set([new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator]),first(old_kink))) - first(old_kink)# TODO: write new function for this
+        τ_Intervall = τ_next_affecting(c.kinks, Set([new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator]), first(old_kink)) - first(old_kink)
         if τ_Intervall < 0
             τ_Intervall +=1
         end
@@ -301,7 +301,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m, last(add_kink2).k) + energy(m, last(add_kink2).l) - energy(m, last(add_kink2).i) - energy(m, last(add_kink2).j)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_left_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25# TODO: is there a straighter way than to explicitly calculate all these pairs in order to get their number ?
+        inverse_prop_prob = 0.5 * 0.25 / length( get_left_type_E_removable_pairs( apply_step(c,Δ).kinks ) )# TODO: is there a straighter way than to explicitly calculate all these pairs in order to get their number ?
 
         @assert(inverse_prop_prob != Inf)
     end
@@ -318,7 +318,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     prop_prob = 0.5
     if rand() > 0.5
         #removed kink left of changed kink
-        opportunities = get_right_type_E_removable_pairs(c)
+        opportunities = get_right_type_E_removable_pairs(c.kinks)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -357,7 +357,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         delete!(opportunities_occ_orb_E, last(add_kink).i)
         delete!(opportunities_occ_orb_E, last(add_kink).j)
         @assert(in(removed_kink.k,opportunities_occ_orb_E))
-        τ_Intervall = changed_kink_τ - first(τ_borders(apply_step(c,Δ), Set([removed_kink.k, removed_kink.l,removed_kink.i, removed_kink.j]),changed_kink_τ))# TODO: write new function instead of picking the first element from τ_borders
+        τ_Intervall = changed_kink_τ - τ_prev_affecting( apply_step(c,Δ).kinks, Set([removed_kink.k, removed_kink.l,removed_kink.i, removed_kink.j]), changed_kink_τ )
 
 
         if τ_Intervall < 0
@@ -381,7 +381,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     else
         #removed kink right of changed kink
-        opportunities = get_left_type_E_removable_pairs(c)
+        opportunities = get_left_type_E_removable_pairs(c.kinks)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -417,7 +417,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         delete!(opportunities_unocc_orb_E, last(add_kink).k)
         delete!(opportunities_unocc_orb_E, last(add_kink).l)
         @assert in(removed_kink.k,opportunities_unocc_orb_E)
-        τ_Intervall =  last(τ_borders(apply_step(c,Δ), Set([removed_kink.i, removed_kink.j,removed_kink.k, removed_kink.l]),changed_kink_τ)) - changed_kink_τ# TODO: write a function for this instead of picking the first of the tuple returned by τ_borders
+        τ_Intervall =  τ_next_affecting( apply_step(c,Δ).kinks, Set([removed_kink.i, removed_kink.j,removed_kink.k, removed_kink.l]), changed_kink_τ ) - changed_kink_τ
 
         if τ_Intervall < 0
             τ_Intervall +=1
