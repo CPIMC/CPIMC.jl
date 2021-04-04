@@ -99,6 +99,16 @@ const ImgTime = Fixed{Int64,60}
 " outer constructor method for a Tuple{ImgTime,ImgTime} from Tuple{Nothing,Nothing} which returns the bounds of the ImgTime interval as Tuple (ImgTime(0), ImgTime(1)) "
 ImgTime(t::Tuple{Nothing,Nothing}) = (ImgTime(0), ImgTime(1))
 
+"""
+    ImgTime(::Pair{ImgTime,<:Kink})
+
+outer constructor method for an ImgTime from Pair{ImgTime,<:Kink}
+this returns the first argument of the Pair
+useful for automatic conversion
+"""
+ImgTime(p::Pair{ImgTime,<:Kink}) = first(p)
+
+
 " outer constructor method for a Tuple{ImgTime,ImgTime} from Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}} which returns the ImgTimes of the Pairs as Tuple{ImgTime,ImgTime} "
 ImgTime(t::Tuple{Pair{ImgTime,<:Kink},Pair{ImgTime,<:Kink}}) = (first(first(t)), first(last(t)))
 
@@ -203,8 +213,11 @@ function occupations(c::Configuration, τ::ImgTime)
   occupations(c.occupations, filter(x -> first(x) <= τ, c.kinks))
 end
 
-""" return first kink after to τ
-    if there is no kink with ImgTime larger than τ, return first kink """
+"""
+    next(::SortedDict{ImgTime,<:Kink}, ::ImgTime)
+
+Return first kink after to given ::ImgTime. If there is no kink with ::ImgTime larger than τ, return first kink.
+"""
 function next(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
     toc = searchsortedafter(ck, τ)
     if toc == pastendsemitoken(ck)
@@ -214,8 +227,11 @@ function next(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
     end
 end
 
-""" return first kink before τ
-    if there is no kink with ImgTime smaller than τ, return last kink """
+"""
+    prev(::SortedDict{ImgTime,<:Kink}, ::ImgTime)
+
+Return first kink before given ::ImgTime. If there is no kink with ::ImgTime smaller than τ, return last kink.
+"""
 function prev(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
     toc = regress((ck, searchsortedfirst(ck, τ)))
     if toc == beforestartsemitoken(ck)
@@ -225,41 +241,102 @@ function prev(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
     end
 end
 
-"""     kinks_affecting_orbs(c::Configuration{T}, os::Set{T}) where {T <: Orbital}
-return all kinks in c which affect one ore more of the orbitals in os
 """
-kinks_affecting_orbs(c::Configuration{T}, os::Set{T}) where {T <: Orbital} = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), c.kinks)
+     kinks_affecting_orbs(itr::Any, itr::Any)
 
-kinks_affecting_orbs(ck::SortedDict{ImgTime,<:Kink}, os::Set{T}) where {T <: Orbital} = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), ck)
-"""     adjacent_kinks(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime) where {T <: Orbital}
-return a tuple of imaginary times the closest kink to the right and
-the closest kink to the left of τ that affect one of the orbitals in os
-if there are no such kinks in ck, return (nothing,nothing)
+Return all kinks in the first argument that affect one ore more of the orbitals the second argument.
+The first itr is expected to contain tuples or at least types on which `last()` is defined
+and `last(i)` is intended to contain a ::T4 for all elements `i ∈ itr` or at least a type
+which has fields with the names `i`, `j`, `k`, `l`.
 """
-adjacent_kinks(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime) where {T <: Orbital} = prev(ck, τ), next(ck, τ)
+kinks_affecting_orbs(ck, os) = filter( p -> any( Set([last(p).i,last(p).j,last(p).k,last(p).l]) .∈ (os,) ), ck)
+kinks_affecting_orbs(c::Configuration, os) = kinks_affecting_orbs(c.kinks, os)
 
-"""    adjacent_kinks_affecting_orbs(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital}
 
-return a tuple of
-the closest kink to the right and the closest kink to the left of τ
-that affect one of the orbitals in os if there are no such kinks in c, return (nothing,nothing) """
-function adjacent_kinks_affecting_orbs(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital}
-    k = kinks_affecting_orbs(c, os)
+"""
+    adjacent_kinks(itr::Any, ::Any)
+
+Return a tuple of the kink in `itr`
+that is closest right of the time in the second argument.
+This expects that methods for the functions `next()` and `prev()` are defined
+for the given argument types.
+Used for getting a tuple of the neighbouring kinks from some imaginary time.
+"""
+adjacent_kinks(ck::Any, τ::Any) = prev(ck, τ), next(ck, τ)
+
+
+"""
+    adjacent_kinks_affecting_orbs(::Any, ::Any, ::Any)
+
+Return a tuple of the closest kink to the right and the closest kink to the left of some imaginary time
+that affect one of the orbitals in some collection. If there are no such kinks, return (nothing,nothing).
+The first argument is expected to be an iterable which contains pairs as elements, with
+the first element of each pair containing an imaginary time and the second element of each pair containing a kink.
+The second argument is expected to be a collection of orbitals, that are to be considered regarding affection with one of the
+kinks in the first argument.
+The third argument is expected to be an imaginary time from which the neighbouring kinks affected by any orbitals from the
+second argument are to be determined."""
+function adjacent_kinks_affecting_orbs(ck, os, τ)
+    k = kinks_affecting_orbs(ck, os)
     if isempty(k)
         return (nothing,nothing)
     else
         return adjacent_kinks(k, τ)
     end
 end
+adjacent_kinks_affecting_orbs(c::Configuration, os, τ) = adjacent_kinks_affecting_orbs(c.kinks, os, τ)
 
-"""     τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital}
-return a tuple of
+
+"""
+     τ_prev_affecting(::Any, ::Any, ::Any)
+
+Return the ImgTime of the closest kink to the left of τ
+that affects one of the orbitals in os.
+If no orbital in os is affected by and kink,
+return the lower interval bound ImgTime(0).
+"""
+function τ_prev_affecting(ck, os, τ)
+    κs = kinks_affecting_orbs(ck, os)
+    if isempty(κs)
+        ImgTime(0.0)
+    else
+        ImgTime(prev(ck, τ))
+    end
+end
+
+
+"""
+     τ_next_affecting(::Any, ::Any, ::Any)
+
+Return the ImgTime of the closest kink to the right of τ
+that affects one of the orbitals in os.
+If no orbital in os is affected by and kink,
+return the lower interval bound ImgTime(0).
+"""
+function τ_next_affecting(ck, os, τ)
+    κs = kinks_affecting_orbs(ck, os)
+    if isempty(κs)
+        ImgTime(1.0)
+    else
+        ImgTime(next(ck, τ))
+    end
+end
+
+"""
+     τ_borders(::SortedDict{ImgTime,<:Kink}, ::Set{T}, ::ImgTime) where {T <: Orbital}
+
+Return a tuple of
 the ImgTime of the closest kink to the right and
 the ImgTime of the closest kink to the left of τ
-that affect one of the orbitals in os """
-τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(c, os, τ))
+that affect one of the orbitals in os.
+If no orbital in os is affected by and kink from the collection in the first argument,
+return a tuple of the interval bounds (ImgTime(0), ImgTime(1))."""
+τ_borders(ck::SortedDict{ImgTime,<:Kink{T}}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, os, τ))
 
-" return if an orbital is not affected by any kink "
+τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, os, τ)
+
+
+" Return if an orbital is not affected by any kink. "
 function isunaffected(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T) where {T<:Orbital}
     if isempty(ck)
         return true
@@ -268,7 +345,7 @@ function isunaffected(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T) where {T<:O
     end
 end
 
-" return if an orbital is not affected by any of the kinks from ck in the open interval (τ_first,τ_last). "
+" Return if an orbital is not affected by any of the kinks from ck in the open interval (τ_first,τ_last). "
 function isunaffected_in_interval(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T, τ_first::ImgTime, τ_last::ImgTime) :: Bool where {T<:Orbital}
     @assert τ_first != τ_last
     if τ_first < τ_last
@@ -556,25 +633,46 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink})
     return count
 end
 
-# TODO: write this for varargs of orbitals
-function shuffle_annihilators(kink::T4)
-    if rand() < 0.5
-        # shuffle
-        return T4(kink.i,kink.j,kink.l,kink.k)
-    else
-        return T4(kink.i,kink.j,kink.k,kink.l)
-    end
-end
 
-# TODO: write this for varargs of orbitals
-function shuffle_creators(kink::T4)
+"""
+    shuffle_annihilators(::Any, ::Any, ::Any, ::Any)
+
+Return a tuple where the last two arguments are randomly shuffled with equal probability 0.5
+in comparison to the ordering of the input.
+"""
+function shuffle_annihilators(i, j, k, l)
     if rand() < 0.5
-        # shuffle
-        return T4(kink.j,kink.i,kink.k,kink.l)
+        i, j, l, k
     else
-        return T4(kink.i,kink.j,kink.k,kink.l)
+        i, j, k, l
     end
 end
+shuffle_annihilators(κ::T4) = T4(shuffle_annihilators(κ.i, κ.j, κ.k, κ.l)...)
+
+"""
+    shuffle_creators(::Any, ::Any, ::Any, ::Any)
+
+Return a tuple where the first two arguments are randomly shuffled with equal probability 0.5
+in comparison to the ordering of the input.
+"""
+function shuffle_creators(i, j, k, l)
+    if rand() < 0.5
+        j, i, k, l
+    else
+        i, j, k, l
+    end
+end
+shuffle_creators(κ::T4) = T4(shuffle_creators(κ.i, κ.j, κ.k, κ.l)...)
+
+"""
+    shuffle_indices(::Any, ::Any, ::Any, ::Any)
+
+Return a tuple where both the first two arguments and the last two arguments
+are randomly shuffled with equal probability 0.5 respectively
+in comparison to the ordering of the input.
+"""
+shuffle_indices(i, j, k, l) = shuffle_creators( shuffle_annihilators(i,j,k,l)... )
+shuffle_indices(κ::T4) = T4(shuffle_indices(κ.i, κ.j, κ.k, κ.l)...)
 
 
 """
