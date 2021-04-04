@@ -453,7 +453,10 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink}) where T
     return count
 end
 
-
+"""
+    shuffle_annihilators(kink::T4)
+Returns a Kink, that acts on the same Orbitals at kink::T4 but with randomly shuffled order of the annihilators.
+"""
 function shuffle_annihilators(kink::T4)
     if rand() < 0.5
         # shuffle
@@ -463,6 +466,10 @@ function shuffle_annihilators(kink::T4)
     end
 end
 
+"""
+    shuffle_creators(kink::T4)
+Returns a Kink, that acts on the same Orbitals at kink::T4 but with randomly shuffled order of the creators.
+"""
 function shuffle_creators(kink::T4)
     if rand() < 0.5
         # shuffle
@@ -470,4 +477,15 @@ function shuffle_creators(kink::T4)
     else
         return T4(kink.i,kink.j,kink.k,kink.l)
     end
+end
+
+function find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_operator1, other_kind_ladder_operator2)
+    @assert(in(same_kind_ladder_operator.spin, [other_kind_ladder_operator1.spin, other_kind_ladder_operator2.spin]))
+    if other_kind_ladder_operator1.spin == other_kind_ladder_operator2.spin
+        fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, same_kind_ladder_operator.spin)
+
+    else
+        fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, flip(same_kind_ladder_operator.spin))
+    end
+    return(fourth_orb)
 end

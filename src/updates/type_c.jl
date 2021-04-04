@@ -17,7 +17,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the left of the first τ."""
-function get_left_type_C_removable_pairs(c::Configuration)
+function left_type_C_removable_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -41,7 +41,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_C_removable_pairs(c::Configuration)
+function right_type_C_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -58,8 +58,9 @@ function get_right_type_C_removable_pairs(c::Configuration)
 end
 
 
+
 function possible_new_orb1_C(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
-    opprtunities = filter(new_orb_1 -> !in(PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin),occs) && (new_orb_1 != PlaneWave(old_orb1.vec + old_orb2.vec - new_orb_1.vec, exite_orb2.spin)),
+    opprtunities = filter(new_orb_1 -> !in(find_fourth_orb_for_kink(new_orb_1, old_orb1, old_orb2),occs) && (new_orb_1 != find_fourth_orb_for_kink(new_orb_1, old_orb1, old_orb2)),
                     setdiff!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
 
     return setdiff!(opprtunities, Set([exite_orb1, exite_orb2, old_orb1, old_orb2]))
@@ -82,7 +83,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         end
         new_orb1 = rand(opportunities_new_orb1)
         prop_prob *= 1.0/length(opportunities_new_orb1)
-        new_orb2 = PlaneWave(last(old_kink).j.vec + last(old_kink).i.vec - new_orb1.vec, last(old_kink).l.spin)
+        new_orb2 = find_fourth_orb_for_kink(new_orb1, last(old_kink).i, last(old_kink).j)
 
         @assert(!in(new_orb2, occs) & (new_orb1 != new_orb2))
 
@@ -140,7 +141,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m,new_orb1) + energy(m,new_orb2) -
                                     energy(m,last(old_kink).k) - energy(m,last(old_kink).l)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_right_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
+        inverse_prop_prob = (1.0/length(right_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
 
         @assert !isinf(inverse_prop_prob) "change kink left: inverse_prop_prob = Inf"
 
@@ -153,7 +154,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         end
         new_orb1 = rand(opportunities_new_orb1)
         prop_prob *= 1.0/length(opportunities_new_orb1)
-        new_orb2 = PlaneWave(last(old_kink).l.vec + last(old_kink).k.vec - new_orb1.vec, last(old_kink).j.spin)
+        new_orb2 = find_fourth_orb_for_kink(new_orb1, last(old_kink).k, last(old_kink).l)
 
         @assert(!in(new_orb2, occs) & (new_orb1 != new_orb2))
         τ_Intervall = last(τ_borders(c, Set([
@@ -215,7 +216,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m, new_orb1) + energy(m, new_orb2) -
                                     energy(m, last(old_kink).i) - energy(m, last(old_kink).j)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_left_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
+        inverse_prop_prob = (1.0/length(left_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
 
         @assert !isinf(inverse_prop_prob) "change kink right: inverse_prop_prob = Inf"
     end
@@ -232,16 +233,12 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     prop_prob = 0.5
     if rand() > 0.5
         #removed kink left of changed kink
-        opportunities = get_right_type_C_removable_pairs(c)
+        opportunities = right_type_C_removable_pairs(c)
         if isempty(opportunities)
             return 1.0, Step()
         end
         removed_kink_τ, changed_kink_τ = rand(opportunities)
         prop_prob *= 1.0/length(opportunities)
-
-        @assert(c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin)
-        @assert ( dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2) ) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
-
         #safe thoose for later
         removed_orb1 = c.kinks[removed_kink_τ].i
         removed_orb2 = c.kinks[removed_kink_τ].j
@@ -296,16 +293,12 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     else
         #removed kink right of changed kink
-        opportunities = get_left_type_C_removable_pairs(c)
+        opportunities = left_type_C_removable_pairs(c)
         if isempty(opportunities)
             return 1.0, Step()
         end
         removed_kink_τ, changed_kink_τ = rand(opportunities)
         prop_prob *= 1.0/length(opportunities)
-
-        @assert(c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin)
-        @assert (dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2)) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
-
         #safe thoose for later
         removed_orb1 = c.kinks[removed_kink_τ].k
         removed_orb2 = c.kinks[removed_kink_τ].l
@@ -316,7 +309,6 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #see if c.occupations change
         if removed_kink_τ < changed_kink_τ  #new kink was added right of old kink
-            # change_occupations(c.occupations, T4(c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j,removed_orb1,removed_orb2))
             drop_orbs = Set([removed_orb1,removed_orb2])
             add_orbs = Set([c.kinks[removed_kink_τ].i, c.kinks[removed_kink_τ].j])
         else

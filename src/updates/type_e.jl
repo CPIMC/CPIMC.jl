@@ -29,7 +29,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-E-entanglement is oriented
 #to the left of the first τ."""
-function get_left_type_E_removable_pairs(c::Configuration)
+function left_type_E_removable_pairs(c::Configuration)
   pairs_left = Set{}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -56,7 +56,7 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-E-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_E_removable_pairs(c::Configuration)
+function right_type_E_removable_pairs(c::Configuration)
   pairs_right = Set{}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -79,24 +79,17 @@ function get_right_type_E_removable_pairs(c::Configuration)
 end
 
 
-function new_kink_new_creator(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator)
-    if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-        new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, new_kink_old_creator.spin)
-    else
-        new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, flip(new_kink_old_creator.spin))
-    end
-end
-
-
 function possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
-    possibilities = filter(new_kink_new_annihilator -> !in(new_kink_new_creator(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
-                    intersect!(sphere(new_kink_old_creator, dk = ex_radius), occs))
+    possibilities = filter(new_kink_new_annihilator -> !in(find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
+                    intersect!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
+                            sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs))
     return setdiff!(possibilities, Set([new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator]))
 end
 
 function possible_new_kink_new_unocc_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
-    possibilities = filter(new_kink_new_annihilator -> in(new_kink_new_creator(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
-                    setdiff!(sphere(new_kink_old_creator, dk = ex_radius), occs))
+    possibilities = filter(new_kink_new_annihilator -> in(find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
+                    setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
+                            sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs))
     return setdiff!(possibilities, Set([new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator]))
 end
 
@@ -133,24 +126,15 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             changed_kink_old_annihilator = last(old_kink).k
         end
         #find occupied orb for creation of Type_E
-        #opportunities_new_kink_new_annihilator = intersect!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-        #        sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
-
-
         opportunities_new_kink_new_annihilator = possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
-        delete!(opportunities_new_kink_new_annihilator, last(old_kink).i)
-        delete!(opportunities_new_kink_new_annihilator, last(old_kink).j)
         if isempty(opportunities_new_kink_new_annihilator)
             return 1.0, Step()
         end
         new_kink_new_annihilator = rand(opportunities_new_kink_new_annihilator)
         prop_prob *= 1.0/length(opportunities_new_kink_new_annihilator)
         #calculate new creator
-        if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), new_kink_old_creator.spin)
-        else
-            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + (new_kink_new_annihilator.vec - new_kink_old_creator.vec), flip(new_kink_old_creator.spin))
-        end
+
+        new_kink_new_creator = find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator)
         if (in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).k) | (new_kink_new_creator == last(old_kink).l))
             return 1.0, Step()
         end
@@ -215,7 +199,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m,apply_step(c,Δ).kinks[τ_new_kink].i) + energy(m,apply_step(c,Δ).kinks[τ_new_kink].j)-
                                                          energy(m,apply_step(c,Δ).kinks[τ_new_kink].k) - energy(m,apply_step(c,Δ).kinks[τ_new_kink].l)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_right_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25
+        inverse_prop_prob = (1.0/length(right_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25
 
         @assert(inverse_prop_prob != Inf)
     else
@@ -238,23 +222,14 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             changed_kink_old_annihilator = last(old_kink).k
         end
         #find occupied orb for creation of Type_E
-        #opportunities_new_kink_new_annihilator = setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
-        #                                                         sphere_with_same_spin(PlaneWave(new_kink_old_creator.vec, flip(new_kink_old_annihilator.spin)), dk = ex_radius)), occs)
-
         opportunities_new_kink_new_annihilator = possible_new_kink_new_unocc_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
-        delete!(opportunities_new_kink_new_annihilator, last(old_kink).k)
-        delete!(opportunities_new_kink_new_annihilator, last(old_kink).l)
         if isempty(opportunities_new_kink_new_annihilator)
             return 1.0, Step()
         end
         new_kink_new_annihilator = rand(opportunities_new_kink_new_annihilator)
         prop_prob *= 1.0/length(opportunities_new_kink_new_annihilator)
 
-        if new_kink_new_annihilator.spin == new_kink_old_annihilator.spin
-            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, new_kink_old_creator.spin)
-        else
-            new_kink_new_creator = PlaneWave(new_kink_old_annihilator.vec + new_kink_new_annihilator.vec - new_kink_old_creator.vec, flip(new_kink_old_creator.spin))
-        end
+        new_kink_new_creator = find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator)
 
         if (!in(new_kink_new_creator, occs) | (new_kink_new_creator == last(old_kink).i) | (new_kink_new_creator == last(old_kink).j))
             return 1.0, Step()
@@ -318,7 +293,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m,apply_step(c,Δ).kinks[τ_new_kink].k) + energy(m,apply_step(c,Δ).kinks[τ_new_kink].l) -
                                                          energy(m,apply_step(c,Δ).kinks[τ_new_kink].i) - energy(m,apply_step(c,Δ).kinks[τ_new_kink].j)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_left_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25
+        inverse_prop_prob = (1.0/length(left_type_E_removable_pairs(apply_step(c,Δ)))) * 0.5 * 0.25
 
         @assert(inverse_prop_prob != Inf)
     end
@@ -335,7 +310,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     prop_prob = 0.5
     if rand() > 0.5
         #removed kink left of changed kink
-        opportunities = get_right_type_E_removable_pairs(c)
+        opportunities = right_type_E_removable_pairs(c)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -346,11 +321,6 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         #safe thoose for later
         removed_kink = last(removed_kink_tuple)
         changed_kink_old = last(changed_kink_tuple)
-        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
-        @assert(dot(removed_kink.i.vec-removed_kink.k.vec,
-                    removed_kink.i.vec-removed_kink.k.vec) <= (ex_radius^2))
-
-
         #shuffle Indices TODO: is this necessary for ergodicy ?
         prop_prob *= 0.25
         add_kink = changed_kink_τ => shuffle_creators(shuffle_annihilators(T4(changed_kink_old.i, removed_kink.i, changed_kink_old.l, removed_kink.l)))
@@ -372,11 +342,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        #opportunities_occ_orb_E = intersect!(union!(sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Down), dk = ex_radius)), occs)
         opportunities_occ_orb_E = possible_new_kink_new_occ_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
-
-        delete!(opportunities_occ_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].i)
-        delete!(opportunities_occ_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].j)
         @assert(in(removed_kink.k,opportunities_occ_orb_E))
         τ_Intervall = changed_kink_τ - first(τ_borders(apply_step(c,Δ), Set([removed_kink.k, removed_kink.l,removed_kink.i, removed_kink.j]),changed_kink_τ))
 
@@ -404,7 +370,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     else
         #removed kink right of changed kink
-        opportunities = get_left_type_E_removable_pairs(c)
+        opportunities = left_type_E_removable_pairs(c)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -414,10 +380,6 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         prop_prob *= 1.0/length(opportunities)
         removed_kink = last(removed_kink_tuple)
         changed_kink_old = last(changed_kink_tuple)
-        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
-        @assert(dot(removed_kink.i.vec-removed_kink.k.vec,
-                    removed_kink.i.vec-removed_kink.k.vec) <= (ex_radius^2))
-
         #shuffle Indices TODO: is this necessary for ergodicy ?
         prop_prob *= 0.25
         add_kink = changed_kink_τ => shuffle_creators(shuffle_annihilators(T4(changed_kink_old.i, removed_kink.i, changed_kink_old.l, removed_kink.l)))
@@ -437,10 +399,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
-        #opportunities_unocc_orb_E = setdiff!(union!(sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Up), dk = ex_radius), sphere_with_same_spin(PlaneWave(removed_kink.i.vec, Down), dk = ex_radius)), occs)
         opportunities_unocc_orb_E = possible_new_kink_new_unocc_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
-        delete!(opportunities_unocc_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].k)
-        delete!(opportunities_unocc_orb_E, apply_step(c,Δ).kinks[changed_kink_τ].l)
         @assert(in(removed_kink.k,opportunities_unocc_orb_E))
         τ_Intervall =  last(τ_borders(apply_step(c,Δ), Set([removed_kink.i, removed_kink.j,removed_kink.k, removed_kink.l]),changed_kink_τ)) - changed_kink_τ
 

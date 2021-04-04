@@ -77,10 +77,10 @@ function Δdiagonal_interaction(m::Model, e::Ensemble, c::Configuration, orb_a::
     Δdi = Δτ12 * e.λ * ( wdiag(m, orb_a, orb_b) - wdiag(m, orb_c, orb_d) )
 
     occs = occupations(c, τ1)
-
+    @assert !isinf(abs(Δdi))
     # collect diagonal interaction energy at τ1
     for occ in occs
-        if occ.vec in [ orb_a.vec, orb_b.vec, orb_c.vec, orb_d.vec ]
+        if occ in [ orb_a, orb_b, orb_c, orb_d ]
             continue
         else
             for orb in [orb_a, orb_b]
@@ -237,4 +237,3 @@ end
 Calculate the sign of the `Configuration`'s weight.
 """
 signum(m::Model, c::Configuration) = ladder_operator_order_factor(c.kinks)*sign_offdiagonal_product(m, c)
-

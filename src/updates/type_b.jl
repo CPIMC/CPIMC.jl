@@ -12,7 +12,7 @@ end
 
 
 """Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangled.
-This function has no use in the current update set removability will therefore not be considered here.
+This function has no use in the current update set. Removability of a Kink will therefore not be considered here.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -20,7 +20,7 @@ the opther stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 to the left of the first τ."""
-function get_left_type_B_pairs(c::Configuration)
+function left_type_B_pairs(c::Configuration)
   pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -33,7 +33,7 @@ function get_left_type_B_pairs(c::Configuration)
 end
 
 
-"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangeld. Removablility will
+"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangeld. Removablility of Kinks will
 no be looked at. 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -41,7 +41,7 @@ the opther stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_B_pairs(c::Configuration)
+function right_type_B_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -58,11 +58,11 @@ end
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
-the opther stands first. (for type-B-entanglement that always imples the
+the other and is removable stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_B_removable_pairs(c::Configuration)
+function right_type_B_removable_pairs(c::Configuration)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
   for (τ,kink) in c.kinks
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
@@ -79,8 +79,8 @@ function get_right_type_B_removable_pairs(c::Configuration)
 end
 
 function possible_new_orb_a(occs, orb_c, orb_d)
-    return(filter(orb_a -> !in(PlaneWave(orb_c.vec + orb_d.vec - orb_a.vec, orb_d.spin),occs) && (orb_a != PlaneWave((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)),
-                    setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs)))
+    filter(orb_a -> !in(find_fourth_orb_for_kink(orb_a, orb_c, orb_d),occs) && (orb_a != find_fourth_orb_for_kink(orb_a, orb_c, orb_d)),
+                    setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs))
 end
 
 function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
@@ -102,7 +102,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
         return 1.0, Step()
     end
     orb_a = rand(opportunities_orb_a)
-    orb_b = PlaneWave((orb_c.vec-orb_a.vec) + orb_d.vec,orb_d.spin)
+    orb_b = find_fourth_orb_for_kink(orb_a, orb_c, orb_d)
     @assert !((orb_a == orb_d) | (orb_b == orb_c))
     @assert (!in(orb_b,occs) & (orb_a != orb_b))
     #We will change the proposal probability after we get τ2
@@ -166,7 +166,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
     #We do consider states that differ only threw the order off indices of kinks
     #as different states, that contribute all with the same weight with is already
-    #blocked over all permutations (see function “get_abs_offdiagonal_element”),
+    #blocked over all permutations (see function “abs_offdiagonal_element”),
     #therefore the updates where we end up with the same kinks but start building
     #the kink with a different Excitation will result in a different order off indices
     #and therefore considered a different Update (to compensate that we use a factor ¼
@@ -177,7 +177,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
     #Therefore we modify the proposal_probability in the following way
     occs_τ2 = occupations(c, τ2)
-    opportunities_orb_a_τ2 = setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs_τ2)
+    opportunities_orb_a_τ2 = possible_new_orb_a(occs_τ2, orb_c, orb_d)
     @assert !isempty(opportunities_orb_a_τ2)
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
 
@@ -208,7 +208,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     Δ = Step(drop_orbs, Configuration(add_orbs, add_kinks...))
 
     # quotient of proposal probabilities
-    dv = (1.0/length(get_right_type_B_removable_pairs(apply_step(c,Δ))))/prop_prob
+    dv = (1.0/length(right_type_B_removable_pairs(apply_step(c,Δ))))/prop_prob
 
     # weight factor
     dw = ((e.β)^2) *
@@ -220,6 +220,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     @assert (dv*dw) >= 0
     @assert (dv*dw) != Inf
     @assert !isnan(dv*dw)
+    occupations(c, ImgTime(0.99))
     return dv*dw, Δ
 end
 
@@ -227,7 +228,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     if isempty(c.kinks)
         return 1.0, Step()
     end
-    opportunities = get_right_type_B_removable_pairs(c)
+    opportunities = right_type_B_removable_pairs(c)
     if isempty(opportunities)
         return 1.0, Step()
     end
@@ -237,17 +238,9 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     τ_kink1, τ_kink2 = rand(opportunities)
     kink1 = τ_kink1 => c.kinks[τ_kink1]
     kink2 = τ_kink2 => c.kinks[τ_kink2]
-
-    @assert (last(kink1).i.spin == last(kink1).k.spin)
-    @assert ( dot(last(kink1).i.vec-last(kink1).k.vec, last(kink1).i.vec-last(kink1).k.vec) <= ex_radius^2 ) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
-
     prop_prob = 1.0/length(opportunities)
 
     #change configuration
-    # delete!(c.kinks, first(kink1))
-    # delete!(c.kinks, first(kink2))
-
-
     #see if occupations at τ=0 are modified
     if first(kink1) > first(kink2)
         # change_occupations(c.occupations, last(kink2))
@@ -313,7 +306,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         return 1.0, Step()
     end
 
-    kink_opportunities = get_right_type_B_pairs(c)
+    kink_opportunities = right_type_B_pairs(c)
     if isempty(kink_opportunities)
         return 1.0, Step()
     end
@@ -322,19 +315,16 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     kink2 = τ2 => c.kinks[τ2]
     occs = occupations(c, first(kink1))
 
+
     opportunities = filter( x -> isunaffected_in_interval(c.kinks, x, first(kink1), first(kink2))
-                        ,setdiff!(
-                            sphere_with_same_spin(last(kink1).i, dk = ex_radius
-                            ), occs
-                        )
-                    )
+                        ,possible_new_orb_a(occs, last(kink1).i, last(kink1).j))
     delete!(opportunities, last(kink1).k)
     delete!(opportunities, last(kink1).l)
     if isempty(opportunities)
         return 1.0, Step()
     end
     new_orb_i = rand(opportunities)
-    new_orb_j = PlaneWave(last(kink1).j.vec + last(kink1).i.vec - new_orb_i.vec, last(kink1).j.spin)
+    new_orb_j = find_fourth_orb_for_kink(new_orb_i, last(kink1).i, last(kink1).j)
     if new_orb_i == new_orb_j
         return 1.0, Step()
     end
@@ -370,12 +360,9 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         # MC Step generated by this update
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
-        kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ))
+        kink_opportunities_reverse = right_type_B_pairs(apply_step(c,Δ))
         opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ).kinks, x, first(kink1), first(kink2))
-                                    ,setdiff!(
-                                        sphere_with_same_spin(new_orb_i, dk = ex_radius), occs
-                                    )
-                                )
+                                    ,possible_new_orb_a(occs, new_orb_i, new_orb_j))
         delete!(opportunities_reverse, last(kink1).k)
         delete!(opportunities_reverse, last(kink1).l)
 

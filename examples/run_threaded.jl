@@ -1,7 +1,8 @@
+#] dev .
 using DelimitedFiles
 using DataFrames
 using CSV
-
+using Revise
 using CPIMC
 using CPIMC.Estimators
 using CPIMC.PlaneWaves
@@ -46,11 +47,9 @@ function sweep_multithreaded!(m::Model, e::Ensemble, c::Configuration, updates::
     end
     i = 0
     k = 1#print progress
-    #global add_E_counter = 0
-    #global remove_E_counter = 0
     while i < steps
         #print progress
-        if (i%(steps/100) == 0) #& (Threads.threadid() == 1)
+        if (i%(steps/100) == 0)
             println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
             k+=1
         end
@@ -78,10 +77,10 @@ function main()
     NMC = 2*10^5
     cyc = 50
     N_Runs = 24
-    NEquil = 10^5
+    NEquil = 5*10^4
     # system parameters
     θ = 0.125
-    rs = 2.0
+    rs = 2.00
 
     # use 7 particles
     S = sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1)
@@ -99,7 +98,7 @@ function main()
 
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])#, change_type_B
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])#add_type_E, remove_type_E, add_remove_kink_chain
 
     measurements = Dict(
       :sign => (Variance(), signum)

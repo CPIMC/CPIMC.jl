@@ -1,6 +1,6 @@
 using CPIMC, CPIMC.PlaneWaves, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count
-
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count, find_fourth_orb_for_kink
+import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, apply_step!
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
 a = PlaneWave((-2,0,0))
@@ -118,4 +118,20 @@ end
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 3
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
+end
+
+@testset "find_fourth_orb_for_kink" for _ in (1:1000)
+    r = (1:100)
+    orb1 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
+    orb2 = orb1
+    while orb1 == orb2
+        orb2 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
+    end
+    orb3 = orb1
+    while (orb3 == orb2) || (orb3 == orb1)
+        orb3 = PlaneWave((rand(r),rand(r),rand(r)),rand([orb1.spin,orb2.spin]))
+    end
+    @test in(find_fourth_orb_for_kink(orb3, orb1, orb2).spin, [orb1.spin, orb2.spin])
+    @test (find_fourth_orb_for_kink(orb3, orb1, orb2).spin == orb3.spin) == (orb1.spin == orb2.spin)
+    @test find_fourth_orb_for_kink(orb3, orb1, orb2).vec + orb3.vec == orb1.vec + orb2.vec
 end
