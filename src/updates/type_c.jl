@@ -23,7 +23,7 @@ function get_left_type_C_removable_pairs(ck)
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
         τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)# TODO: ? this function may return ImgTime(0), ImgTime(1), catch ? TODO: use adjacent_kinks_affecting_orbs ?
         if is_type_C(ck[τ_left], kink)
-            if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
+            if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin
                     push!(pairs_left, (τ, τ_left))
                 end
@@ -47,7 +47,7 @@ function get_right_type_C_removable_pairs(ck)
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
         τ_left,τ_right = τ_borders(ck, kink_orb_set, τ)
         if is_type_C(kink, ck[τ_right])
-            if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
+            if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin
                     push!(pairs_right, (τ, τ_right))
                 end
@@ -228,8 +228,8 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         removed_kink_τ, changed_kink_τ = rand(opportunities)
         prop_prob *= 1.0/length(opportunities)
 
-        @assert(c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin)
-        @assert ( dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2) ) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
+        @assert c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin
+        @assert norm(c.kinks[removed_kink_τ].i.vec - c.kinks[removed_kink_τ].k.vec) <= ex_radius "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
         #safe thoose for later
         removed_orb1 = c.kinks[removed_kink_τ].i
@@ -289,7 +289,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         prop_prob *= 1.0/length(opportunities)
 
         @assert c.kinks[removed_kink_τ].i.spin == c.kinks[removed_kink_τ].k.spin
-        @assert dot(c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec,c.kinks[removed_kink_τ].i.vec-c.kinks[removed_kink_τ].k.vec) <= (ex_radius^2) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"# TODO: define sqnorm(vec) = dot(vec, vec)
+        @assert norm(c.kinks[removed_kink_τ].i.vec - c.kinks[removed_kink_τ].k.vec) <= ex_radius "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
         #safe thoose for later
         removed_orb1 = c.kinks[removed_kink_τ].k

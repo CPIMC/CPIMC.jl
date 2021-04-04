@@ -5,7 +5,7 @@ module CPIMC
 
 using DataStructures
 using FixedPointNumbers
-import LinearAlgebra: dot
+import LinearAlgebra: dot, norm
 using OnlineStats
 
 export Group, Mean, Variance

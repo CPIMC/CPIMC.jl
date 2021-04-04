@@ -68,7 +68,7 @@ function get_right_type_B_removable_pairs(ck)
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
         τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
         if is_type_B(kink, ck[τ_right])
-            if dot(kink.i.vec-kink.k.vec, kink.i.vec-kink.k.vec) <= ex_radius^2
+            if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin
                     push!(pairs_right, (τ, τ_right))
                 end
@@ -229,8 +229,8 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     kink1 = τ_kink1 => c.kinks[τ_kink1]
     kink2 = τ_kink2 => c.kinks[τ_kink2]
 
-    @assert (last(kink1).i.spin == last(kink1).k.spin)
-    @assert ( dot(last(kink1).i.vec-last(kink1).k.vec, last(kink1).i.vec-last(kink1).k.vec) <= ex_radius^2 ) "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
+    @assert last(kink1).i.spin == last(kink1).k.spin
+    @assert norm(last(kink1).i.vec - last(kink1).k.vec) <= ex_radius "if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it"
 
     prop_prob = 1.0/length(opportunities)
 

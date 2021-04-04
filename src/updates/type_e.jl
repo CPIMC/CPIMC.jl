@@ -39,7 +39,7 @@ function get_left_type_E_removable_pairs(ck)
         end
         @assert τ_left != τ_right
         @assert τ_right != ImgTime(1)
-        if dot(last(sorted_kinks).i.vec - last(sorted_kinks).k.vec, last(sorted_kinks).i.vec - last(sorted_kinks).k.vec) <= (ex_radius^2)# TODO: write function sqnorm(vec) = dot(vec,vec) for this
+        if norm(last(sorted_kinks).i.vec - last(sorted_kinks).k.vec) <= ex_radius
             push!(pairs_left, (τ => last(sorted_kinks),τ_left => first(sorted_kinks)))
         end
     end
@@ -66,7 +66,7 @@ function get_right_type_E_removable_pairs(ck)
         end
         @assert τ_left != τ_right
         @assert τ_right != ImgTime(1)
-        if dot(first(sorted_kinks).i.vec - first(sorted_kinks).k.vec, first(sorted_kinks).i.vec - first(sorted_kinks).k.vec) <= (ex_radius^2)# TODO: write function sqnorm(vec) = dot(vec,vec) for this
+        if norm(first(sorted_kinks).i.vec - first(sorted_kinks).k.vec) <= ex_radius
             push!(pairs_right, (τ => first(sorted_kinks),τ_right => last(sorted_kinks)))
         end
     end
@@ -329,8 +329,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         # safe those for later
         removed_kink = last(removed_kink_tuple)
         changed_kink_old = last(changed_kink_tuple)
-        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
-        @assert(dot(removed_kink.i.vec-removed_kink.k.vec, removed_kink.i.vec-removed_kink.k.vec) <= (ex_radius^2))# TODO: write function sqnorm(vec) = dot(vec,vec)
+        @assert norm(removed_kink.i.vec - removed_kink.k.vec) <= ex_radius^2 " If the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it. "
 
         # shuffle indices
         prop_prob *= 0.25
@@ -391,8 +390,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         prop_prob *= 1.0/length(opportunities)
         removed_kink = last(removed_kink_tuple)
         changed_kink_old = last(changed_kink_tuple)
-        # if the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it
-        @assert(dot(removed_kink.i.vec-removed_kink.k.vec, removed_kink.i.vec-removed_kink.k.vec) <= (ex_radius^2))# TODO: write function sqnorm(vec) = dot(vec,vec)
+        @assert norm(removed_kink.i.vec - removed_kink.k.vec) <= ex_radius " If the difference between i and k is larger then ex_radius we can not create the kink and therefore also can't delete it. "
 
         # shuffle indices
         prop_prob *= 0.25
