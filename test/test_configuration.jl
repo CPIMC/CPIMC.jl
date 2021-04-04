@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -46,6 +46,20 @@ end
     @test kinks_affecting_orbs(conf, Set([c])) == sd
     @test kinks_affecting_orbs(conf, Set([d])) == sd
     @test kinks_affecting_orbs(conf, Set([e])) == SortedDict{ImgTime, Kink{<:Orbital}}()
+end
+
+@testset "τ_prev_affecting" begin
+    @test τ_prev_affecting(conf.kinks, Set([a]), ImgTime(0.0)) == ImgTime(0.8)
+    @test τ_prev_affecting(conf.kinks, Set([a,e]), ImgTime(0.5)) == ImgTime(0.2)
+    @test τ_prev_affecting(conf.kinks, Set([b,d]), ImgTime(0.1)) == ImgTime(0.8)
+    @test τ_prev_affecting(conf.kinks, Set([e]), ImgTime(0.9)) == ImgTime(0.0)
+end
+
+@testset "τ_next_affecting" begin
+    @test τ_next_affecting(conf.kinks, Set([a]), ImgTime(0.0)) == ImgTime(0.2)
+    @test τ_next_affecting(conf.kinks, Set([a,e]), ImgTime(0.5)) == ImgTime(0.6)
+    @test τ_next_affecting(conf.kinks, Set([b,d]), ImgTime(0.1)) == ImgTime(0.2)
+    @test τ_next_affecting(conf.kinks, Set([e]), ImgTime(0.9)) == ImgTime(1.0)
 end
 
 @testset "τ_borders" begin
