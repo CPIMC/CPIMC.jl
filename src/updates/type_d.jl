@@ -117,10 +117,10 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             add_orbs = Set{basis(c)}()
         end
 
-        prop_prob *= 0.5#shuffle creators of the changed kink TODO: is this necessary for ergodicy ?
+        prop_prob *= 0.5# shuffle creators of the changed kink
         add_kinks =(
                     τ_new_kink => T4(last(old_kink).i, last(old_kink).j,new_orb1, new_orb2),
-                    first(old_kink) => shuffle_creators(T4(new_orb2, new_orb1, last(old_kink).k, last(old_kink).l))
+                    first(old_kink) => T4( shuffle_creators( new_orb2, new_orb1, last(old_kink).k, last(old_kink).l )... )
                     )
         @assert is_type_D(last(first(add_kinks)), last(last(add_kinks)))
 
@@ -183,10 +183,10 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             add_orbs = Set{basis(c)}()
         end
 
-        prop_prob *= 0.5#shuffle annihilators (!) of the changed kink TODO: is this necessary for ergodicy ?
+        prop_prob *= 0.5# shuffle annihilators (!) of the changed kink
         add_kinks = (
                     τ_new_kink => T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l),
-                    first(old_kink) => shuffle_annihilators(T4(last(old_kink).i, last(old_kink).j, new_orb2, new_orb1))
+                    first(old_kink) => T4( shuffle_annihilators( last(old_kink).i, last(old_kink).j, new_orb2, new_orb1 )... )
                     )
         @assert is_type_D(last(last(add_kinks)), last(first(add_kinks)))
 

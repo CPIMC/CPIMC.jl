@@ -114,7 +114,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 
         prop_prob *= 1.0/Float64(τ_Intervall)
 
-        #see if c.occupations change
+        # see if c.occupations change
         if τ_new_kink > first(old_kink)  #new kink was added left of old kink
             drop_orbs = Set([last(old_kink).k,last(old_kink).l])
             add_orbs = Set([new_orb1, new_orb2])
@@ -123,10 +123,10 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             add_orbs = Set{basis(c)}()
         end
 
-        prop_prob *= 0.5# shuffle annihilators of the changed kink TODO: is this necessary for ergodicy ?
+        prop_prob *= 0.5# shuffle annihilators of the changed kink
         add_kinks = (
                     τ_new_kink => T4(new_orb1, new_orb2, last(old_kink).k, last(old_kink).l),
-                    first(old_kink) => shuffle_annihilators(T4(last(old_kink).i, last(old_kink).j, new_orb2, new_orb1))
+                    first(old_kink) => T4( shuffle_annihilators( last(old_kink).i, last(old_kink).j, new_orb2, new_orb1 )... )
                     )
         drop_kinks = (old_kink,)
 
@@ -189,10 +189,10 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
             add_orbs = Set{basis(c)}()
         end
 
-        prop_prob *= 0.5# shuffle creators of the changed kink TODO: is this necessary for ergodicy ?
+        prop_prob *= 0.5# shuffle creators of the changed kink
         add_kinks =(
                     τ_new_kink => T4(last(old_kink).i, last(old_kink).j, new_orb1, new_orb2),
-                    first(old_kink) => shuffle_creators(T4(new_orb2, new_orb1, last(old_kink).k, last(old_kink).l))
+                    first(old_kink) => T4( shuffle_creators( new_orb2, new_orb1, last(old_kink).k, last(old_kink).l)... )
                     )
         drop_kinks = (old_kink,)
 

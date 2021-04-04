@@ -181,7 +181,10 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     @assert !isempty(opportunities_orb_a_τ2)
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
 
-    add_kinks = (firstτ => T4(orb_a,orb_b,orb_c,orb_d), lastτ => shuffle_creators(shuffle_annihilators(T4(orb_d,orb_c,orb_b,orb_a))))
+    add_kinks = (
+                firstτ => T4(orb_a,orb_b,orb_c,orb_d),
+                lastτ => T4(shuffle_indices(orb_d,orb_c,orb_b,orb_a)...)
+                )
     prop_prob *= 1/4
 
     #Look at wether the new pair of kinks modifies the Occupations at τ = 0
@@ -333,7 +336,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     drop_kinks = (kink1,kink2)
     add_kinks = (
                 first(kink1) => T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l),
-                first(kink2) => shuffle_creators(shuffle_annihilators(T4(last(kink2).i, last(kink2).j, new_orb_i, new_orb_j)))
+                first(kink2) => T4(shuffle_indices(last(kink2).i, last(kink2).j, new_orb_i, new_orb_j)...)
                 )
 
     excite!(occs, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j)
