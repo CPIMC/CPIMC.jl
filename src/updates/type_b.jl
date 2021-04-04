@@ -20,16 +20,16 @@ the opther stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 to the left of the first τ."""
-function get_left_type_B_pairs(c::Configuration)
-  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in c.kinks
-    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
-    if is_type_B(c.kinks[τ_left], kink)
-      push!(pairs_left, (τ, τ_left))
+function get_left_type_B_pairs(ck)
+    pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+    for (τ,kink) in ck
+        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
+        if is_type_B(ck[τ_left], kink)
+            push!(pairs_left, (τ, τ_left))
+        end
     end
-  end
-  return pairs_left
+    return pairs_left
 end
 
 
@@ -41,16 +41,16 @@ the opther stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_B_pairs(c::Configuration)
-  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in c.kinks
-    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
-    if is_type_B(kink, c.kinks[τ_right])
-        push!(pairs_right, (τ, τ_right))
+function get_right_type_B_pairs(ck)
+    pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+    for (τ,kink) in ck
+        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
+        if is_type_B(kink, ck[τ_right])
+            push!(pairs_right, (τ, τ_right))
+        end
     end
-  end
-  return pairs_right
+    return pairs_right
 end
 
 
@@ -62,20 +62,20 @@ the opther stands first. (for type-B-entanglement that always imples the
 vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_B_removable_pairs(c::Configuration)
-  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in c.kinks
-    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
-    if is_type_B(kink, c.kinks[τ_right])
-      if dot(kink.i.vec-kink.k.vec, kink.i.vec-kink.k.vec) <= ex_radius^2
-        if kink.i.spin == kink.k.spin
-          push!(pairs_right, (τ, τ_right))
+function get_right_type_B_removable_pairs(ck)
+    pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+    for (τ,kink) in ck
+        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
+        if is_type_B(kink, ck[τ_right])
+            if dot(kink.i.vec-kink.k.vec, kink.i.vec-kink.k.vec) <= ex_radius^2
+                if kink.i.spin == kink.k.spin
+                    push!(pairs_right, (τ, τ_right))
+                end
+            end
         end
-      end
     end
-  end
-  return pairs_right
+    return pairs_right
 end
 
 possible_new_orb_a(occs, orb_c, orb_d) = filter(orb_a ->
@@ -109,7 +109,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
 
     #get τ2
-    borders = τ_borders(c, Set([orb_a,orb_b,orb_c,orb_d]),τ1)
+    borders = τ_borders(c.kinks, Set([orb_a,orb_b,orb_c,orb_d]),τ1)
     possible_τ2_interval = borders[2]-borders[1]
     if possible_τ2_interval < 0
         possible_τ2_interval += 1
@@ -197,7 +197,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     Δ = Step(drop_orbs, Configuration(add_orbs, add_kinks...))
 
     # quotient of proposal probabilities
-    dv = (1.0/length(get_right_type_B_removable_pairs(apply_step(c,Δ))))/prop_prob
+    dv = ( 1.0/ length( get_right_type_B_removable_pairs(apply_step(c,Δ).kinks) ) ) / prop_prob
 
     #calculate change in diagonal interaction energy
     delta_di = ΔWdiag_element(m, e, c, orb_a, orb_b, orb_c, orb_d, firstτ, lastτ)
@@ -215,7 +215,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     if isempty(c.kinks)
         return 1.0, Step()
     end
-    opportunities = get_right_type_B_removable_pairs(c)
+    opportunities = get_right_type_B_removable_pairs(c.kinks)
     if isempty(opportunities)
         return 1.0, Step()
     end
@@ -250,7 +250,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     # calculate inverse prop_prob (see add_type_B)
     ijkl = Set([last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l])
-    borders = τ_borders(apply_step(c,Δ), ijkl ,first(kink1))
+    borders = τ_borders(apply_step(c,Δ).kinks, ijkl, first(kink1))
     possible_τ2_interval = borders[2]-borders[1]
     if possible_τ2_interval < 0
         possible_τ2_interval = 1 + possible_τ2_interval
@@ -289,7 +289,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         return 1.0, Step()
     end
 
-    kink_opportunities = get_right_type_B_pairs(c)
+    kink_opportunities = get_right_type_B_pairs(c.kinks)
     if isempty(kink_opportunities)
         return 1.0, Step()
     end
@@ -341,7 +341,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     # MC Step generated by this update
     Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
-    kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ))
+    kink_opportunities_reverse = get_right_type_B_pairs(apply_step(c,Δ).kinks)
     opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ).kinks, x, first(kink1), first(kink2))
                                 , setdiff!( sphere_with_same_spin(new_orb_i, dk = ex_radius), occs ) )
     delete!(opportunities_reverse, last(kink1).k)
