@@ -2,35 +2,35 @@
 """Returns True if left_kink and right_kink are entangled in a Type-C way.
 This does not check wether the two kinks are neighbouring"""
 function is_type_C(left_kink::T4, right_kink::T4)
-  if (Set([left_kink.i, left_kink.j]) == Set([right_kink.k, right_kink.l])) &
+    if (Set([left_kink.i, left_kink.j]) == Set([right_kink.k, right_kink.l])) &
         !(Set([left_kink.k, left_kink.l]) == Set([right_kink.i, right_kink.j]))
-    return true
-  else
-    return false
-  end
+        return true
+    else
+        return false
+    end
 end
 
-"""Return a Tuple of 2 imaginaty times of 'neighbouring' Kinks that are Type-C-Entangeld AND removable.
+"""Return a Tuple of 2 imaginaty times of 'neighbouring' kinks that are Type-C entangled AND removable.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the left of the first τ."""
-function get_left_type_C_removable_pairs(c::Configuration)
-  pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in c.kinks
-    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = τ_borders(c, kink_orb_set ,τ)
-    if is_type_C(c.kinks[τ_left], kink)
-      if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
-        if kink.i.spin == kink.k.spin
-          push!(pairs_left, (τ, τ_left))
+function get_left_type_C_removable_pairs(ck)
+    pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+    for (τ,kink) in ck
+        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
+        if is_type_C(ck[τ_left], kink)
+            if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
+                if kink.i.spin == kink.k.spin
+                    push!(pairs_left, (τ, τ_left))
+                end
+            end
         end
-      end
     end
-  end
-  return pairs_left
+    return pairs_left
 end
 
 
@@ -41,12 +41,12 @@ The Tuples are always arranged in a way that the Kink who gets neighboured by
 the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the right of the first τ."""
-function get_right_type_C_removable_pairs(c::Configuration)
+function get_right_type_C_removable_pairs(ck)
   pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in c.kinks
+  for (τ,kink) in ck
     kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = τ_borders(c, kink_orb_set, τ)
-    if is_type_C(kink, c.kinks[τ_right])
+    τ_left,τ_right = τ_borders(ck, kink_orb_set, τ)
+    if is_type_C(kink, ck[τ_right])
       if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
         if kink.i.spin == kink.k.spin
           push!(pairs_right, (τ, τ_right))
@@ -88,7 +88,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 
         @assert(!in(new_orb2, occs) & (new_orb1 != new_orb2))
 
-        τ_Intervall = first(old_kink) - first(τ_borders(c, Set([last(old_kink).k, last(old_kink).l, new_orb1, new_orb2]), first(old_kink)))
+        τ_Intervall = first(old_kink) - τ_prev_affecting( c.kinks, Set([last(old_kink).k, last(old_kink).l, new_orb1, new_orb2]), first(old_kink) )
 
         if τ_Intervall < 0
             τ_Intervall +=1
@@ -138,7 +138,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw_off_diag = abs( Woffdiag_element(m, e, new_orb1, new_orb2, last(old_kink).k, last(old_kink).l) * Woffdiag_element(m, e, last(last(add_kinks))) / Woffdiag_element(m, e, last(old_kink)) )
         dw = e.β * dw_off_diag * exp(-(e.β * delta_τ*(energy(m, new_orb1) + energy(m, new_orb2) - energy(m, last(old_kink).k) - energy(m, last(old_kink).l)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_right_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
+        inverse_prop_prob = 0.5 / length( get_right_type_C_removable_pairs( apply_step(c,Δ).kinks ) )
 
         @assert !isinf(inverse_prop_prob) "change kink left: inverse_prop_prob = Inf"
     else
@@ -152,8 +152,8 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         prop_prob *= 1.0/length(opportunities_new_orb1)
         new_orb2 = PlaneWave(last(old_kink).l.vec + last(old_kink).k.vec - new_orb1.vec, last(old_kink).j.spin)
 
-        @assert(!in(new_orb2, occs) & (new_orb1 != new_orb2))
-        τ_Intervall = last( τ_borders( c, Set([last(old_kink).i, last(old_kink).j, new_orb1, new_orb2]), first(old_kink) ) ) - first(old_kink)# TODO: use extra function for previous kink instead of τ_borders, which returns prev and next
+        @assert !in(new_orb2, occs) & (new_orb1 != new_orb2)
+        τ_Intervall = τ_next_affecting( c.kinks , Set([last(old_kink).i, last(old_kink).j, new_orb1, new_orb2]), first(old_kink) ) - first(old_kink)
 
         if τ_Intervall < 0
             τ_Intervall +=1
@@ -204,7 +204,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         dw_off_diag = abs( Woffdiag_element(m, e, last(old_kink).i, last(old_kink).j, new_orb1, new_orb2) * Woffdiag_element(m, e, last(last(add_kinks))) / Woffdiag_element(m, e, last(old_kink)) )
         dw = e.β * dw_off_diag* exp(-(e.β * delta_τ*(energy(m, new_orb1) + energy(m, new_orb2) - energy(m, last(old_kink).i) - energy(m, last(old_kink).j)) + e.β * delta_di))
 
-        inverse_prop_prob = (1.0/length(get_left_type_C_removable_pairs(apply_step(c,Δ)))) * 0.5
+        inverse_prop_prob = 0.5 / length( get_left_type_C_removable_pairs( apply_step(c,Δ).kinks ) )
 
         @assert !isinf(inverse_prop_prob) "change kink right: inverse_prop_prob = Inf"
     end
@@ -221,7 +221,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     prop_prob = 0.5
     if rand() > 0.5
         #removed kink left of changed kink
-        opportunities = get_right_type_C_removable_pairs(c)
+        opportunities = get_right_type_C_removable_pairs(c.kinks)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -255,9 +255,9 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         #calculate reverse_prop_prob
         occs = occupations(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, last(first(add_kinks)).k, last(first(add_kinks)).l, last(first(add_kinks)).i, last(first(add_kinks)).j)# TODO: use directly the orbitals referenced via c.kinks[changed_kink_τ] ? for now this is left for clearity
-        @assert(in(removed_orb1,opportunities_reverse_new_orb1))
-        τ_Intervall = changed_kink_τ - first( τ_borders(apply_step(c,Δ), Set([removed_orb1, removed_orb2, last(first(add_kinks)).k, last(first(add_kinks)).l]), changed_kink_τ) )# TODO: use function to only get the previous kinks and not prev and next as with τ_borders
 
+        @assert(in(removed_orb1,opportunities_reverse_new_orb1))
+        τ_Intervall = changed_kink_τ - τ_prev_affecting( apply_step(c,Δ).kinks, Set([removed_orb1, removed_orb2, last(first(add_kinks)).k, last(first(add_kinks)).l]), changed_kink_τ )
 
         if τ_Intervall < 0
             τ_Intervall +=1
@@ -280,8 +280,8 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         dw = (1/e.β)* (1/dw_off_diag) * exp(e.β * delta_τ * (energy(m, removed_orb1) + energy(m, removed_orb2) -energy(m, last(first(add_kinks)).k) - energy(m, last(first(add_kinks)).l)) + e.β * delta_di)
 
     else
-        #removed kink right of changed kink
-        opportunities = get_left_type_C_removable_pairs(c)
+        # removed kink right of changed kink
+        opportunities = get_left_type_C_removable_pairs(c.kinks)
         if isempty(opportunities)
             return 1.0, Step()
         end
@@ -318,7 +318,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         @assert in(removed_orb1,opportunities_reverse_new_orb1)
 
-        τ_Intervall =  last(τ_borders(apply_step(c,Δ), Set([last(first(add_kinks)).i, last(first(add_kinks)).j,removed_orb1, removed_orb2]),changed_kink_τ)) - changed_kink_τ# TODO: write function for next kink instead of τ_borders
+        τ_Intervall =  τ_next_affecting( apply_step(c,Δ).kinks, Set([last(first(add_kinks)).i, last(first(add_kinks)).j,removed_orb1, removed_orb2]), changed_kink_τ ) - changed_kink_τ
 
         if τ_Intervall < 0
             τ_Intervall +=1
