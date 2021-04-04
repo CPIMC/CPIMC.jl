@@ -21,7 +21,7 @@ function get_left_type_C_removable_pairs(ck)
     pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
     for (τ,kink) in ck
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
+        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)# TODO: ? this function may return ImgTime(0), ImgTime(1), catch ? TODO: use adjacent_kinks_affecting_orbs ?
         if is_type_C(ck[τ_left], kink)
             if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
                 if kink.i.spin == kink.k.spin
@@ -34,7 +34,7 @@ function get_left_type_C_removable_pairs(ck)
 end
 
 
-"""Return a Tuple of 2 imaginaty times of 'neighbouring' Kinks that are Type-C-Entangeld AND removable.
+"""Return a Tuple of 2 imaginaty times of 'neighbouring' Kinks that are Type-C entangled AND removable.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -42,19 +42,19 @@ the opther stands first.(vice versa does not have to be the case)
 The Set consists of the pairs where the Type-C-entanglement is oriented
 #to the right of the first τ."""
 function get_right_type_C_removable_pairs(ck)
-  pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-  for (τ,kink) in ck
-    kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-    τ_left,τ_right = τ_borders(ck, kink_orb_set, τ)
-    if is_type_C(kink, ck[τ_right])
-      if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
-        if kink.i.spin == kink.k.spin
-          push!(pairs_right, (τ, τ_right))
+    pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
+    for (τ,kink) in ck
+        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
+        τ_left,τ_right = τ_borders(ck, kink_orb_set, τ)
+        if is_type_C(kink, ck[τ_right])
+            if dot(kink.i.vec-kink.k.vec,kink.i.vec-kink.k.vec) <= (ex_radius^2)
+                if kink.i.spin == kink.k.spin
+                    push!(pairs_right, (τ, τ_right))
+                end
+            end
         end
-      end
     end
-  end
-  return pairs_right
+    return pairs_right
 end
 
 
