@@ -340,6 +340,8 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
                 # shuffle creators and shuffle annihilators
                 first(kink2) => T4( random_shuffle(last(kink2).i, last(kink2).j)..., random_shuffle(new_orb_i, new_orb_j)...)
                 )
+    # do not add factor 1/4 to proposal porbability (prop_prob *= 1/4)
+    # since this cancels with the reverse update in the quotient of proposal propabilities
 
     excite!(occs, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j)
 
