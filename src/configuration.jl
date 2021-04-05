@@ -300,7 +300,7 @@ function τ_prev_affecting(ck, os, τ)
     if isempty(κs)
         ImgTime(0.0)
     else
-        ImgTime(prev(ck, τ))
+        ImgTime(prev(κs, τ))
     end
 end
 
@@ -318,7 +318,7 @@ function τ_next_affecting(ck, os, τ)
     if isempty(κs)
         ImgTime(1.0)
     else
-        ImgTime(next(ck, τ))
+        ImgTime(next(κs, τ))
     end
 end
 
