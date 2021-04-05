@@ -25,7 +25,7 @@ function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     remove_single_kinks = [remove_type_C, remove_type_D, remove_type_E]
     chain_length = rand(1:9)
     acc_prob = 1.0
-    step_list = Array{Step,1}()
+    step_list = Array{Step,1}()# TODO: it may be more efficient to pre-allocate this output and only set it here
     for i in  1:chain_length
         dv, Δ = rand(add_single_kinks)(m,e,apply_step(c,step_list))
         acc_prob *= dv

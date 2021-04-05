@@ -14,7 +14,7 @@ function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     y = rand(oe)
     @assert x != y "same Configuration proposed."
 
-    delta_di = Δdiagonal_interaction(m, e, c, y, x, ImgTime(0), ImgTime(1))
+    delta_di = ΔWdiag_element(m, e, c, y, x, ImgTime(0), ImgTime(1))
     @assert delta_di != Inf
     # weight change
     dw = exp(-(e.β*(energy(m,y)-energy(m,x)) + e.β*delta_di))
@@ -30,6 +30,6 @@ function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     dv = length(oe)/length(oe2)
     @assert dv >= 0
     @assert dw >= 0 "dw=$(dw), x=$(x), y=$(y), delta_di=$(delta_di)"
-    @assert (dv*dw) >= 0
+    
     return dv*dw, Δ
 end

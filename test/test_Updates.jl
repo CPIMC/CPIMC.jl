@@ -26,36 +26,36 @@ const ex_radius = 3
             apply_step!(conf1, Δ)
         end
     end
-    for pair in CPIMC.right_type_B_removable_pairs(conf1)
+    for pair in CPIMC.right_type_B_removable_pairs(conf1.kinks)
         kink1 = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.right_type_C_removable_pairs(conf1)
+    for pair in CPIMC.right_type_C_removable_pairs(conf1.kinks)
         kink1 = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.left_type_C_removable_pairs(conf1)
+    for pair in CPIMC.left_type_C_removable_pairs(conf1.kinks)
         kink1 = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.right_type_D_removable_pairs(conf1)
+    for pair in CPIMC.right_type_D_removable_pairs(conf1.kinks)
         kink1 = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.left_type_D_removable_pairs(conf1)
+    for pair in CPIMC.left_type_D_removable_pairs(conf1.kinks)
         kink1 = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.right_type_E_removable_pairs(conf1)
+    for pair in CPIMC.right_type_E_removable_pairs(conf1.kinks)
         kink1 = last(first(pair))
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
     end
-    for pair in CPIMC.left_type_E_removable_pairs(conf1)
+    for pair in CPIMC.left_type_E_removable_pairs(conf1.kinks)
         kink1 = last(first(pair))
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
     end

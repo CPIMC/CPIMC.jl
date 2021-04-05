@@ -3,7 +3,7 @@ module UniformElectronGas
 using ..CPIMC
 using ..CPIMC.PlaneWaves
 
-import ..CPIMC: kernel, energy
+import ..CPIMC: energy, w
 
 
 import StaticArrays: StaticVector
@@ -19,8 +19,28 @@ function energy(m::UEG, o::PlaneWave)
     dot(o.vec,o.vec)
 end
 
-" coulomb kernel in plane wave basis "
-kernel(m::UEG, i::PlaneWave, k::PlaneWave) = 1.0 / dot(i.vec - k.vec, i.vec - k.vec)
+"""
+    w(i::Orbital, j::Orbital, k::Orbital, l::Orbital)
+
+Return the two-particle matrix element of the Coulomb interaction.
+Zero is returned if momentum or spin is not conserved, in consequence of the Bloch-theorem and the spin kronecker-delta in the plane-spin-wave basis.
+
+The singular contribution (i.vec == k.vec) is also removed, i.e. set to zero.
+This property is not a result of the Bloch theorem for the two-particle Coulomb matrix element in the plane wave basis
+but is added here to allow for straightforward summation over all combination of orbitals without explictly excluding this component. It is not part of the UEG many-body Hamiltonian due to the physical assumption that contributions from the
+uniform background cancel with this diverging term in the thermodynamic limit.
+"""
+function w(m::UEG, i::Orbital, j::Orbital, k::Orbital, l::Orbital)
+    if !iszero(i.vec + j.vec - k.vec - l.vec) | (i.spin != k.spin) | (j.spin != l.spin)# momentum and spin conservation
+        return 0.0
+    elseif i.vec == k.vec
+        # here return 0 in order to remove this term from sums over all occupations since it is canceled by the uniform background in the TD-Limes
+        0.0
+    else
+        return 1.0 / dot(i.vec - k.vec, i.vec - k.vec)
+    end
+end
+
 
 """
     λ(N, rs, d::Int)

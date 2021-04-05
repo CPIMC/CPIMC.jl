@@ -1,4 +1,4 @@
-#] dev .
+#] activate .
 using DelimitedFiles
 using DataFrames
 using CSV
@@ -74,7 +74,7 @@ end
 #the Programm uses.
 function main()
     # MC options
-    NMC = 2*10^5
+    NMC = 3*10^5
     cyc = 50
     N_Runs = 24
     NEquil = 5*10^4

@@ -5,7 +5,7 @@ module CPIMC
 
 using DataStructures
 using FixedPointNumbers
-import LinearAlgebra: dot
+import LinearAlgebra: dot, norm
 using OnlineStats
 
 export Group, Mean, Variance
@@ -25,6 +25,8 @@ include("PlaneWaves.jl")
 radius of the sphere of orbitals which are considered for excitations
 """
 const ex_radius = 3 # TODO: find better solution
+# ex_radius could be kwarg to each update function
+# and passed to `sweep!` via anonymous function with local variable ex_radius
 
 
 using .PlaneWaves
@@ -91,7 +93,7 @@ end
 apply_step(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
 
 " change configuration c as given by a list of subsequent Steps "
-apply_step(c::Configuration, Δ::Array{Step,1}) = reduce(apply_step, Δ, init=c)
+apply_step(c::Configuration, Δ::Array{Step,1}) = foldl(apply_step, Δ, init=c)
 
 " empty Step: do nothing "
 function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})

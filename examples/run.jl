@@ -1,4 +1,4 @@
-#] dev .
+#] activate .
 using OnlineStats
 using DelimitedFiles
 using Revise
@@ -6,14 +6,13 @@ using CPIMC
 using CPIMC.PlaneWaves
 using CPIMC.Estimators
 using CPIMC.UniformElectronGas
-
 import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
 
 function main()
     # MC options
     NMC = 3 * 10^5
     cyc = 50
-    NEquil = 10^5
+    NEquil = 5*10^4
     # system parameters
     θ = 0.125
     rs = 2.0
