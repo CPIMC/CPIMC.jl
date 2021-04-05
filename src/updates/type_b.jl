@@ -183,7 +183,8 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
 
     add_kinks = (
                 firstτ => T4(orb_a,orb_b,orb_c,orb_d),
-                lastτ => T4(shuffle_indices(orb_d,orb_c,orb_b,orb_a)...)
+                # shuffle creators and shuffle annihilators
+                lastτ => T4( random_shuffle(orb_d,orb_c)..., random_shuffle(orb_b, orb_a)... )
                 )
     prop_prob *= 1/4
 
@@ -332,11 +333,12 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     end
 
 
-    #shuffle indices of the new orbs in the second kink
+    # shuffle indices of the new orbs in the second kink
     drop_kinks = (kink1,kink2)
     add_kinks = (
                 first(kink1) => T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l),
-                first(kink2) => T4(shuffle_indices(last(kink2).i, last(kink2).j, new_orb_i, new_orb_j)...)
+                # shuffle creators and shuffle annihilators
+                first(kink2) => T4( random_shuffle(last(kink2).i, last(kink2).j)..., random_shuffle(new_orb_i, new_orb_j)...)
                 )
 
     excite!(occs, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j)
