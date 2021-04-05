@@ -632,6 +632,21 @@ function right_type_1_count(ck::SortedDict{ImgTime,<:Kink})
     return count
 end
 
+"""
+    random_shuffle(::Any, ::Any)
+
+shuffle or not shuffle the given tuple with equal propability:
+Return either the same tuple, or the tuple in reverse order,
+with equal probability 0.5.
+"""
+function random_shuffle(i, j)
+    if rand() < 0.5
+        return i, j
+    else
+        return j, i
+    end
+end
+
 
 """
     shuffle_annihilators(::Any, ::Any, ::Any, ::Any)
@@ -639,13 +654,7 @@ end
 Return a tuple where the last two arguments are randomly shuffled with equal probability 0.5
 in comparison to the ordering of the input.
 """
-function shuffle_annihilators(i, j, k, l)
-    if rand() < 0.5
-        i, j, l, k
-    else
-        i, j, k, l
-    end
-end
+shuffle_annihilators(i, j, k, l) = i, j, random_shuffle(k, l)...
 shuffle_annihilators(κ::T4) = T4(shuffle_annihilators(κ.i, κ.j, κ.k, κ.l)...)
 
 """
@@ -654,13 +663,7 @@ shuffle_annihilators(κ::T4) = T4(shuffle_annihilators(κ.i, κ.j, κ.k, κ.l)..
 Return a tuple where the first two arguments are randomly shuffled with equal probability 0.5
 in comparison to the ordering of the input.
 """
-function shuffle_creators(i, j, k, l)
-    if rand() < 0.5
-        j, i, k, l
-    else
-        i, j, k, l
-    end
-end
+shuffle_creators(i, j, k, l) = random_shuffle(i, j)..., k, l
 shuffle_creators(κ::T4) = T4(shuffle_creators(κ.i, κ.j, κ.k, κ.l)...)
 
 """
@@ -670,7 +673,7 @@ Return a tuple where both the first two arguments and the last two arguments
 are randomly shuffled with equal probability 0.5 respectively
 in comparison to the ordering of the input.
 """
-shuffle_indices(i, j, k, l) = shuffle_creators( shuffle_annihilators(i,j,k,l)... )
+shuffle_indices(i, j, k, l) = random_shuffle(i, j)..., random_shuffle(k, l)...
 shuffle_indices(κ::T4) = T4(shuffle_indices(κ.i, κ.j, κ.k, κ.l)...)
 
 
