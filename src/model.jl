@@ -147,7 +147,7 @@ function ΔWdiag_element(m::Model, e::Ensemble, c::Configuration, i, j, k, l, τ
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
 
     # calculate Wdiag with the occupation at the start of the interval
-    ΔWdiag = ΔW_diag(m, i,j,k,l, occupations_at(c,τ1)) * Δ(τ1,τ2)
+    ΔWdiag = ΔW_diag(m, i,j,k,l, occupations(c,τ1)) * Δ(τ1,τ2)
 
     if !isempty(Ks)
         # calculate contrubutions to ΔWdiag from the orbitals changed by kinks in the intervall:
@@ -182,7 +182,7 @@ function ΔWdiag_element(m::Model, e::Ensemble, c::Configuration, i, j, τ1, τ2
     Ks = kinks_from_periodic_interval(c.kinks, τ1, τ2)
 
     # calculate Wdiag with the occupation at the start of the interval
-    ΔWdiag = ΔW_diag(m, i,j, occupations_at(c,τ1)) * Δ(τ1,τ2)
+    ΔWdiag = ΔW_diag(m, i,j, occupations(c,τ1)) * Δ(τ1,τ2)
     if !isempty(Ks)
         # calculate contrubutions to ΔWdiag from the orbitals changed by kinks in the intervall:
         # add a contribution if an orbital is created and

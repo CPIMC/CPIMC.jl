@@ -908,3 +908,14 @@ function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTi
         collect(keys( filter(x -> τ1 < first(x) < τ2, ck) ))
     end
 end
+
+function find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_operator1, other_kind_ladder_operator2)
+    @assert(in(same_kind_ladder_operator.spin, [other_kind_ladder_operator1.spin, other_kind_ladder_operator2.spin]))
+    if other_kind_ladder_operator1.spin == other_kind_ladder_operator2.spin
+        fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, same_kind_ladder_operator.spin)
+
+    else
+        fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, flip(same_kind_ladder_operator.spin))
+    end
+    return(fourth_orb)
+end

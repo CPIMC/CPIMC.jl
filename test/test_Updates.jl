@@ -1,6 +1,6 @@
 using CPIMC, CPIMC.PlaneWaves, DataStructures
 import LinearAlgebra: dot
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, find_fourth_orb_for_kink
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count, find_fourth_orb_for_kink
 import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, apply_step!
 
 const ex_radius = 3
@@ -86,7 +86,7 @@ end
         end
     end
     old_kink = rand(conf.kinks)
-    occs = CPIMC.occupations_at(conf, first(old_kink))
+    occs = CPIMC.occupations(conf, first(old_kink))
 
 
     opportunities_new_orb1 = CPIMC.possible_new_orb1_C(occs, last(old_kink).k, last(old_kink).l,last(old_kink).i, last(old_kink).j)

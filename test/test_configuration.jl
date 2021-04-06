@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, apply_step!
 
 
@@ -171,7 +171,7 @@ end
                         Set([e,h])),
                 Set([g,f]))
     conf_Type_1 = Configuration(occs,Type_1_chain)
-    @test (occupations_at(conf_Type_1, ImgTime(0.9)) == occs)
+    @test (occupations(conf_Type_1, ImgTime(0.9)) == occs)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
@@ -241,15 +241,15 @@ end
     β = 0.02
     N = length(conf.occupations)
 
-    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ2, τ3) ≈ ΔW_diag(mod, i, j, k, l, occupations_at(conf,τ2)) * (τ3 - τ2) * λ
+    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ2, τ3) ≈ ΔW_diag(mod, i, j, k, l, occupations(conf,τ2)) * (τ3 - τ2) * λ
 
-    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ1, τ3) ≈ ( ΔW_diag(mod, i, j, k, l, occupations_at(conf,τ1)) * (ImgTime(0.2) - τ1)
-                                                                                + ΔW_diag(mod, i, j, k, l, occupations_at(conf,ImgTime(0.2))) * (τ3 - ImgTime(0.2))
+    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ1, τ3) ≈ ( ΔW_diag(mod, i, j, k, l, occupations(conf,τ1)) * (ImgTime(0.2) - τ1)
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.2))) * (τ3 - ImgTime(0.2))
                                                                                 ) * λ
 
-    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ3, τ1) ≈ ( ΔW_diag(mod, i, j, k, l, occupations_at(conf,τ3)) * (ImgTime(0.5) - τ3)
-                                                                                + ΔW_diag(mod, i, j, k, l, occupations_at(conf,ImgTime(0.5))) * (ImgTime(0.6) - ImgTime(0.5))
-                                                                                + ΔW_diag(mod, i, j, k, l, occupations_at(conf,ImgTime(0.6))) * (ImgTime(0.8) - ImgTime(0.6))
-                                                                                + ΔW_diag(mod, i, j, k, l, occupations_at(conf,ImgTime(0.8))) * (ImgTime(1) + τ1 - ImgTime(0.8))
+    @test ΔWdiag_element(mod, CEnsemble(λ, β, N), conf, i, j, k, l, τ3, τ1) ≈ ( ΔW_diag(mod, i, j, k, l, occupations(conf,τ3)) * (ImgTime(0.5) - τ3)
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.5))) * (ImgTime(0.6) - ImgTime(0.5))
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.6))) * (ImgTime(0.8) - ImgTime(0.6))
+                                                                                + ΔW_diag(mod, i, j, k, l, occupations(conf,ImgTime(0.8))) * (ImgTime(1) + τ1 - ImgTime(0.8))
                                                                                 ) * λ
 end
