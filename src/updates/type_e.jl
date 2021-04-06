@@ -91,7 +91,7 @@ end
 
 
 function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
-    #After the updates the i and l komponents of both kinks will contain the old kink, wile the j and k components contain the old orbitals
+    #After the updates the i and l komponents of both kinks will contain the old kink, while the j and k components contain the old orbitals
     prop_prob = 1.0
     if isempty(c.kinks)
         return 1.0, Step()
