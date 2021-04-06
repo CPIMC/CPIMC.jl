@@ -16,6 +16,8 @@ dimension
 ```@docs
 Spin
 flip
+fractional_spin_polarization
+ξ
 ```
 
 ```@docs

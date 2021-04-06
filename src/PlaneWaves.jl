@@ -1,3 +1,6 @@
+"""
+Plane wave single-particle basis states.
+"""
 module PlaneWaves
 
 export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin, shell, ξ, fractional_spin_polarization
@@ -5,6 +8,9 @@ export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin
 using ..CPIMC
 using StaticArrays
 
+"""
+Type for storing spin projection of particles with spin 1/2.
+"""
 @enum Spin Down Up
 
 """
@@ -21,14 +27,26 @@ function flip(s::Spin)
 end
 
 
-"representation of single particle state"
+"""
+    struct PlaneWave{D} <: Orbital
+
+Representation of plane wave single-particle states with dimensionality `D`.
+
+**Fields**
+- `vec  :: StaticVector{D,Int}` -- momentum vector
+- `spin :: Spin`                -- spin
+
+"""
 struct PlaneWave{D} <: Orbital
-    "D-dimensional momentum vector"
     vec :: StaticVector{D,Int}
-    "spin"
     spin :: Spin
 end
 
+"""
+    PlaneWave(v::Tuple,s=Up)
+
+Outer constructor with default value `spin = Up`.
+"""
 PlaneWave(v::Tuple,s=Up) = PlaneWave(SVector(v),s)
 
 
@@ -49,6 +67,13 @@ return the dimension of the momentum vectors of a Set{<:Orbital{D}}
 """
 dimension(os::Set{<:PlaneWave{D}}) where {D} = D
 
+"""
+    shell(o::PlaneWave{1};dw::Int=2)
+    shell(o::PlaneWave{2};dw::Int=2)
+    shell(o::PlaneWave{3};dw::Int=2)
+
+Returns a set of all `PlaneWave` orbitals lying in the `dw`th shell.
+"""
 function shell(o::PlaneWave{1};dw::Int=2)
     eq = energy(o)
     qmax = Int(floor(eq))

@@ -6,8 +6,9 @@ export Model
 Abstract type for the representation of a physical model for which calculations can be performed.
 Needs to be implemented system-specifically, in particular the following functions need to be defined: (for now)
 
-    * the one-particle matrix element, `energy(::Model, ::Orbital)`
-    * the two-particle matrix element, `w(::Model, ::Orbital, ::Orbital, ::Orbital, ::Orbital)`
+- the one-particle matrix element, `energy(::Model, ::Orbital)`
+- the two-particle matrix element, `w(::Model, ::Orbital, ::Orbital, ::Orbital, ::Orbital)`
+
 """
 abstract type Model end
 
@@ -25,7 +26,7 @@ end
 return the difference of the two-particle matrix element with the same but the last two indices transposed
 antisymmetric difference of the two-particle matrix elements:
 
-    `w^-_{ijkl} = w_{ijkl} - w_{ijlk}`
+$w^-_{ijkl} = w_{ijkl} - w_{ijlk}$
 
 This is called the antisymmetrized two-particle matrix element.
 This is an abbreviation for these terms arising in the
@@ -40,7 +41,7 @@ wminus(m::Model, i,j,k,l) = w(m,i,j,k,l) - w(m,i,j,l,k)
 
 Return the offdiagonal many body matrix element of the interaction operator
 
-    `\frac{1}{4} ( w_{ijkl} - w_{ijlk} ) ( \pm \braket{\tilde{\onvv} | \onvv^{ij}_{kl}} )`
+$\frac{1}{4} ( w_{ijkl} - w_{ijlk} ) (\pm \langle\{\tilde{n}\}|\{n\}^{ij}_{kl}\rangle)$
 
 for an excitation given by creating orbitals i,j and annihilating orbitals k, l
 as given by the Slater-Condon rules.
@@ -201,12 +202,12 @@ end
 Return the sign of the product of two-particle terms in the offdiagonal many-body matrix elements.
 These are given by function `wminus`, i.e.
 
-    `\langle \{\tilde{n}\} | a^{\dagger}_i a^{\dagger}_j a_k a_l | \{n\} \rangle
-    = \pm ( w_{ijkl} - w_{ijlk} )` for `\{\tilde{n}\} = \{n\}_{kl}^{ij}`
+$\langle \{\tilde{n}\} | a^{\dagger}_i a^{\dagger}_j a_k a_l | \{n\} \rangle
+    = \pm ( w_{ijkl} - w_{ijlk} ) \text{ for } \{\tilde{n}\} = \{n\}_{kl}^{ij}$
 
 the term in the braces may be negative and this function returns the product of the
-sign of all these contributions `w_{ijkl} - w_{ijlk}` from all kinks.
-The sign `\pm` is determined from the permutation factor of the orbitals i,j,k,l
+sign of all these contributions $w_{ijkl} - w_{ijlk}$ from all kinks.
+The sign $\pm$ is determined from the permutation factor of the orbitals i,j,k,l
 and is not calculated here.
 
 used for the calculation the sign of the weight function
