@@ -103,7 +103,6 @@ end
 " perform a MC step on the configuration c "
 function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
     @assert !isempty(updates)
-
     up = rand(updates)
     up.proposed += 1
     dv, Δ = up.update(m, e, c)
