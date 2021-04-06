@@ -1,3 +1,6 @@
+"""
+Types and definitions used for simulations of the uniform electron gas.
+"""
 module UniformElectronGas
 
 using ..CPIMC
@@ -11,10 +14,26 @@ import LinearAlgebra: dot
 
 export UEG, β, EF, λ, β_Ha, rs, kF
 
+"""
+Singleton for dispatching.
 
+For other models this would be the place to store additional
+parameters that might come up in the matrix elements.
+"""
 struct UEG <: Model end
 
-" return the energy of a single diagonal single-particle matrix element "
+@doc raw"""
+    energy(m::UEG, o::PlaneWave)
+
+The single-particle energy of a plane wave with momentum $\vec{k}$ is given by (Hartree atomic units):
+
+$ \epsilon_k = \vec{k}^2 / 2. $
+
+In the internal unit system we use integer $k$-values, which results in:
+
+$ \epsilon_k = \vec{k}^2. $
+
+"""
 function energy(m::UEG, o::PlaneWave)
     dot(o.vec,o.vec)
 end
@@ -23,11 +42,15 @@ end
     w(i::Orbital, j::Orbital, k::Orbital, l::Orbital)
 
 Return the two-particle matrix element of the Coulomb interaction.
-Zero is returned if momentum or spin is not conserved, in consequence of the Bloch-theorem and the spin kronecker-delta in the plane-spin-wave basis.
+Zero is returned if momentum or spin is not conserved, in consequence of the Bloch-theorem
+and the spin kronecker-delta in the plane-spin-wave basis.
 
-The singular contribution (i.vec == k.vec) is also removed, i.e. set to zero.
-This property is not a result of the Bloch theorem for the two-particle Coulomb matrix element in the plane wave basis
-but is added here to allow for straightforward summation over all combination of orbitals without explictly excluding this component. It is not part of the UEG many-body Hamiltonian due to the physical assumption that contributions from the
+The singular contribution `(i.vec == k.vec)` is also removed, i.e. set to zero.
+This property is not a result of the Bloch theorem for the two-particle Coulomb matrix
+element in the plane wave basis but is added here to allow for straightforward summation over
+all combination of orbitals without explictly excluding this component.
+
+It is not part of the UEG many-body Hamiltonian due to the physical assumption that contributions from the
 uniform background cancel with this diverging term in the thermodynamic limit.
 """
 function w(m::UEG, i::Orbital, j::Orbital, k::Orbital, l::Orbital)
