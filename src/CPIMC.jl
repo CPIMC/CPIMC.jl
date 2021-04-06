@@ -1,5 +1,5 @@
 """
-new implementation of the CPIMC method
+Common functionality to simulate any physical model.
 """
 module CPIMC
 
@@ -46,8 +46,22 @@ include("UniformElectronGas.jl")
 export Update, sweep!, print_results
 
 
-" a Monte Carlo update to the configuration with two counters "
-mutable struct Update
+"""
+Wrapper structure for a Monte Carlo update.
+
+**Fields**
+
+- `update :: Function` -- actual update function
+- `proposed`           -- number of times this update has been proposed
+- `accepted`           -- number of times this update has been accepted
+- `trivial`            -- number of times the changes proposed by this update have been trivial, e.g. the `Step` returned by `update` has been empty
+
+For convenience, an outer constructor with all counters set to zero is provided:
+
+    Update(f::Function) = Update(f,0,0,0)
+
+"""
+mutable struct Update  
     update :: Function
     proposed :: UInt
     accepted :: UInt
@@ -57,13 +71,22 @@ end
 Update(f::Function) = Update(f,0,0,0)
 
 
-" change to Configuration " # TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
+"""
+Represents a change which can be applied to a `Configuration`.
+
+**Fields**
+
+- `drop` 
+- `add`
+
+"""
 struct Step{S<:Union{Nothing,<:Orbital,Configuration},T<:Union{Nothing,<:Orbital,Configuration}}
     drop :: S
     add :: T
 end
+# TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
 
-" outer constructor method for an empty Step "
+# outer constructor method for an empty Step
 Step() = Step(nothing,nothing)
 
 
@@ -75,32 +98,44 @@ Step(drop::Set{T}, add) where {T <: Orbital} = Step(Configuration(drop), add)
 Step(drop, add::Set{T}) where {T <: Orbital} = Step(drop, Configuration(add))
 Step(drop::Set{T}, add::Set{T}) where {T <: Orbital} = Step(Configuration(drop), Configuration(add))
 
-" change configuration c as given by Δ "
-function apply_step!(c::Configuration, Δ::Step)
-    drop!(c, Δ.drop)
-    add!(c, Δ.add)
+"""
+    apply_step!(c::Configuration, step::Step)
+    apply_step!(c::Configuration, steps)
+
+Apply the changes given by the second argument to a `Configuration`.
+"""
+function apply_step!(c::Configuration, step::Step)
+    drop!(c, step.drop)
+    add!(c, step.add)
     nothing
 end
 
-" change configuration c as given by a list of subsequent Steps "
-function apply_step!(c::Configuration, Δ::Array{Step,1})
-    for δ in Δ
-        apply_step!(c, δ)
+function apply_step!(c::Configuration, steps)
+    for step in steps
+        apply_step!(c, step)
     end
 end
 
-" return configuration Δ(c) "
-apply_step(c::Configuration, Δ::Step) = add(drop(c, Δ.drop), Δ.add)
+"""
+    apply_step(c::Configuration, step::Step)
+    apply_step(c::Configuration, steps)
 
-" change configuration c as given by a list of subsequent Steps "
-apply_step(c::Configuration, Δ::Array{Step,1}) = foldl(apply_step, Δ, init=c)
+Return the result of applying the changes given by the second argument to a `Configuration`.
+"""
+apply_step(c::Configuration, step::Step) = add(drop(c, step.drop), step.add)
+apply_step(c::Configuration, steps) = foldl(apply_step, steps, init=c)
 
-" empty Step: do nothing "
+#empty Step: do nothing
 function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
     nothing
 end
 
-" perform a MC step on the configuration c "
+"""
+    update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
+
+Obtain the next state of the Markov chain by randomly selecting an element of `updates`
+and applying the proposed changes to `c` with the calculated probability.
+"""
 function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
     @assert !isempty(updates)
     no_kinks_Updates = filter(x -> in(x.update,[move_particle,add_type_B]), updates)
@@ -160,7 +195,7 @@ end
 """
     measure!(m::Model, e::Ensemble, c::Configuration, estimators)
 
-Perform measurements on a configuration. `estimators` needs to be a dictionary that contains tuples `(::OnlineStat, ::Function)`.
+Perform measurements on a `Configuration`. `estimators` needs to be a dictionary that contains tuples `(::OnlineStat, ::Function)`.
 """
 function measure!(m, e, c, estimators)
     s = signum(m, c)
@@ -221,7 +256,11 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1
     println("\nThread",Threads.threadid(),"finished")
 end
 
-" print all measured observables and calculate further quantities "
+"""
+    print_results(measurements, e::Ensemble)
+
+Print all measured observables, potentially taking the sign into account.
+"""
 function print_results(measurements, e::Ensemble)
     println("measurements:")
     println("=============")
