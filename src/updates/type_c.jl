@@ -73,7 +73,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     end
     old_kink = rand(c.kinks)
     prop_prob *= 1.0/length(c.kinks)
-    occs = occupations(c, first(old_kink))
+    occs = occupations_at(c, first(old_kink))
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
@@ -250,7 +250,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         #calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, last(first(add_kinks)).k, last(first(add_kinks)).l, last(first(add_kinks)).i, last(first(add_kinks)).j)# TODO: use directly the orbitals referenced via c.kinks[changed_kink_τ] ? for now this is left for clearity
 
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))
@@ -306,7 +306,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         # calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, last(first(add_kinks)).i, last(first(add_kinks)).j, last(first(add_kinks)).k, last(first(add_kinks)).l)
 
         @assert in(removed_orb1,opportunities_reverse_new_orb1)

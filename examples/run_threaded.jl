@@ -25,49 +25,6 @@ E_Ha(E_internal::Float64, e::Ensemble) = E_internal * 16/((2*pi)^4 * e.λ^2) * 0
 Et_Ry(E_internal::Float64, e::Ensemble) = E_Ry(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
 Et_Ha(E_internal::Float64, e::Ensemble) = E_Ha(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
 
-function sweep_multithreaded!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
-    @assert(length(c.kinks) == 0)
-    c = Configuration(copy(c.occupations))# c should be a different object for each thread
-    " equilibration "
-    if (Threads.threadid() == 1)
-        println("\nstarting equilibration")
-    end
-    k = 1# progress counter
-    for i in 1:throwAway
-        if (i%(throwAway/100) == 0)
-            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100","; K: ",length(c.kinks))
-
-            k+=1
-        end
-        #TODO Use reentrantlook for Update counters?
-        update!(m, e, c, updates)
-    end
-    if (Threads.threadid() == 1)
-        println("\nstarting Simulation")
-    end
-    i = 0
-    k = 1#print progress
-    while i < steps
-        #print progress
-        if (i%(steps/100) == 0)
-            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
-            k+=1
-        end
-
-        " MC step "
-        update!(m, e, c, updates)
-
-        "measurement"
-        if i % sampleEvery == 0
-            " calculate observables "
-            measure!(m, e, c, measurements)
-        end
-        i += 1
-    end
-    println("\nThread",Threads.threadid(),"finished")
-end
-
-
 #To run on a Linux System use "julia --threads NT run_threads.jl", where NT is the
 #desired number of Threads.
 #Inside the Code you can use Threads.nthreads() to check how many Threads
@@ -98,7 +55,7 @@ function main()
 
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])#add_type_E, remove_type_E, add_remove_kink_chain
+    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])
 
     measurements = Dict(
       :sign => (Variance(), signum)
@@ -127,7 +84,7 @@ function main()
     Threads.@threads for t in 1:N_Runs
         m = deepcopy(measurements_Mean)
         push!(measurements_of_runs,m)
-        sweep_multithreaded!(UEG(), e, c, updates, m, NMC, cyc, NEquil)
+        sweep!(UEG(), e, Configuration(copy(c.occupations)), updates, m, NMC, cyc, NEquil)
     end
 
     println(" finished.")
