@@ -98,7 +98,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     end
     old_kink = rand(c.kinks)
     prop_prob *= 1.0/length(c.kinks)
-    occs = occupations_at(c, first(old_kink))
+    occs = occupations(c, first(old_kink))
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
@@ -329,7 +329,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kink))
 
         # calculate reverse_prop_prob
-        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations(apply_step(c,Δ), changed_kink_τ)
         opportunities_occ_orb_E = possible_new_kink_new_occ_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
         @assert(in(removed_kink.k,opportunities_occ_orb_E))
         τ_Intervall = changed_kink_τ - τ_prev_affecting( apply_step(c,Δ).kinks, Set([removed_kink.k, removed_kink.l,removed_kink.i, removed_kink.j]), changed_kink_τ )
@@ -385,7 +385,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kink))
 
         #calculate reverse_prop_prob
-        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations(apply_step(c,Δ), changed_kink_τ)
         opportunities_unocc_orb_E = possible_new_kink_new_unocc_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
         @assert(in(removed_kink.k,opportunities_unocc_orb_E))
         τ_Intervall =  τ_next_affecting( apply_step(c,Δ).kinks, Set([removed_kink.i, removed_kink.j,removed_kink.k, removed_kink.l]), changed_kink_τ ) - changed_kink_τ
