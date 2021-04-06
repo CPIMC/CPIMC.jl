@@ -39,7 +39,7 @@ creators
 annihilators
 excite
 excite!
-occupations_at
+occupations
 next
 prev
 ```
