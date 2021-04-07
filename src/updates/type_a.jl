@@ -36,7 +36,7 @@ function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 end
 
 function equlibrate_diagonal(m::Model, e::Ensemble, c::Configuration)
-    for _ in 1:e.N*1e3
+    for _ in 1:e.N*1e2
         dv, Δ = move_particle(m, e, c)
         if rand() < dv
             apply_step!(c, Δ)

@@ -37,7 +37,7 @@ function main()
     update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
     updates = Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}()
     for up_name in update_names
-        push!(updates, (up_name,SVector((0,0,0))))
+        push!(updates, (up_name,MVector((0,0,0))))
     end
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)

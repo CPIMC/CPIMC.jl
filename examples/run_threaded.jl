@@ -59,9 +59,9 @@ function main()
 
 
     update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    updates = Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}()
-    for up_name in update_names
-        push!(updates, (up_name,SVector((0,0,0))))
+    update_counters = []
+    for _ in 1:length(update_names)
+        push!(update_counters, MVector((0,0,0)))
     end
 
 
@@ -91,9 +91,20 @@ function main()
 
     Threads.@threads for t in 1:N_Runs
         m = deepcopy(measurements_Mean)
+        updates = Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}()
+        for up_name in update_names
+            push!(updates, (up_name,MVector((0,0,0))))
+        end
         push!(measurements_of_runs,m)
         sweep!(UEG(), e, Configuration(copy(c.occupations)), updates, m, NMC, cyc, NEquil)
+        lock(ReentrantLock()) do
+            for i in 1:length(updates)
+                update_counters[i] += updates[i][2]
+            end
+        end
     end
+    #Addup counters
+
 
     println(" finished.")
 
@@ -161,8 +172,10 @@ function main()
 
     println("acceptance ratios:")
     println("============")
-    for u in updates
-        println("$(u[1]):\t$(u[2][1]) proposed,\t$(u[2][2]) accepted,\t$(u[2][3]) trivial,\tratio(acc/prop) : $(u[2][2]/u[2][1]), ratio(acc/(prop-triv)) : $(u[2][2]/(u[2][1]-u[2][3]))")
+    for i in 1:length(update_counters)
+        uc = update_counters[i]
+        up = update_names[i]
+        println("$(up):\t$(uc[1]) proposed,\t$(uc[2]) accepted,\t$(uc[3]) trivial,\tratio(acc/prop) : $(uc[2]/uc[1]), ratio(acc/(prop-triv)) : $(uc[2]/(uc[1]-uc[3]))")
     end
 
 
