@@ -7,6 +7,8 @@ using CPIMC
 using CPIMC.Estimators
 using CPIMC.PlaneWaves
 using CPIMC.UniformElectronGas
+using StaticArrays
+
 
 using OnlineStats
 
@@ -31,13 +33,13 @@ Et_Ha(E_internal::Float64, e::Ensemble) = E_Ha(E_internal-abs_E_madelung(e.N, e.
 #the Programm uses.
 function main()
     # MC options
-    NMC = 3*10^5
+    NMC = 10^5
     cyc = 50
     N_Runs = 24
-    NEquil = 5*10^4
+    NEquil = 2*10^4
     # system parameters
-    θ = 0.125
-    rs = 2.00
+    θ = 5.0
+    rs = 4.00
 
     # use 7 particles
     S = sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1)
@@ -55,7 +57,13 @@ function main()
 
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])
+
+    update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
+    updates = Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}()
+    for up_name in update_names
+        push!(updates, (up_name,SVector((0,0,0))))
+    end
+
 
     measurements = Dict(
       :sign => (Variance(), signum)
@@ -154,7 +162,7 @@ function main()
     println("acceptance ratios:")
     println("============")
     for u in updates
-        println("$(u.update):\t$(u.proposed) proposed,\t$(u.accepted) accepted,\t$(u.trivial) trivial,\tratio(acc/prop) : $(u.accepted/u.proposed), ratio(acc/(prop-triv)) : $(u.accepted/(u.proposed-u.trivial))")
+        println("$(u[1]):\t$(u[2][1]) proposed,\t$(u[2][2]) accepted,\t$(u[2][3]) trivial,\tratio(acc/prop) : $(u[2][2]/u[2][1]), ratio(acc/(prop-triv)) : $(u[2][2]/(u[2][1]-u[2][3]))")
     end
 
 

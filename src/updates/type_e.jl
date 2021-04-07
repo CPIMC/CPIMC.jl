@@ -286,11 +286,9 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         @assert(inverse_prop_prob != Inf)
     end
 
-    @assert !iszero(delta_τ)
-    @assert !isinf(dw)
     @assert !iszero(prop_prob)
-    @assert !isinf(inverse_prop_prob)
     @assert !iszero(inverse_prop_prob)
+    @assert (  0 <= (inverse_prop_prob/prop_prob)*dw < Inf)
     return (inverse_prop_prob/prop_prob)*dw, Δ
 end
 
@@ -410,9 +408,6 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     end
 
-    @assert !isinf(dw)
-    @assert delta_τ > 0
-    @assert !isnan((inverse_prop_prob/prop_prob) * dw)
-
+    @assert (  0 <= (inverse_prop_prob/prop_prob)*dw < Inf)
     return (inverse_prop_prob/prop_prob) * dw, Δ
 end

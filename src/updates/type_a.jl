@@ -1,3 +1,4 @@
+
 function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     free_orbitals = filter(x -> isunaffected(c.kinks, x), c.occupations)
     if isempty(free_orbitals)
@@ -30,6 +31,15 @@ function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     dv = length(oe)/length(oe2)
     @assert dv >= 0
     @assert dw >= 0 "dw=$(dw), x=$(x), y=$(y), delta_di=$(delta_di)"
-    
+
     return dv*dw, Δ
+end
+
+function equlibrate_diagonal(m::Model, e::Ensemble, c::Configuration)
+    for _ in 1:e.N*1e3
+        dv, Δ = move_particle(m, e, c)
+        if rand() < dv
+            apply_step!(c, Δ)
+        end
+    end
 end
