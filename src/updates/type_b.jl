@@ -365,3 +365,19 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     @assert !isinf(dw * dv)
     return dw*dv, Δ
 end
+
+function isusefull(c::Configuration, up::typeof(remove_type_B))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end
+
+function isusefull(c::Configuration, up::typeof(change_type_B))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end

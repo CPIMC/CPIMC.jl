@@ -38,8 +38,8 @@ function main()
     N_Runs = 24
     NEquil = 2*10^4
     # system parameters
-    θ = 5.0
-    rs = 4.00
+    θ = 0.125
+    rs = 2.0
 
     # use 7 particles
     S = sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1)

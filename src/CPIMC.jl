@@ -92,7 +92,7 @@ function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
     nothing
 end
 
-" perform a MC step on the configuration c "
+"""
 function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1})
     @assert !isempty(updates)
     no_kinks_Updates = filter(x -> in(x[1],[move_particle,add_type_B]), updates)
@@ -145,6 +145,25 @@ function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{F
             else
                 up[2][2] += 1
             end
+        end
+    end
+end
+"""
+
+" perform a MC step on the configuration c "
+function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1})
+    usefull_updates = filter(up -> isusefull(c, up[1]), updates)
+    @assert !isempty(usefull_updates)
+    up = rand(usefull_updates)
+    up[2][1] += 1
+    dv, Δ = up[1](m, e, c)
+    dv *= length(usefull_updates)/length(filter(up -> isusefull(apply_step(c, Δ), up[1]), updates))
+    if rand() < dv
+        apply_step!(c, Δ)
+        if Δ == Step()
+            up[2][3] += 1
+        else
+            up[2][2] += 1
         end
     end
 end

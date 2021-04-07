@@ -335,3 +335,20 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     return (inverse_prop_prob/prop_prob) * dw, Δ
 end
+
+
+function isusefull(c::Configuration, up::typeof(add_type_D))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end
+
+function isusefull(c::Configuration, up::typeof(remove_type_D))
+    if length(c.kinks) < 3
+        return false
+    else
+        return true
+    end
+end

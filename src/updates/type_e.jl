@@ -411,3 +411,19 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     @assert (  0 <= (inverse_prop_prob/prop_prob)*dw < Inf)
     return (inverse_prop_prob/prop_prob) * dw, Δ
 end
+
+function isusefull(c::Configuration, up::typeof(add_type_E))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end
+
+function isusefull(c::Configuration, up::typeof(remove_type_E))
+    if length(c.kinks) < 3
+        return false
+    else
+        return true
+    end
+end

@@ -44,3 +44,15 @@ function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     end
     return acc_prob, step_list
 end
+
+function isusefull(c::Configuration, up::Function)
+    return true
+end
+
+function isusefull(c::Configuration, up::typeof(shuffle_indices))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end
