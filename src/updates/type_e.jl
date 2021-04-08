@@ -73,7 +73,13 @@ function right_type_E_removable_pairs(ck)
     return pairs_right
 end
 
-# TODO: use short variable names as function arguments and write their meanings in the docstring. Edit: argument names are controversial don't change them without disscussing it first.
+"""
+    possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
+This function will find possibilites for the choice of the new Orbital that is occupied in occs and should be part of both Kinks after an add_type_E-update,
+when which orbital of the old-Kink is new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator and changed_kink_old_annihilator
+is already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
     possibilities = filter(new_kink_new_annihilator -> !in(find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
                     intersect!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
@@ -81,7 +87,13 @@ function possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_
     return setdiff!(possibilities, Set([new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator]))
 end
 
-# TODO: use short variable names as function arguments and write their meanings in the docstring. Edit: argument names are controversial don't change them without disscussing it first.
+"""
+    possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
+This function will find possibilites for the choice of the new Orbital that is unoccupied in occs and should be part of both Kinks after an add_type_E-update,
+when which orbital of the old-Kink is new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator and changed_kink_old_annihilator
+is already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_kink_new_unocc_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
     possibilities = filter(new_kink_new_annihilator -> in(find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
                     setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),

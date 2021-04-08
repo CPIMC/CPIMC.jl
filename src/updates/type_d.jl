@@ -57,7 +57,12 @@ function right_type_D_removable_pairs(ck)
 end
 
 
-
+"""
+    possible_new_orb1_C(occs, orb_c, orb_d)
+This function will find possibilites for the choice of the first Orbital that should be part of both Kinks after an add_type_D-update,
+when the two old orbitals of the old Kink are already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_orb1_D(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
     opprtunities = filter(new_orb_1 -> in(find_fourth_orb_for_kink(new_orb_1, old_orb1, old_orb2),occs) && (new_orb_1 != find_fourth_orb_for_kink(new_orb_1, old_orb1, old_orb2)),
                     intersect!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))

@@ -1,4 +1,8 @@
-
+"""
+    shuffle_indices(m::Model, e::Ensemble, c::Configuration)
+Performs an Update that takes a Kink and randomly shuffles its annihlators with each other and its creators.
+The Sets of creators and annihilators of the kinks stay the same the acceptance propability is therefore always 1.
+"""
 function shuffle_indices(m::Model, e::Ensemble, c::Configuration)
     if isempty(c.kinks)
         return 1.0, Step()
@@ -44,6 +48,7 @@ function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     end
     return acc_prob, step_list
 end
+
 """
     isuseful(c::Configuration, up::Function)
 Function with the name isuseful checkt wether it is senseble to propose a spezific Update-Type.

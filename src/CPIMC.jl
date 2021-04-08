@@ -46,13 +46,22 @@ include("UniformElectronGas.jl")
 
 export Updatecounter, sweep!, print_results
 
+"""
+Wrapper structure for counters of proposed/accepted/trivial-Updates for a single non spezifeied class of updates.
 
+**Fields**
+- proposed           -- number of times this updates of that class have been proposed
+- accepted           -- number of times this updates of that class have been accepted
+- trivial            -- number of times the changes proposed by updates of that class have been trivial, e.g. the Step returned by update has been empty
+
+"""
 mutable struct Updatecounter
     proposed :: Int64
     accepted :: Int64
     trivial  :: Int64
 end
 
+"Addition of counters for example to add counters from different Markov-chains"
 function Base.:+(x::Updatecounter, y::Updatecounter)
     Updatecounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
 end

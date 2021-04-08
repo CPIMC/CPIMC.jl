@@ -78,6 +78,11 @@ function right_type_B_removable_pairs(ck)
     return pairs_right
 end
 
+"""
+    possible_new_orb_a(occs, orb_c, orb_d)
+This function will find possibilites for the choice of the first annihilator for an add_type_B-update when the two creators are already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_orb_a(occs, orb_c, orb_d)
     filter(orb_a -> !in(find_fourth_orb_for_kink(orb_a, orb_c, orb_d),occs) && (orb_a != find_fourth_orb_for_kink(orb_a, orb_c, orb_d)),
                     setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs))
