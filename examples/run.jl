@@ -34,11 +34,8 @@ function main()
     e = CEnsemble(λ(N, rs, d), β(θ, N, ξ, d), N)
     equlibrate_diagonal!(UEG(), e, c)
 
-    update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    updates = Array{Tuple{Function,UpdateCounter},1}()
-    for up_name in update_names
-        push!(updates, (up_name,UpdateCounter()))
-    end
+    updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
+    updates = map(x -> (x, UpdateCounter()), updates)
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
       :sign => (Variance(), signum)
@@ -67,4 +64,3 @@ function main()
 end
 
 main()
-#Juno.@run(main())
