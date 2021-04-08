@@ -412,7 +412,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     return (inverse_prop_prob/prop_prob) * dw, Δ
 end
 
-function isusefull(c::Configuration, up::typeof(add_type_E))
+function isuseful(c::Configuration, up::typeof(add_type_E))
     if isempty(c.kinks)
         return false
     else
@@ -420,7 +420,7 @@ function isusefull(c::Configuration, up::typeof(add_type_E))
     end
 end
 
-function isusefull(c::Configuration, up::typeof(remove_type_E))
+function isuseful(c::Configuration, up::typeof(remove_type_E))
     if length(c.kinks) < 3
         return false
     else

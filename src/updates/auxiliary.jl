@@ -44,12 +44,17 @@ function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     end
     return acc_prob, step_list
 end
-
-function isusefull(c::Configuration, up::Function)
+"""
+    isuseful(c::Configuration, up::Function)
+Function with the name isuseful checkt wether it is senseble to propose a spezific Update-Type.
+If no explizit function is defined for the type spezific type of Update its called on, this function will be called, which just returns true.
+"""
+function isuseful(c::Configuration, up::Function)
     return true
 end
 
-function isusefull(c::Configuration, up::typeof(shuffle_indices))
+
+function isuseful(c::Configuration, up::typeof(shuffle_indices))
     if isempty(c.kinks)
         return false
     else

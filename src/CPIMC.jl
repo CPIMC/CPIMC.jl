@@ -44,9 +44,18 @@ include("updates/auxiliary.jl")
 include("UniformElectronGas.jl")
 
 
-export Update, sweep!, print_results
+export Updatecounter, sweep!, print_results
 
-Update(f::Function) = Update(f,0,0,0)
+
+mutable struct Updatecounter
+    proposed :: Int64
+    accepted :: Int64
+    trivial  :: Int64
+end
+
+function Base.:+(x::Updatecounter, y::Updatecounter)
+    Updatecounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
+end
 
 
 " change to Configuration " # TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
@@ -92,78 +101,22 @@ function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
     nothing
 end
 
-"""
-function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1})
-    @assert !isempty(updates)
-    no_kinks_Updates = filter(x -> in(x[1],[move_particle,add_type_B]), updates)
-    two_kinks_Updates = filter(x -> in(x[1],[move_particle, add_type_B, remove_type_B, add_type_C, add_type_D, add_type_E, add_remove_kink_chain, shuffle_indices]), updates)
-    threeplus_kinks_Updates = filter(x -> in(x[1],[move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]), updates)
-    if isempty(c.kinks)
-        up = rand(no_kinks_Updates)
-        up[2][1] += 1
-        dv, Δ = up[1](m, e, c)
-        if !isempty(apply_step(c, Δ).kinks)
-            @assert(length(apply_step(c, Δ).kinks) == 2)
-            dv *= length(no_kinks_Updates)/length(two_kinks_Updates)
-        end
-        if rand() < dv
-            apply_step!(c, Δ)
-            if Δ == Step()
-                up[2][3] += 1
-            else
-                up[2][2] += 1
-            end
-        end
-    elseif length(c.kinks) == 2
-        up = rand(two_kinks_Updates)
-        up[2][1] += 1
-        dv, Δ = up[1](m, e, c)
-        if isempty(apply_step(c, Δ).kinks)
-            dv *= length(two_kinks_Updates)/length(no_kinks_Updates)
-        elseif length(apply_step(c, Δ).kinks) != 2
-            dv *= length(two_kinks_Updates)/length(threeplus_kinks_Updates)
-        end
-        if rand() < dv
-            apply_step!(c, Δ)
-            if Δ == Step()
-                up[2][3] += 1
-            else
-                up[2][2] += 1
-            end
-        end
-    else
-        up = rand(threeplus_kinks_Updates)
-        up[2][1] += 1
-        dv, Δ = up[1](m, e, c)
-        if length(apply_step(c, Δ).kinks) == 2
-            dv *= length(threeplus_kinks_Updates)/length(two_kinks_Updates)
-        end
-        if rand() < dv
-            apply_step!(c, Δ)
-            if Δ == Step()
-                up[2][3] += 1
-            else
-                up[2][2] += 1
-            end
-        end
-    end
-end
-"""
+
 
 " perform a MC step on the configuration c "
-function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1})
-    usefull_updates = filter(up -> isusefull(c, up[1]), updates)
+function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,Updatecounter},1})
+    usefull_updates = filter(up -> isuseful(c, up[1]), updates)
     @assert !isempty(usefull_updates)
     up = rand(usefull_updates)
-    up[2][1] += 1
+    up[2].proposed += 1
     dv, Δ = up[1](m, e, c)
-    dv *= length(usefull_updates)/length(filter(up -> isusefull(apply_step(c, Δ), up[1]), updates))
+    dv *= length(usefull_updates)/length(filter(up -> isuseful(apply_step(c, Δ), up[1]), updates))
     if rand() < dv
         apply_step!(c, Δ)
         if Δ == Step()
-            up[2][3] += 1
+            up[2].trivial += 1
         else
-            up[2][2] += 1
+            up[2].accepted += 1
         end
     end
 end
@@ -186,12 +139,12 @@ end
 
 
 """
-    sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
+    sweep!(m::Model, e::Ensemble, c::Configuration,updates::Array{Tuple{Function,Updatecounter},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
 
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
 """
-function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
+function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,Updatecounter},1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
 
     if (Threads.threadid() == 1)
         println("\nstarting equilibration")

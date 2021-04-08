@@ -337,7 +337,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 end
 
 
-function isusefull(c::Configuration, up::typeof(add_type_D))
+function isuseful(c::Configuration, up::typeof(add_type_D))
     if isempty(c.kinks)
         return false
     else
@@ -345,7 +345,7 @@ function isusefull(c::Configuration, up::typeof(add_type_D))
     end
 end
 
-function isusefull(c::Configuration, up::typeof(remove_type_D))
+function isuseful(c::Configuration, up::typeof(remove_type_D))
     if length(c.kinks) < 3
         return false
     else

@@ -366,16 +366,16 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     return dw*dv, Δ
 end
 
-function isusefull(c::Configuration, up::typeof(remove_type_B))
-    if isempty(c.kinks)
+function isuseful(c::Configuration, up::typeof(remove_type_B))
+    if isempty(c.kinks) || length(c.kinks) == 3
         return false
     else
         return true
     end
 end
 
-function isusefull(c::Configuration, up::typeof(change_type_B))
-    if isempty(c.kinks)
+function isuseful(c::Configuration, up::typeof(change_type_B))
+    if isempty(c.kinks) || length(c.kinks) == 3
         return false
     else
         return true

@@ -35,9 +35,9 @@ function main()
 
 
     update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    updates = Array{Tuple{Function,MArray{Tuple{3},Int64,1,3}},1}()
+    updates = Array{Tuple{Function,Updatecounter},1}()
     for up_name in update_names
-        push!(updates, (up_name,MVector((0,0,0))))
+        push!(updates, (up_name,Updatecounter(0,0,0)))
     end
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
@@ -59,7 +59,7 @@ function main()
     println("N: ", N)
 
     for u in updates
-        println("$(u[1]):\t$(u[2][1]) proposed,\t$(u[2][2]) accepted,\t$(u[2][3]) trivial,\tratio(acc/prop) : $(u[2][2]/u[2][1]), ratio(acc/(prop-triv)) : $(u[2][2]/(u[2][1]-u[2][3]))")
+        println("$(u[1]):\t$(u[2].proposed) proposed,\t$(u[2].accepted) accepted,\t$(u[2].trivial) trivial,\tratio(acc/prop) : $(u[2].accepted/u[2].proposed), ratio(acc/(prop-triv)) : $(u[2].accepted/(u[2].proposed-u[2].trivial))")
     end
 
 
