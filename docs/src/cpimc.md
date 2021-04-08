@@ -39,7 +39,7 @@ creators
 annihilators
 excite
 excite!
-occupations
+occupations_at
 next
 prev
 ```
@@ -67,7 +67,7 @@ drop
 drop!
 add
 add!
-Update
+UpdateCounter
 ```
 
 ## utility functions

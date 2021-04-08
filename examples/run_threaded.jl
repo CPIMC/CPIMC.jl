@@ -12,7 +12,7 @@ using StaticArrays
 
 using OnlineStats
 
-import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
+import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, equlibrate_diagonal!
 
 import CPIMC: measure!, update!
 
@@ -61,7 +61,7 @@ function main()
     update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
     update_counters = []
     for _ in 1:length(update_names)
-        push!(update_counters, Updatecounter(0,0,0))
+        push!(update_counters, UpdateCounter())
     end
 
 
@@ -90,13 +90,15 @@ function main()
 
 
     Threads.@threads for t in 1:N_Runs
-        m = deepcopy(measurements_Mean)
-        updates = Array{Tuple{Function, Updatecounter},1}()
+        me = deepcopy(measurements_Mean)
+        updates = Array{Tuple{Function, UpdateCounter},1}()
         for up_name in update_names
-            push!(updates, (up_name,Updatecounter(0,0,0)))
+            push!(updates, (up_name,UpdateCounter()))
         end
-        push!(measurements_of_runs,m)
-        sweep!(UEG(), e, Configuration(copy(c.occupations)), updates, m, NMC, cyc, NEquil)
+        push!(measurements_of_runs,me)
+        c_new = Configuration(copy(c.occupations))
+            equlibrate_diagonal!(UEG(), e, c_new)
+        sweep!(UEG(), e, c_new, updates, me, NMC, cyc, NEquil)
         lock(ReentrantLock()) do
             for i in 1:length(updates)
                 update_counters[i] += updates[i][2]

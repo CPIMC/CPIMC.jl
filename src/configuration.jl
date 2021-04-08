@@ -229,12 +229,20 @@ end
 excite!(o::Set{T}, κ::T4{T}) where T = excite!(o, κ.i, κ.j, κ.k, κ.l)
 
 
-" Return the occupied orbitals after applying all kinks to initial occupation. "
+"""
+    occupations_at(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}})
+
+Return the occupied orbitals after applying all kinks to initial occupation.
+"""
 function occupations_at(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
   foldl(excite, kinks; init=o)
 end
 
-" Return the occupied orbitals to the right of τ ."
+"""
+    occupations_at(c::Configuration, τ::ImgTime)
+
+Return the occupied orbitals to the right of τ.
+"""
 function occupations_at(c::Configuration, τ::ImgTime)
   occupations_at(c.occupations, filter(x -> first(x) <= τ, c.kinks))
 end

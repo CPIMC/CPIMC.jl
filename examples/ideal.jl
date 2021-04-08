@@ -69,7 +69,11 @@ function main()
 
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N) # β only works for 3D
 
-    updates = Update.([move_particle],0,0,0)
+    update_names = [move_particle]
+    updates = Array{Tuple{Function,UpdateCounter},1}()
+    for up_name in update_names
+        push!(updates, (up_name,UpdateCounter()))
+    end
 
     measurements = Dict(
       :Ekin => (Variance(UInt), Ekin)

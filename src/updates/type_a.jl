@@ -44,7 +44,7 @@ This function will propose 100 type-a-updates for each particle in c::Configurat
 As move_particle can only be called on kinkfreee orbitals, calling this before starting the true equilibration
 might reduce the error of the kinetic energy in runs with lots of kinks.
 """
-function equlibrate_diagonal(m::Model, e::Ensemble, c::Configuration)
+function equlibrate_diagonal!(m::Model, e::Ensemble, c::Configuration)
     for _ in 1:e.N*1e2
         dv, Δ = move_particle(m, e, c)
         if rand() < dv

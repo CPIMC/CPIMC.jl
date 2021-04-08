@@ -44,7 +44,7 @@ include("updates/auxiliary.jl")
 include("UniformElectronGas.jl")
 
 
-export Updatecounter, sweep!, print_results
+export UpdateCounter, sweep!, print_results
 
 """
 Wrapper structure for counters of proposed/accepted/trivial-Updates for a single non spezifeied class of updates.
@@ -55,15 +55,16 @@ Wrapper structure for counters of proposed/accepted/trivial-Updates for a single
 - trivial            -- number of times the changes proposed by updates of that class have been trivial, e.g. the Step returned by update has been empty
 
 """
-mutable struct Updatecounter
+mutable struct UpdateCounter
     proposed :: Int64
     accepted :: Int64
     trivial  :: Int64
 end
+UpdateCounter() = UpdateCounter(0,0,0)
 
 "Addition of counters for example to add counters from different Markov-chains"
-function Base.:+(x::Updatecounter, y::Updatecounter)
-    Updatecounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
+function Base.:+(x::UpdateCounter, y::UpdateCounter)
+    UpdateCounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
 end
 
 
@@ -129,7 +130,7 @@ end
 
 
 " perform a MC step on the configuration c "
-function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,Updatecounter},1})
+function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
     usefull_updates = filter(up -> isuseful(c, up[1]), updates)
     @assert !isempty(usefull_updates)
     up = rand(usefull_updates)
@@ -164,17 +165,16 @@ end
 
 
 """
-    sweep!(m::Model, e::Ensemble, c::Configuration,updates::Array{Tuple{Function,Updatecounter},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
+    sweep!(m::Model, e::Ensemble, c::Configuration,updates::Array{Tuple{Function,UpdateCounter},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
 
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
 """
-function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,Updatecounter},1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
+function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
 
     if (Threads.threadid() == 1)
         println("\nstarting equilibration")
     end
-    equlibrate_diagonal(m, e, c)
     k = 1 # progress counter
     for i in 1:throwAway
         # print progress

@@ -7,13 +7,13 @@ using CPIMC
 using CPIMC.PlaneWaves
 using CPIMC.Estimators
 using CPIMC.UniformElectronGas
-import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
+import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, equlibrate_diagonal!
 
 function main()
     # MC options
-    NMC = 3 * 10^5
+    NMC = 10^5
     cyc = 50
-    NEquil = 5*10^4
+    NEquil = 2*10^4
     # system parameters
     θ = 0.125
     rs = 2.0
@@ -32,12 +32,12 @@ function main()
     println("ξ: ", ξ)
 
     e = CEnsemble(λ(N, rs, d), β(θ, N, ξ, d), N)
-
+    equlibrate_diagonal!(UEG(), e, c)
 
     update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    updates = Array{Tuple{Function,Updatecounter},1}()
+    updates = Array{Tuple{Function,UpdateCounter},1}()
     for up_name in update_names
-        push!(updates, (up_name,Updatecounter(0,0,0)))
+        push!(updates, (up_name,UpdateCounter()))
     end
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
