@@ -1,8 +1,9 @@
+
 """
 Common functionality to simulate any physical model.
 """
 module CPIMC
-
+using StaticArrays
 using DataStructures
 using FixedPointNumbers
 import LinearAlgebra: dot, norm
@@ -43,32 +44,37 @@ include("updates/auxiliary.jl")
 include("UniformElectronGas.jl")
 
 
-export Update, sweep!, print_results
-
+export UpdateCounter, sweep!, print_results
 
 """
-Wrapper structure for a Monte Carlo update.
+Objects of this type are used to keep track of the acceptance ratio of a class of updates.
 
 **Fields**
-
-- `update :: Function` -- actual update function
-- `proposed`           -- number of times this update has been proposed
-- `accepted`           -- number of times this update has been accepted
-- `trivial`            -- number of times the changes proposed by this update have been trivial, e.g. the `Step` returned by `update` has been empty
+- `proposed` -- number of times updates have been proposed
+- `accepted` -- number of times updates have been accepted
+- `trivial`  -- number of times the changes proposed by updates of that class have been trivial, e.g. the Step returned by update has been empty
 
 For convenience, an outer constructor with all counters set to zero is provided:
 
-    Update(f::Function) = Update(f,0,0,0)
+    UpdateCounter() = UpdateCounter(0,0,0)
 
 """
-mutable struct Update  
-    update :: Function
-    proposed :: UInt
-    accepted :: UInt
-    trivial :: UInt
+mutable struct UpdateCounter
+    proposed :: Int64
+    accepted :: Int64
+    trivial  :: Int64
 end
 
-Update(f::Function) = Update(f,0,0,0)
+UpdateCounter() = UpdateCounter(0,0,0)
+
+"""
+    Base.:+(x::UpdateCounter, y::UpdateCounter)
+
+Addition of counters for example to add counters from different Markov-chains.
+"""
+function Base.:+(x::UpdateCounter, y::UpdateCounter)
+    UpdateCounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
+end
 
 
 """
@@ -76,7 +82,7 @@ Represents a change which can be applied to a `Configuration`.
 
 **Fields**
 
-- `drop` 
+- `drop`
 - `add`
 
 """
@@ -130,23 +136,24 @@ function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
     nothing
 end
 
+
 """
     update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
 
 Obtain the next state of the Markov chain by randomly selecting an element of `updates`
 and applying the proposed changes to `c` with the calculated probability.
 """
-function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
+function update!(m::Model, e::Ensemble, c::Configuration, updates)
     @assert !isempty(updates)
-    up = rand(updates)
-    up.proposed += 1
-    dv, Δ = up.update(m, e, c)
+    (update, counter) = rand(updates)
+    counter.proposed += 1
+    dv, Δ = update(m, e, c)
     if rand() < dv
         apply_step!(c, Δ)
         if Δ == Step()
-            up.trivial += 1
+            counter.trivial += 1
         else
-            up.accepted += 1
+            counter.accepted += 1
         end
     end
 end
@@ -169,31 +176,34 @@ end
 
 
 """
-    sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
+    sweep!(m::Model, e::Ensemble, c::Configuration,updates::Array{Tuple{Function,UpdateCounter},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
 
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
 """
-function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
+function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
 
-    println("starting equilibration")
+    if (Threads.threadid() == 1)
+        println("\nstarting equilibration")
+    end
     k = 1 # progress counter
     for i in 1:throwAway
         # print progress
         if i % (throwAway/100) == 0
-            print("eq: ", k, "/100   ", "K ", lpad(length(c.kinks),4, ' '), "\r")
+            print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀    "^(Threads.threadid()-1), "eq:",Threads.threadid(), "T",lpad(k,3, ' '),"%","K:",lpad(length(c.kinks),4, ' '), "\r")
             k += 1
         end
         update!(m, e, c, updates)
     end
-
-    println("\n starting Simulation")
+    if (Threads.threadid() == 1)
+        println("\n starting Simulation")
+    end
     i = 0
     k = 1 # progress counter
     while i < steps
         # print progress
         if i % (steps/100) == 0
-            print(k, "/100   ", "K: ", lpad(length(c.kinks),4, ' '), "\r")
+            print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀    "^(Threads.threadid()-1),"   ",Threads.threadid(), "T",lpad(k,3, ' '),"%","K:",lpad(length(c.kinks),4, ' '), "\r")
             k+=1
         end
 
@@ -207,8 +217,7 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1
 
         i += 1
     end
-
-    println("\n")
+    println("\nThread",Threads.threadid(),"finished")
 end
 
 """

@@ -7,12 +7,31 @@ using CPIMC
 using CPIMC.Estimators
 using CPIMC.PlaneWaves
 using CPIMC.UniformElectronGas
+using StaticArrays
+
 
 using OnlineStats
 
-import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices
+import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, equlibrate_diagonal!
 
 import CPIMC: measure!, update!
+
+"""function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
+    usefull_updates = filter(up -> isuseful(c, up[1]), updates)
+    @assert !isempty(usefull_updates)
+    up = rand(usefull_updates)
+    up[2].proposed += 1
+    dv, Δ = up[1](m, e, c)
+    dv *= length(usefull_updates)/length(filter(up -> isuseful(apply_step(c, Δ), up[1]), updates))
+    if rand() < dv
+        apply_step!(c, Δ)
+        if Δ == Step()
+            up[2].trivial += 1
+        else
+            up[2].accepted += 1
+        end
+    end
+end"""
 
 W_off_diag(e::Ensemble, avg_K::Float64) = -avg_K/e.β
 abs_E_madelung(N::Int, λ::Float64) = 2.83729747948527 * pi/2.0 * N * λ
@@ -25,62 +44,19 @@ E_Ha(E_internal::Float64, e::Ensemble) = E_internal * 16/((2*pi)^4 * e.λ^2) * 0
 Et_Ry(E_internal::Float64, e::Ensemble) = E_Ry(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
 Et_Ha(E_internal::Float64, e::Ensemble) = E_Ha(E_internal-abs_E_madelung(e.N, e.λ),e.λ)
 
-function sweep_multithreaded!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
-    @assert(length(c.kinks) == 0)
-    c = Configuration(copy(c.occupations))# c should be a different object for each thread
-    " equilibration "
-    if (Threads.threadid() == 1)
-        println("\nstarting equilibration")
-    end
-    k = 1# progress counter
-    for i in 1:throwAway
-        if (i%(throwAway/100) == 0)
-            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " eq: ",k,"/100","; K: ",length(c.kinks))
-
-            k+=1
-        end
-        #TODO Use reentrantlook for Update counters?
-        update!(m, e, c, updates)
-    end
-    if (Threads.threadid() == 1)
-        println("\nstarting Simulation")
-    end
-    i = 0
-    k = 1#print progress
-    while i < steps
-        #print progress
-        if (i%(steps/100) == 0)
-            println("                 "^(Threads.threadid()-1),"T",Threads.threadid(), " ",k,"/100","; K: ",length(c.kinks))
-            k+=1
-        end
-
-        " MC step "
-        update!(m, e, c, updates)
-
-        "measurement"
-        if i % sampleEvery == 0
-            " calculate observables "
-            measure!(m, e, c, measurements)
-        end
-        i += 1
-    end
-    println("\nThread",Threads.threadid(),"finished")
-end
-
-
 #To run on a Linux System use "julia --threads NT run_threads.jl", where NT is the
 #desired number of Threads.
 #Inside the Code you can use Threads.nthreads() to check how many Threads
 #the Programm uses.
 function main()
     # MC options
-    NMC = 3*10^5
+    NMC = 10^5
     cyc = 50
     N_Runs = 24
-    NEquil = 5*10^4
+    NEquil = 2*10^4
     # system parameters
     θ = 0.125
-    rs = 2.00
+    rs = 2.0
 
     # use 7 particles
     S = sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1)
@@ -98,7 +74,13 @@ function main()
 
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
-    updates = Update.([move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices])#add_type_E, remove_type_E, add_remove_kink_chain
+
+    update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
+    update_counters = []
+    for _ in 1:length(update_names)
+        push!(update_counters, UpdateCounter())
+    end
+
 
     measurements = Dict(
       :sign => (Variance(), signum)
@@ -125,10 +107,23 @@ function main()
 
 
     Threads.@threads for t in 1:N_Runs
-        m = deepcopy(measurements_Mean)
-        push!(measurements_of_runs,m)
-        sweep_multithreaded!(UEG(), e, c, updates, m, NMC, cyc, NEquil)
+        me = deepcopy(measurements_Mean)
+        updates = Array{Tuple{Function, UpdateCounter},1}()
+        for up_name in update_names
+            push!(updates, (up_name,UpdateCounter()))
+        end
+        push!(measurements_of_runs,me)
+        c_run = Configuration(copy(c.occupations))
+            equlibrate_diagonal!(UEG(), e, c_run)
+        sweep!(UEG(), e, c_run, updates, me, NMC, cyc, NEquil)
+        lock(ReentrantLock()) do
+            for i in 1:length(updates)
+                update_counters[i] += updates[i][2]
+            end
+        end
     end
+    #Addup counters
+
 
     println(" finished.")
 
@@ -196,8 +191,10 @@ function main()
 
     println("acceptance ratios:")
     println("============")
-    for u in updates
-        println("$(u.update):\t$(u.proposed) proposed,\t$(u.accepted) accepted,\t$(u.trivial) trivial,\tratio(acc/prop) : $(u.accepted/u.proposed), ratio(acc/(prop-triv)) : $(u.accepted/(u.proposed-u.trivial))")
+    for i in 1:length(update_counters)
+        uc = update_counters[i]
+        up = update_names[i]
+        println("$(up):\t$(uc.proposed) proposed,\t$(uc.accepted) accepted,\t$(uc.trivial) trivial,\tratio(acc/prop) : $(uc.accepted/uc.proposed), ratio(acc/(prop-triv)) : $(uc.accepted/(uc.proposed-uc.trivial))")
     end
 
 

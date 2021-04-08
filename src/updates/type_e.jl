@@ -73,7 +73,13 @@ function right_type_E_removable_pairs(ck)
     return pairs_right
 end
 
-# TODO: use short variable names as function arguments and write their meanings in the docstring. Edit: argument names are controversial don't change them without disscussing it first.
+"""
+    possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
+This function will find possibilites for the choice of the new Orbital that is occupied in occs and should be part of both Kinks after an add_type_E-update,
+when which orbital of the old-Kink is new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator and changed_kink_old_annihilator
+is already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
     possibilities = filter(new_kink_new_annihilator -> !in(find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
                     intersect!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
@@ -81,7 +87,13 @@ function possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_
     return setdiff!(possibilities, Set([new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator]))
 end
 
-# TODO: use short variable names as function arguments and write their meanings in the docstring. Edit: argument names are controversial don't change them without disscussing it first.
+"""
+    possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
+This function will find possibilites for the choice of the new Orbital that is unoccupied in occs and should be part of both Kinks after an add_type_E-update,
+when which orbital of the old-Kink is new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator and changed_kink_old_annihilator
+is already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_kink_new_unocc_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
     possibilities = filter(new_kink_new_annihilator -> in(find_fourth_orb_for_kink(new_kink_old_creator, new_kink_old_annihilator, new_kink_new_annihilator),occs),
                     setdiff!(union!(sphere_with_same_spin(new_kink_old_creator, dk = ex_radius),
@@ -91,14 +103,14 @@ end
 
 
 function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
-    #After the updates the i and l komponents of both kinks will contain the old kink, wile the j and k components contain the old orbitals
+    #After the updates the i and l komponents of both kinks will contain the old kink, while the j and k components contain the old orbitals
     prop_prob = 1.0
     if isempty(c.kinks)
         return 1.0, Step()
     end
     old_kink = rand(c.kinks)
     prop_prob *= 1.0/length(c.kinks)
-    occs = occupations(c, first(old_kink))
+    occs = occupations_at(c, first(old_kink))
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
@@ -286,11 +298,9 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         @assert(inverse_prop_prob != Inf)
     end
 
-    @assert !iszero(delta_τ)
-    @assert !isinf(dw)
     @assert !iszero(prop_prob)
-    @assert !isinf(inverse_prop_prob)
     @assert !iszero(inverse_prop_prob)
+    @assert (  0 <= (inverse_prop_prob/prop_prob)*dw < Inf)
     return (inverse_prop_prob/prop_prob)*dw, Δ
 end
 
@@ -329,7 +339,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kink))
 
         # calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_occ_orb_E = possible_new_kink_new_occ_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
         @assert(in(removed_kink.k,opportunities_occ_orb_E))
         τ_Intervall = changed_kink_τ - τ_prev_affecting( apply_step(c,Δ).kinks, Set([removed_kink.k, removed_kink.l,removed_kink.i, removed_kink.j]), changed_kink_τ )
@@ -385,7 +395,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kink))
 
         #calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_unocc_orb_E = possible_new_kink_new_unocc_orb(occs, removed_kink.i, changed_kink_old.i, removed_kink.l, changed_kink_old.l)
         @assert(in(removed_kink.k,opportunities_unocc_orb_E))
         τ_Intervall =  τ_next_affecting( apply_step(c,Δ).kinks, Set([removed_kink.i, removed_kink.j,removed_kink.k, removed_kink.l]), changed_kink_τ ) - changed_kink_τ
@@ -410,9 +420,22 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     end
 
-    @assert !isinf(dw)
-    @assert delta_τ > 0
-    @assert !isnan((inverse_prop_prob/prop_prob) * dw)
-
+    @assert (  0 <= (inverse_prop_prob/prop_prob)*dw < Inf)
     return (inverse_prop_prob/prop_prob) * dw, Δ
+end
+
+function isuseful(c::Configuration, up::typeof(add_type_E))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end
+
+function isuseful(c::Configuration, up::typeof(remove_type_E))
+    if length(c.kinks) < 3
+        return false
+    else
+        return true
+    end
 end

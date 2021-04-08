@@ -230,21 +230,21 @@ excite!(o::Set{T}, κ::T4{T}) where T = excite!(o, κ.i, κ.j, κ.k, κ.l)
 
 
 """
-    occupations(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}})
+    occupations_at(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}})
 
 Return the occupied orbitals after applying all kinks to initial occupation.
 """
-function occupations(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
+function occupations_at(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
   foldl(excite, kinks; init=o)
 end
 
 """
-    occupations(c::Configuration, τ::ImgTime)
+    occupations_at(c::Configuration, τ::ImgTime)
 
 Return the occupied orbitals to the right of τ.
 """
-function occupations(c::Configuration, τ::ImgTime)
-  occupations(c.occupations, filter(x -> first(x) <= τ, c.kinks))
+function occupations_at(c::Configuration, τ::ImgTime)
+  occupations_at(c.occupations, filter(x -> first(x) <= τ, c.kinks))
 end
 
 """
@@ -435,7 +435,7 @@ Return a configuration with the `Orbital` `o` dropped from `c.occupations`.
 drop(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(drop(c.occupations, Set([o])),c.kinks)
 
 """
-    drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} 
+    drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital}
 
 Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
 """
@@ -622,7 +622,7 @@ Return a configuration with the pairs in ck added to `c.kinks`.
 add(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = add(c, ck...)
 
 """
-    add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} 
+    add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
 
 Return a configuration with occupations and kinks in c2 dropped from c1.
 """
@@ -907,15 +907,4 @@ function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTi
     else# this also catches τ1 == τ2
         collect(keys( filter(x -> τ1 < first(x) < τ2, ck) ))
     end
-end
-
-function find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_operator1, other_kind_ladder_operator2)
-    @assert(in(same_kind_ladder_operator.spin, [other_kind_ladder_operator1.spin, other_kind_ladder_operator2.spin]))
-    if other_kind_ladder_operator1.spin == other_kind_ladder_operator2.spin
-        fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, same_kind_ladder_operator.spin)
-
-    else
-        fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, flip(same_kind_ladder_operator.spin))
-    end
-    return(fourth_orb)
 end

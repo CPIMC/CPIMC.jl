@@ -78,6 +78,11 @@ function right_type_B_removable_pairs(ck)
     return pairs_right
 end
 
+"""
+    possible_new_orb_a(occs, orb_c, orb_d)
+This function will find possibilites for the choice of the first annihilator for an add_type_B-update when the two creators are already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_orb_a(occs, orb_c, orb_d)
     filter(orb_a -> !in(find_fourth_orb_for_kink(orb_a, orb_c, orb_d),occs) && (orb_a != find_fourth_orb_for_kink(orb_a, orb_c, orb_d)),
                     setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs))
@@ -92,7 +97,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     while haskey(c.kinks, τ1)
         τ1 = ImgTime(rand())
     end
-    occs = occupations(c, τ1)
+    occs = occupations_at(c, τ1)
     orb_c = rand(occs)
     prop_prob *= 1.0/e.N
     orb_d = rand(drop(occs, orb_c))
@@ -176,7 +181,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     #update by choosing the imaginary times in a different order.
 
     #Therefore we modify the proposal_probability in the following way
-    occs_τ2 = occupations(c, τ2)
+    occs_τ2 = occupations_at(c, τ2)
     opportunities_orb_a_τ2 = possible_new_orb_a(occs_τ2, orb_c, orb_d)
     @assert !isempty(opportunities_orb_a_τ2)
     prop_prob *= (1.0/length(opportunities_orb_a) + 1.0/length(opportunities_orb_a_τ2)) * 1.0/float(possible_τ2_interval)
@@ -212,7 +217,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     @assert (dv*dw) >= 0
     @assert !isinf(dv*dw)
     @assert !isnan(dv*dw)
-    occupations(c, ImgTime(0.99))
+    occupations_at(c, ImgTime(0.99))
     return dv*dw, Δ
 end
 
@@ -235,7 +240,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     #change configuration
     #see if occupations at τ=0 are modified
     if first(kink1) > first(kink2)
-        # change_occupations(c.occupations, last(kink2))
+        # change_occupations_at(c.occupations, last(kink2))
         add_orbs = Set([last(kink2).i, last(kink2).j])
         drop_orbs = Set([last(kink2).k, last(kink2).l])
         delta_τ = first(kink2)-first(kink1) + 1.0
@@ -257,8 +262,8 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     if possible_τ2_interval < 0
         possible_τ2_interval = 1 + possible_τ2_interval
     end
-    occs_τ_kink1 = occupations(apply_step(c,Δ), first(kink1))
-    occs_τ_kink2 = occupations(apply_step(c,Δ), first(kink2))
+    occs_τ_kink1 = occupations_at(apply_step(c,Δ), first(kink1))
+    occs_τ_kink2 = occupations_at(apply_step(c,Δ), first(kink2))
     orb_a = last(kink1).i
     orb_b = last(kink1).j
     orb_c = last(kink1).k
@@ -298,7 +303,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     τ1, τ2 = rand(kink_opportunities)
     kink1 = τ1 => c.kinks[τ1]
     kink2 = τ2 => c.kinks[τ2]
-    occs = occupations(c, first(kink1))
+    occs = occupations_at(c, first(kink1))
 
 
     opportunities = filter( x -> isunaffected_in_interval(c.kinks, x, first(kink1), first(kink2))
@@ -364,4 +369,20 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     @assert (dw * dv) >= 0
     @assert !isinf(dw * dv)
     return dw*dv, Δ
+end
+
+function isuseful(c::Configuration, up::typeof(remove_type_B))
+    if isempty(c.kinks) || length(c.kinks) == 3
+        return false
+    else
+        return true
+    end
+end
+
+function isuseful(c::Configuration, up::typeof(change_type_B))
+    if isempty(c.kinks) || length(c.kinks) == 3
+        return false
+    else
+        return true
+    end
 end

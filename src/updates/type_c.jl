@@ -58,7 +58,12 @@ function right_type_C_removable_pairs(ck)
 end
 
 
-
+"""
+    possible_new_orb1_C(occs, orb_c, orb_d)
+This function will find possibilites for the choice of the first Orbital that should be part of both Kinks after an add_type_C-update,
+when the two old orbitals of the old Kink are already selected.
+To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
+"""
 function possible_new_orb1_C(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
     opprtunities = filter(new_orb_1 -> !in(find_fourth_orb_for_kink(new_orb_1, old_orb1, old_orb2),occs) && (new_orb_1 != find_fourth_orb_for_kink(new_orb_1, old_orb1, old_orb2)),
                     setdiff!(sphere_with_same_spin(exite_orb1, dk = ex_radius), occs))
@@ -73,7 +78,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     end
     old_kink = rand(c.kinks)
     prop_prob *= 1.0/length(c.kinks)
-    occs = occupations(c, first(old_kink))
+    occs = occupations_at(c, first(old_kink))
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
@@ -250,7 +255,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         #calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, last(first(add_kinks)).k, last(first(add_kinks)).l, last(first(add_kinks)).i, last(first(add_kinks)).j)# TODO: use directly the orbitals referenced via c.kinks[changed_kink_τ] ? for now this is left for clearity
 
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))
@@ -306,7 +311,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         # calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, last(first(add_kinks)).i, last(first(add_kinks)).j, last(first(add_kinks)).k, last(first(add_kinks)).l)
 
         @assert in(removed_orb1,opportunities_reverse_new_orb1)
@@ -336,4 +341,20 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     @assert delta_τ > 0
     @assert !isnan((inverse_prop_prob/prop_prob) * dw)
     return (inverse_prop_prob/prop_prob)*dw, Δ
+end
+
+function isuseful(c::Configuration, up::typeof(add_type_C))
+    if isempty(c.kinks)
+        return false
+    else
+        return true
+    end
+end
+
+function isuseful(c::Configuration, up::typeof(remove_type_C))
+    if length(c.kinks) < 3
+        return false
+    else
+        return true
+    end
 end
