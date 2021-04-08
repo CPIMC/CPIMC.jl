@@ -224,7 +224,6 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1
     for i in 1:throwAway
         # print progress
         if i % (throwAway/100) == 0
-            #print("eq: ", k, "/100   ", "K ", lpad(length(c.kinks),4, ' '), "\r")
             print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀    "^(Threads.threadid()-1), "eq:",Threads.threadid(), "T",k,"%"," K:",lpad(length(c.kinks),4, ' '), "\r")
             k += 1
         end
@@ -238,7 +237,6 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1
     while i < steps
         # print progress
         if i % (steps/100) == 0
-            #print(k, "/100   ", "K: ", lpad(length(c.kinks),4, ' '), "\r")
             print("⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠀   "^(Threads.threadid()-1),"   ",Threads.threadid(), "T",k,"%"," K:",lpad(length(c.kinks),4, ' '), "\r")
             k+=1
         end
