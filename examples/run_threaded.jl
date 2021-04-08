@@ -96,9 +96,9 @@ function main()
             push!(updates, (up_name,UpdateCounter()))
         end
         push!(measurements_of_runs,me)
-        c_new = Configuration(copy(c.occupations))
-            equlibrate_diagonal!(UEG(), e, c_new)
-        sweep!(UEG(), e, c_new, updates, me, NMC, cyc, NEquil)
+        c_run = Configuration(copy(c.occupations))
+            equlibrate_diagonal!(UEG(), e, c_run)
+        sweep!(UEG(), e, c_run, updates, me, NMC, cyc, NEquil)
         lock(ReentrantLock()) do
             for i in 1:length(updates)
                 update_counters[i] += updates[i][2]
