@@ -131,12 +131,10 @@ end
 
 " perform a MC step on the configuration c "
 function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
-    usefull_updates = filter(up -> isuseful(c, up[1]), updates)
-    @assert !isempty(usefull_updates)
-    up = rand(usefull_updates)
+    @assert !isempty(updates)
+    up = rand(updates)
     up[2].proposed += 1
     dv, Δ = up[1](m, e, c)
-    dv *= length(usefull_updates)/length(filter(up -> isuseful(apply_step(c, Δ), up[1]), updates))
     if rand() < dv
         apply_step!(c, Δ)
         if Δ == Step()

@@ -16,6 +16,23 @@ import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_
 
 import CPIMC: measure!, update!
 
+"""function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
+    usefull_updates = filter(up -> isuseful(c, up[1]), updates)
+    @assert !isempty(usefull_updates)
+    up = rand(usefull_updates)
+    up[2].proposed += 1
+    dv, Δ = up[1](m, e, c)
+    dv *= length(usefull_updates)/length(filter(up -> isuseful(apply_step(c, Δ), up[1]), updates))
+    if rand() < dv
+        apply_step!(c, Δ)
+        if Δ == Step()
+            up[2].trivial += 1
+        else
+            up[2].accepted += 1
+        end
+    end
+end"""
+
 W_off_diag(e::Ensemble, avg_K::Float64) = -avg_K/e.β
 abs_E_madelung(N::Int, λ::Float64) = 2.83729747948527 * pi/2.0 * N * λ
 E_int_from_Hartree(E_Ha::Float64, λ::Float64) = E_Ha /(16/((2*pi)^4 * (λ/2)^2) * 0.5)
