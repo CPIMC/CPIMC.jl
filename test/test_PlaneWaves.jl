@@ -1,5 +1,5 @@
 using CPIMC, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations, longest_type_1_chain_length, right_type_1_count
+import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count
 using CPIMC.PlaneWaves
 
 a = PlaneWave((-2,0,0))
@@ -43,5 +43,3 @@ end
 @testset "fractional_spin_polarization(c::Configuration{PlaneWave})" begin
     @test fractional_spin_polarization(conf) == 0
 end
-
-

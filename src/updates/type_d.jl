@@ -72,7 +72,7 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     end
     old_kink = rand(c.kinks)
     prop_prob *= 1.0/length(c.kinks)
-    occs = occupations(c, first(old_kink))
+    occs = occupations_at(c, first(old_kink))
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         #add kink left
@@ -231,7 +231,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #see if c.occupations change
         if removed_kink_τ > changed_kink_τ
-            # change_occupations(c.occupations, T4(removed_orb1,removed_orb2, c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j))
+            # change_occupations_at(c.occupations, T4(removed_orb1,removed_orb2, c.kinks[changed_kink_τ].i,c.kinks[changed_kink_τ].j))
             drop_orbs = Set([c.kinks[removed_kink_τ].i,c.kinks[removed_kink_τ].j])
             add_orbs = Set([removed_orb1,removed_orb2])
         else
@@ -247,7 +247,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         # calculate reverse_prop_prob
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, c.kinks[removed_kink_τ].i,c.kinks[removed_kink_τ].j,c.kinks[changed_kink_τ].k,c.kinks[changed_kink_τ].l)
         @assert in(removed_orb1,opportunities_reverse_new_orb1)
         τ_Intervall = changed_kink_τ - τ_prev_affecting( apply_step(c,Δ).kinks, Set([removed_orb1, removed_orb2, last(first(add_kinks)).i, last(first(add_kinks)).j]), changed_kink_τ )
@@ -301,7 +301,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
         # calculate reverse_proposal probability
-        occs = occupations(apply_step(c,Δ), changed_kink_τ)
+        occs = occupations_at(apply_step(c,Δ), changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, last(first(add_kinks)).k, last(first(add_kinks)).l, last(first(add_kinks)).i, last(first(add_kinks)).j)
         @assert(in(removed_orb1,opportunities_reverse_new_orb1))
         τ_Intervall =  τ_next_affecting( apply_step(c,Δ).kinks, Set([ last(first(add_kinks)).k, last(first(add_kinks)).l,
