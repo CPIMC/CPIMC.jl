@@ -1,3 +1,4 @@
+export add_type_B, remove_type_B, change_type_B
 
 """Returns True if left_kink and right_kink are entangled in a Type-B way.
 This does not check wether the two kinks are neighbouring"""

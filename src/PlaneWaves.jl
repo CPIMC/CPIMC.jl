@@ -3,7 +3,7 @@ Plane wave single-particle basis states.
 """
 module PlaneWaves
 
-export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin, shell, ξ, fractional_spin_polarization
+export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin, shell, ξ, fractional_spin_polarization, find_fourth_orb_for_kink
 
 using ..CPIMC
 using StaticArrays
@@ -226,7 +226,6 @@ thus here no convention is made as to which spin component should be occupied mo
 """
 ξ(c::Configuration{<:PlaneWave}) = fractional_spin_polarization(c)
 
-end
 
 """
     find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_operator1, other_kind_ladder_operator2)
@@ -243,4 +242,6 @@ function find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_o
         fourth_orb = PlaneWave(other_kind_ladder_operator1.vec + other_kind_ladder_operator2.vec - same_kind_ladder_operator.vec, flip(same_kind_ladder_operator.spin))
     end
     return(fourth_orb)
+end
+
 end
