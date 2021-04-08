@@ -47,12 +47,16 @@ include("UniformElectronGas.jl")
 export UpdateCounter, sweep!, print_results
 
 """
-Wrapper structure for counters of proposed/accepted/trivial-Updates for a single non spezifeied class of updates.
+Objects of this type are used to keep track of the acceptance ratio of a class of updates.
 
 **Fields**
-- proposed           -- number of times this updates of that class have been proposed
-- accepted           -- number of times this updates of that class have been accepted
-- trivial            -- number of times the changes proposed by updates of that class have been trivial, e.g. the Step returned by update has been empty
+- `proposed` -- number of times updates have been proposed
+- `accepted` -- number of times updates have been accepted
+- `trivial`  -- number of times the changes proposed by updates of that class have been trivial, e.g. the Step returned by update has been empty
+
+For convenience, an outer constructor with all counters set to zero is provided:
+
+    UpdateCounter() = UpdateCounter(0,0,0)
 
 """
 mutable struct UpdateCounter
@@ -60,9 +64,14 @@ mutable struct UpdateCounter
     accepted :: Int64
     trivial  :: Int64
 end
+
 UpdateCounter() = UpdateCounter(0,0,0)
 
-"Addition of counters for example to add counters from different Markov-chains"
+"""
+    Base.:+(x::UpdateCounter, y::UpdateCounter)
+
+Addition of counters for example to add counters from different Markov-chains.
+"""
 function Base.:+(x::UpdateCounter, y::UpdateCounter)
     UpdateCounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
 end
@@ -128,21 +137,26 @@ function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
 end
 
 
+"""
+    update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
 
-" perform a MC step on the configuration c "
-function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
-    usefull_updates = filter(up -> isuseful(c, up[1]), updates)
-    @assert !isempty(usefull_updates)
-    up = rand(usefull_updates)
-    up[2].proposed += 1
-    dv, Δ = up[1](m, e, c)
-    dv *= length(usefull_updates)/length(filter(up -> isuseful(apply_step(c, Δ), up[1]), updates))
+Obtain the next state of the Markov chain by randomly selecting an element of `updates`
+and applying the proposed changes to `c` with the calculated probability.
+"""
+function update!(m::Model, e::Ensemble, c::Configuration, updates)
+    useful_updates = filter(u -> isuseful(c, u[1]), updates)
+    @assert !isempty(useful_updates)
+    (update, counter) = rand(useful_updates)
+    counter.proposed += 1
+    dv, Δ = update(m, e, c)
+    dv *= length(useful_updates)/length(filter(u -> isuseful(apply_step(c, Δ), u[1]), updates))
+
     if rand() < dv
         apply_step!(c, Δ)
         if Δ == Step()
-            up[2].trivial += 1
+            counter.trivial += 1
         else
-            up[2].accepted += 1
+            counter.accepted += 1
         end
     end
 end
@@ -170,7 +184,7 @@ end
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
 """
-function sweep!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1}, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
+function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
 
     if (Threads.threadid() == 1)
         println("\nstarting equilibration")
