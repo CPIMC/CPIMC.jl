@@ -138,6 +138,7 @@ and applying the proposed changes to `c` with the calculated probability.
 """
 function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
     @assert !isempty(updates)
+
     up = rand(updates)
     up.proposed += 1
     dv, Δ = up.update(m, e, c)
