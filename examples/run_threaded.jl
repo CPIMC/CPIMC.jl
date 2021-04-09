@@ -7,14 +7,12 @@ using CPIMC
 using CPIMC.Estimators
 using CPIMC.PlaneWaves
 using CPIMC.UniformElectronGas
+using CPIMC.DefaultUpdates
 using StaticArrays
 
 
 using OnlineStats
 
-import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, equlibrate_diagonal!
-
-import CPIMC: measure!, update!
 
 """function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
     usefull_updates = filter(up -> isuseful(c, up[1]), updates)
@@ -114,7 +112,7 @@ function main()
         end
         push!(measurements_of_runs,me)
         c_run = Configuration(copy(c.occupations))
-            equlibrate_diagonal!(UEG(), e, c_run)
+            equilibrate_diagonal!(UEG(), e, c_run)
         sweep!(UEG(), e, c_run, updates, me, NMC, cyc, NEquil)
         lock(ReentrantLock()) do
             for i in 1:length(updates)

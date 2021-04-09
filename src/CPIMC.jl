@@ -9,7 +9,7 @@ using FixedPointNumbers
 import LinearAlgebra: dot, norm
 using OnlineStats
 
-export Group, Mean, Variance
+export Group, Mean, Variance, Fixed
 
 
 include("configuration.jl")
@@ -18,33 +18,11 @@ include("model.jl")
 
 include("Estimators.jl")
 include("PlaneWaves.jl")
-
-
-"""
-    const ex_radius = 3
-
-radius of the sphere of orbitals which are considered for excitations
-"""
-const ex_radius = 3 # TODO: find better solution
-# ex_radius could be kwarg to each update function
-# and passed to `sweep!` via anonymous function with local variable ex_radius
-
-
-using .PlaneWaves
-
-include("updates/type_a.jl")
-include("updates/type_b.jl")
-include("updates/type_c.jl")
-include("updates/type_d.jl")
-include("updates/type_e.jl")
-
-include("updates/auxiliary.jl")
-
-
+include("DefaultUpdates.jl")
 include("UniformElectronGas.jl")
 
 
-export UpdateCounter, sweep!, print_results
+export UpdateCounter, sweep!, print_results, Step, apply_step, apply_step!, update!, measure!
 
 """
 Objects of this type are used to keep track of the acceptance ratio of a class of updates.

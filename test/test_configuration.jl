@@ -1,6 +1,5 @@
-using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
-import CPIMC: move_particle, add_type_B, remove_type_B, change_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, apply_step!
+using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -205,9 +204,9 @@ end
     while (orb3 == orb2) || (orb3 == orb1)
         orb3 = PlaneWave((rand(r),rand(r),rand(r)),rand([orb1.spin,orb2.spin]))
     end
-    @test in(CPIMC.find_fourth_orb_for_kink(orb3, orb1, orb2).spin, [orb1.spin, orb2.spin])
-    @test (CPIMC.find_fourth_orb_for_kink(orb3, orb1, orb2).spin == orb3.spin) == (orb1.spin == orb2.spin)
-    @test CPIMC.find_fourth_orb_for_kink(orb3, orb1, orb2).vec + orb3.vec == orb1.vec + orb2.vec
+    @test in(find_fourth_orb_for_kink(orb3, orb1, orb2).spin, [orb1.spin, orb2.spin])
+    @test (find_fourth_orb_for_kink(orb3, orb1, orb2).spin == orb3.spin) == (orb1.spin == orb2.spin)
+    @test find_fourth_orb_for_kink(orb3, orb1, orb2).vec + orb3.vec == orb1.vec + orb2.vec
 end
 
 @testset "ΔWoffdiag_element" begin

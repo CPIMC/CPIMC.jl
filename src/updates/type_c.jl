@@ -1,3 +1,4 @@
+export add_type_C, remove_type_C
 
 """Returns True if left_kink and right_kink are entangled in a Type-C way.
 This does not check wether the two kinks are neighbouring"""

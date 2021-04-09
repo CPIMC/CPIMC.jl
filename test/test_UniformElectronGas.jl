@@ -2,7 +2,7 @@ using CPIMC
 using CPIMC.UniformElectronGas
 import CPIMC.UniformElectronGas: w
 
-import CPIMC: ImgTime, orbs, T2, T4
+import CPIMC: orbs
 
 @testset "λ(N, rs, d) and rs(N::Int, λ::Float64, d) are consistent" begin
     N = 18

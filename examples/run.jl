@@ -1,13 +1,12 @@
-#] activate .
 using StaticArrays
 using OnlineStats
 using DelimitedFiles
-using Revise
+
 using CPIMC
 using CPIMC.PlaneWaves
 using CPIMC.Estimators
 using CPIMC.UniformElectronGas
-import CPIMC: move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices, equlibrate_diagonal!
+using CPIMC.DefaultUpdates
 
 function main()
     # MC options
@@ -32,7 +31,7 @@ function main()
     println("ξ: ", ξ)
 
     e = CEnsemble(λ(N, rs, d), β(θ, N, ξ, d), N)
-    equlibrate_diagonal!(UEG(), e, c)
+    equilibrate_diagonal!(UEG(), e, c)
 
     updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
     updates = map(x -> (x, UpdateCounter()), updates)

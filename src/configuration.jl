@@ -1,4 +1,4 @@
-export Configuration, Orbital, Kink, T2, T4, ImgTime
+export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite
 
 """
 Abstract type for single-particle basis states, implementation is required for each model.

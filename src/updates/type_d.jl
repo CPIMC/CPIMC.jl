@@ -1,3 +1,4 @@
+export add_type_D, remove_type_D
 
 """Returns True if left_kink and right_kink are entangled in a Type-D way
 This does not check wether the two kinks are neighbouring"""

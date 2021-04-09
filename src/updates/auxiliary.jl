@@ -1,3 +1,5 @@
+export shuffle_indices, add_remove_kink_chain
+
 """
     shuffle_indices(m::Model, e::Ensemble, c::Configuration)
 Performs an Update that takes a Kink and randomly shuffles its annihlators with each other and its creators.
