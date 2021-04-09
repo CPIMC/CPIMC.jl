@@ -73,11 +73,8 @@ function main()
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
 
-    update_names = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    update_counters = []
-    for _ in 1:length(update_names)
-        push!(update_counters, UpdateCounter())
-    end
+    updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
+    update_counters = map(x -> UpdateCounter(), updates)
 
 
     measurements = Dict(
@@ -106,17 +103,14 @@ function main()
 
     Threads.@threads for t in 1:N_Runs
         me = deepcopy(measurements_Mean)
-        updates = Array{Tuple{Function, UpdateCounter},1}()
-        for up_name in update_names
-            push!(updates, (up_name,UpdateCounter()))
-        end
+        updates_of_run = map(x -> (x, UpdateCounter()), updates)
         push!(measurements_of_runs,me)
         c_run = Configuration(copy(c.occupations))
             equilibrate_diagonal!(UEG(), e, c_run)
-        sweep!(UEG(), e, c_run, updates, me, NMC, cyc, NEquil)
+        sweep!(UEG(), e, c_run, updates_of_run, me, NMC, cyc, NEquil)
         lock(ReentrantLock()) do
             for i in 1:length(updates)
-                update_counters[i] += updates[i][2]
+                update_counters[i] += updates_of_run[i][2]
             end
         end
     end
@@ -191,7 +185,7 @@ function main()
     println("============")
     for i in 1:length(update_counters)
         uc = update_counters[i]
-        up = update_names[i]
+        up = updates[i]
         println("$(up):\t$(uc.proposed) proposed,\t$(uc.accepted) accepted,\t$(uc.trivial) trivial,\tratio(acc/prop) : $(uc.accepted/uc.proposed), ratio(acc/(prop-triv)) : $(uc.accepted/(uc.proposed-uc.trivial))")
     end
 
