@@ -1,7 +1,7 @@
 using CPIMC
 using CPIMC.PlaneWaves
 
-import CPIMC: energy, Step
+import CPIMC: energy
 import CPIMC.UniformElectronGas: λ, β
 
 import LinearAlgebra: dot

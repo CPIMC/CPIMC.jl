@@ -5,7 +5,7 @@ module Estimators
 
 using ..CPIMC
 
-import ..CPIMC: energy, w, signum, excite!, right_type_1_count, longest_type_1_chain_length
+import ..CPIMC: right_type_1_count, longest_type_1_chain_length, energy, w, signum
 
 export E, Ekin, W, W_off_diag, W_diag, K, occupations, signum, longest_type_1_chain_length, right_type_1_count
 

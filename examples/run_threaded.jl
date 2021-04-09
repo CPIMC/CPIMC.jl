@@ -14,8 +14,6 @@ using StaticArrays
 using OnlineStats
 
 
-import CPIMC: measure!, update!
-
 """function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
     usefull_updates = filter(up -> isuseful(c, up[1]), updates)
     @assert !isempty(usefull_updates)

@@ -18,7 +18,7 @@ const ex_radius = 3 # TODO: find better solution
 using ..CPIMC
 using ..CPIMC.PlaneWaves
 
-import ..CPIMC: τ_borders, Woffdiag_element, isunaffected_in_interval, ΔWdiag_element, isunaffected, occupations_at, drop, add, energy, random_shuffle, basis, τ_next_affecting, τ_prev_affecting
+import ..CPIMC: τ_borders, Woffdiag_element, isunaffected_in_interval, ΔWdiag_element, isunaffected, occupations_at, drop, add, random_shuffle, basis, τ_next_affecting, τ_prev_affecting, energy, w
 
 using LinearAlgebra
 

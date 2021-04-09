@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: ImgTime, orbs, T2, T4, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, apply_step!
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
