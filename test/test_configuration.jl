@@ -15,10 +15,10 @@ h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
 
 
-sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
-                                           ImgTime(0.5) => T4(c,d,a,b),
-                                           ImgTime(0.6) => T4(b,a,d,c),
-                                           ImgTime(0.8) => T4(d,c,b,a) )
+sd = Kinks{PlaneWave{3}}([ ImgTime(0.2) => T4(a,b,c,d),
+       ImgTime(0.5) => T4(c,d,a,b),
+       ImgTime(0.6) => T4(b,a,d,c),
+       ImgTime(0.8) => T4(d,c,b,a) ])
 
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 
@@ -45,7 +45,7 @@ end
     @test kinks_affecting_orbs(conf, Set([b])) == sd
     @test kinks_affecting_orbs(conf, Set([c])) == sd
     @test kinks_affecting_orbs(conf, Set([d])) == sd
-    @test kinks_affecting_orbs(conf, Set([e])) == SortedDict{ImgTime, Kink{<:Orbital}}()
+    @test kinks_affecting_orbs(conf, Set([e])) == Kinks{PlaneWave}()
 end
 
 @testset "τ_prev_affecting" begin
@@ -60,41 +60,6 @@ end
     @test τ_next_affecting(conf.kinks, Set([b,d]), ImgTime(0.1)) == ImgTime(0.2)
 end
 
-@testset "τ_borders" begin
-    @test τ_borders(conf, Set([a]), ImgTime(0.0)) == (ImgTime(0.8), ImgTime(0.2))
-    @test τ_borders(conf, Set([a,e]), ImgTime(0.5)) == (ImgTime(0.2), ImgTime(0.6))
-    @test τ_borders(conf, Set([b,d]), ImgTime(0.1)) == (ImgTime(0.8), ImgTime(0.2))
-    @test τ_borders(conf, Set([e]), ImgTime(0.9)) == (ImgTime(0.0), ImgTime(1.0))
-
-    conf1 = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1))
-    m = UEG()
-    ens = CEnsemble(2,2,7)
-    for _ in (1:5)
-        dv, Δ = add_type_B(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
-        end
-        dv, Δ = add_type_C(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
-        end
-        dv, Δ = add_type_D(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
-        end
-        dv, Δ = add_type_E(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
-        end
-    end
-
-    for _ in 1:10
-        kink = rand(conf1.kinks)
-
-        @test first(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_prev_affecting(conf1, orbs(last(kink)), first(kink))
-        @test last(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_next_affecting(conf1, orbs(last(kink)), first(kink))
-    end
-end
 
 @testset "isunaffected" begin
     @test !isunaffected(conf.kinks, a)
@@ -112,6 +77,7 @@ end
     @test time_ordered_orbs(T4(a,b,c,d)) == [a,b,c,d]
 end
 
+
 @testset "time_ordered_orbs(::SortedDict{ImgTime,<:Kink})" begin
     @test time_ordered_orbs(conf.kinks)[1] == a
     @test time_ordered_orbs(conf.kinks)[4] == d
@@ -121,15 +87,15 @@ end
 
 @testset "kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)" begin
     ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b), ImgTime(0.6) => T4(b,a,d,c), ImgTime(0.8) => T4(d,c,b,a)
-    @test kinks_from_periodic_interval(sd, 0.1, 0.6) == SortedDict(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b))
-    @test kinks_from_periodic_interval(sd, 0.7, 0.4) == SortedDict(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.8) => T4(d,c,b,a))
-    @test kinks_from_periodic_interval(sd, 0.5, 0.7) == SortedDict(ImgTime(0.6) => T4(b,a,d,c))
+    @test kinks_from_periodic_interval(sd, 0.1, 0.6) == Kinks(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.5) => T4(c,d,a,b))
+    @test kinks_from_periodic_interval(sd, 0.7, 0.4) == Kinks(ImgTime(0.2) => T4(a,b,c,d), ImgTime(0.8) => T4(d,c,b,a))
+    @test kinks_from_periodic_interval(sd, 0.5, 0.7) == Kinks(ImgTime(0.6) => T4(b,a,d,c))
 
     @test isempty(kinks_from_periodic_interval(sd, 0.3, 0.4))
     @test kinks_from_periodic_interval(sd, 0.4, 0.3) == sd
 
     @test isempty(kinks_from_periodic_interval(sd, 0.5, 0.5))
-    @test isempty(kinks_from_periodic_interval(SortedDict{ImgTime,T4}(), 0.1, 0.9))
+    @test isempty(kinks_from_periodic_interval(Kinks{PlaneWave{3}}(), 0.1, 0.9))
 end
 
 @testset "times_from_periodic_interval" begin
@@ -156,7 +122,7 @@ end
     g = PlaneWave(a.vec + e.vec - f.vec, Up)
     h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
-    Type_1_chain = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
+    Type_1_chain = Kinks( ImgTime(0.2) => T4(a,b,c,d),
                                                ImgTime(0.5) => T4(f,g,e,a),
                                                ImgTime(0.6) => T4(c,d,h,g),
                                                ImgTime(0.8) => T4(e,h,b,f) )
@@ -174,8 +140,8 @@ end
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
-    Type_1_chain[0.52] = T4(e,a,g,f)
-    Type_1_chain[0.54] = T4(g,f,a,e)
+    Type_1_chain[ImgTime(0.52)] = T4(e,a,g,f)
+    Type_1_chain[ImgTime(0.54)] = T4(g,f,a,e)
 
     conf_Type_1 = Configuration(occs,Type_1_chain)
 
@@ -184,8 +150,8 @@ end
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
-    Type_1_chain[0.82] = T4(b,a,d,c)
-    Type_1_chain[0.84] = T4(c,d,a,b)
+    Type_1_chain[ImgTime(0.82)] = T4(b,a,d,c)
+    Type_1_chain[ImgTime(0.84)] = T4(c,d,a,b)
 
     conf_Type_1 = Configuration(occs,Type_1_chain)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 3
@@ -251,4 +217,40 @@ end
                                                                                 + ΔW_diag(mod, i, j, k, l, occupations_at(conf,ImgTime(0.6))) * (ImgTime(0.8) - ImgTime(0.6))
                                                                                 + ΔW_diag(mod, i, j, k, l, occupations_at(conf,ImgTime(0.8))) * (ImgTime(1) + τ1 - ImgTime(0.8))
                                                                                 ) * λ
+end
+
+@testset "τ_borders" begin
+    @test τ_borders(conf, Set([a]), ImgTime(0.0)) == (ImgTime(0.8), ImgTime(0.2))
+    @test τ_borders(conf, Set([a,e]), ImgTime(0.5)) == (ImgTime(0.2), ImgTime(0.6))
+    @test τ_borders(conf, Set([b,d]), ImgTime(0.1)) == (ImgTime(0.8), ImgTime(0.2))
+    @test τ_borders(conf, Set([e]), ImgTime(0.9)) == (ImgTime(0.0), ImgTime(1.0))
+
+    conf1 = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1))
+    m = UEG()
+    ens = CEnsemble(2,2,7)
+    for _ in (1:5)
+        dv, Δ = add_type_B(m, ens, conf1)
+        if dv != 0
+            apply_step!(conf1, Δ)
+        end
+        dv, Δ = add_type_C(m, ens, conf1)
+        if dv != 0
+            apply_step!(conf1, Δ)
+        end
+        dv, Δ = add_type_D(m, ens, conf1)
+        if dv != 0
+            apply_step!(conf1, Δ)
+        end
+        dv, Δ = add_type_E(m, ens, conf1)
+        if dv != 0
+            apply_step!(conf1, Δ)
+        end
+    end
+
+    for _ in 1:10
+        kink = rand(conf1.kinks)
+
+        @test first(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_prev_affecting(conf1, orbs(last(kink)), first(kink))
+        @test last(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_next_affecting(conf1, orbs(last(kink)), first(kink))
+    end
 end

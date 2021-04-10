@@ -8,10 +8,10 @@ c = PlaneWave((0,0,0))
 d = PlaneWave((1,0,0))
 e = PlaneWave((5,9,9))
 
-sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.2) => T4(a,b,c,d),
-                                           ImgTime(0.5) => T4(c,d,a,b),
-                                           ImgTime(0.6) => T4(b,a,d,c),
-                                           ImgTime(0.8) => T4(d,c,b,a) )
+sd = Kinks( ImgTime(0.2) => T4(a,b,c,d),
+           ImgTime(0.5) => T4(c,d,a,b),
+           ImgTime(0.6) => T4(b,a,d,c),
+           ImgTime(0.8) => T4(d,c,b,a) )
 
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 

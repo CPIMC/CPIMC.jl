@@ -1,7 +1,7 @@
 using StaticArrays
 using OnlineStats
 using DelimitedFiles
-
+using Revise
 using CPIMC
 using CPIMC.PlaneWaves
 using CPIMC.Estimators
@@ -63,3 +63,4 @@ function main()
 end
 
 main()
+#Juno.@run(main())
