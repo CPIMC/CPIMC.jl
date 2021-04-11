@@ -75,8 +75,8 @@ Kink(i,j,k,l) = T4(i,j,k,l)
 # outer constructor method to extract a kink from a pair where the second element is a kink.
 Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
 
-
-const Kinks{T} = Array{Union{Pair{ImgTime,T2{T}}, Pair{ImgTime,T4{T}}},1}
+const Kinks{T} = Vector{Pair{ImgTime, Union{T2{T}, T4{T}}}}
+#const Kinks{T} = Array{Union{Pair{ImgTime,T2{T}}, Pair{ImgTime,T4{T}}},1}
 
 Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}  = Kinks{T}([p...])
 
@@ -227,8 +227,8 @@ end
 
 Apply a `T4`-kink to a set of basis states for a pair of a time and a `T4`-kink. This is useful for iterating threw a Kinks-Objekt to get occupations at  a spezific time.
 """
+excite(o::Set{T}, κ::Pair{Fixed{Int64,60},Union{T2{T}, T4{T}}}) where T = excite(o, last(κ))
 excite(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = excite(o, last(κ))
-
 
 """
     excite!(::Set{T}, i::T, j::T, k::T, l::T) where {T}
