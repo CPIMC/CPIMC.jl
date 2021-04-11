@@ -1,8 +1,11 @@
-#] activate .
+#=
+] activate .
+using Revise
+using BenchmarkTools
+=#
 using DelimitedFiles
 using DataFrames
 using CSV
-using Revise
 using CPIMC
 using CPIMC.Estimators
 using CPIMC.PlaneWaves
@@ -48,10 +51,10 @@ Et_Ha(E_internal::Float64, e::Ensemble) = E_Ha(E_internal-abs_E_madelung(e.N, e.
 #the Programm uses.
 function main()
     # MC options
-    NMC = 10^5
+    NMC = 10^3
     cyc = 50
     N_Runs = 24
-    NEquil = 2*10^4
+    NEquil = 2*10^3
     # system parameters
     θ = 0.125
     rs = 2.0
