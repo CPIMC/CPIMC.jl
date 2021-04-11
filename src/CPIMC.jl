@@ -154,8 +154,8 @@ end
 
 
 """
-    sweep!(m::Model, e::Ensemble, c::Configuration,updates::Array{Tuple{Function,UpdateCounter},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
-
+    sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
+    
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
 """

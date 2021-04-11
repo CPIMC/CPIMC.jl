@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, ordered_orbs, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -69,12 +69,12 @@ end
     @test isunaffected(conf.kinks, e)
 end
 
-@testset "time_ordered_orbs(::T4)" begin
-    @test time_ordered_orbs(T4(a,b,c,d))[1] == a
-    @test time_ordered_orbs(T4(a,b,c,d))[2] == b
-    @test time_ordered_orbs(T4(a,b,c,d))[3] == c
-    @test time_ordered_orbs(T4(a,b,c,d))[4] == d
-    @test time_ordered_orbs(T4(a,b,c,d)) == [a,b,c,d]
+@testset "ordered_orbs(::T4)" begin
+    @test ordered_orbs(T4(a,b,c,d))[1] == a
+    @test ordered_orbs(T4(a,b,c,d))[2] == b
+    @test ordered_orbs(T4(a,b,c,d))[3] == c
+    @test ordered_orbs(T4(a,b,c,d))[4] == d
+    @test ordered_orbs(T4(a,b,c,d)) == [a,b,c,d]
 end
 
 

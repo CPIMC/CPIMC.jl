@@ -75,16 +75,40 @@ Kink(i,j,k,l) = T4(i,j,k,l)
 # outer constructor method to extract a kink from a pair where the second element is a kink.
 Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
 
+"""
+  const Kinks{T}
+Structure for storing of Kinks and their imaginarytimes
+"""
 const Kinks{T} = Vector{Pair{ImgTime, Union{T2{T}, T4{T}}}}
 #const Kinks{T} = Array{Union{Pair{ImgTime,T2{T}}, Pair{ImgTime,T4{T}}},1}
 
+"""
+    Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}
+Outer constructor method to create Kinks-objekt from a bunch of ImgTime-Kink-Pairs.
+"""
 Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}  = Kinks{T}([p...])
 
+"""
+values(ck::Kinks)
+returns a list of the Kink-objekts of a Kinks-objekt, used to allow the use of dictionary synthax.
+"""
 values(ck::Kinks) = map(p -> last(p), ck)
+"""
+    keys(ck::Kinks)
+returns a list of the imaginary-times of a Kinks-objekt, used to allow the use of dictionary synthax.
+"""
 keys(ck::Kinks) = map(p -> first(p), ck)
 
+"""
+    Base.haskey(ck::Kinks, key::ImgTime)
+Check if Kinks-objekt contains a kink at a spezific time.
+"""
 Base.haskey(ck::Kinks, key::ImgTime) = in(key, keys(ck))
 
+"""
+    Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
+Allow the kinks[τ]-synthax to get Kink at a spezific imaginary-time
+"""
 function Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
     searchsortedfirst(kinks, by=first, τ)
     τ_next, k = kinks[searchsortedfirst(kinks, by=first, τ)]
@@ -400,8 +424,13 @@ Base.in(i, k::T2) = i == k.i || i == k.j
 Base.in(i, k::T4) = i == k.i || i == k.j || i == k.k || i == k.l
 isunaffected(kinks, orb) = all(kink -> orb ∉ last(kink), kinks)
 
+"""
+    in_open_interval(τ, τ_first, τ_last)
 
+Check if τ lies in the open ImgTime-interval between τ_first, τ_last, assuming that τ_first is the left boarder and τ_last the right one.
+"""
 in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) & ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
+
 """
     isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime)
 
@@ -456,14 +485,14 @@ Return a container with the elements in `ck2` dropped from `ck1`.
 drop(ck1, ck2) = setdiff(ck1, ck2)
 
 """
-    drop(c::Configuration{T}, ck)
+    drop(c::Configuration{T}, ck::Kinks)
 
 Return a `Configuration` with the pairs in `ck` dropped from `c.kinks`.
 """
 drop(c::Configuration{T}, ck::Kinks) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ck))
 
 """
-    drop(ck, ps...) where {T <: Orbital} = setdiff(ck, Kinks(ps...))
+    drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
 
 Return a Kinks-objekt with the pairs `ps...` dropped from `ck`.
 """
@@ -623,9 +652,9 @@ function add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 end
 
 """
-    add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
+    add(ck1::Kinks, ck2::Kinks)
 
-Return a Kinks-objekt with the pairs ps... added to ck.
+Return a Kinks-objekt with the pairs form ck2 added to ck1.
 """
 function add(ck1::Kinks, ck2::Kinks) where {T <: Orbital}
     ck1_copy = copy(ck1)
@@ -691,9 +720,9 @@ function add!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
 end
 
  """
-     add!(ck::Array{<:Pair}, p::Pair)
+     add!(ck::Kinks, τ::ImgTime, k::Kink)
 
- Return a Kinks-objekt with the pair p added to ck with respect to the sorting. Mutating
+ Return a Kinks-objekt with the pair τ => k added to ck with respect to the sorting. Mutating
  """
  add!(ck::Kinks, τ::ImgTime, k::Kink) = insert!(ck, searchsortedfirst(ck, by=first, τ), τ => k)
 
@@ -701,9 +730,9 @@ end
      add!(ck::Kinks, τ::ImgTime, kink::Kink)
  end
 """
-    add!(c::Configuration{T}, τ::ImgTime, k::Kink{T}) where {T <: Orbital}
+    add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
 
- Add a single kink at time τ to `c.kinks`.
+ Add a single kink at time first(p) to `c.kinks`.
 """
 function add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
     add!(c.kinks, first(p), last(p))
@@ -712,9 +741,9 @@ end
 
 
 """
-    add!(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
+    add!(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 
-Add all kinks given by the pairs `ps` to `c.kinks`.
+Add all kinks given by the pairs `ps` to `ck`.
 """
 function add!(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
     for k in ps
@@ -744,16 +773,16 @@ end
 
 
 @doc raw"""
-    time_ordered_orbs(x::T4)
+    ordered_orbs(x::T4)
 
 Get a list of orbitals that are affected by a kink in the conventional ordering i, j, k, l.
 This corresponds to the matrix element $w_{ijkl}$ in the same order.
 """
-time_ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
+ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
 
 
 """
-    time_ordered_orbs(Kinks{T}) where T
+    time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
 
 Get a list of orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l.
 """
@@ -761,7 +790,7 @@ function time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
     if isempty(ck)
         return Array{T,1}()
     else
-        return vcat([time_ordered_orbs(k) for k in values(ck)]...)
+        return vcat([ordered_orbs(k) for k in values(ck)]...)
     end
 end
 
@@ -829,7 +858,7 @@ function right_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
 end
 
 """
-    left_type_1_chain_length(ck, τ, count = 0)
+    left_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
 
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
 """
@@ -845,7 +874,7 @@ function left_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
 end
 
 """
-    longest_type_1_chain_length(ck)
+    longest_type_1_chain_length(ck::Kinks)
 
 Returns the longest chain of type-1-entaglements in ck.
 """
@@ -859,9 +888,9 @@ function longest_type_1_chain_length(ck::Kinks)
 end
 
 """
-    longest_type_1_chain_length(ck)
+    right_type_1_count(ck::Kinks)
 
-Returns the longest chain of type-1-entaglements in ck.
+Returns the number of kinks that are type 1 entagled with their right neighbour.
 """
 function right_type_1_count(ck::Kinks)
     count = 0
@@ -935,12 +964,4 @@ in the periodic ordering suggested by the relation of the first time-argument τ
 """
 function times_from_periodic_interval(ck::Kinks, τ1::ImgTime, τ2::ImgTime)
     keys(filter(x-> in_open_interval(first(x), τ1, τ2), ck))
-    # if τ1 > τ2# interval is periodically continued
-    #     vcat(
-    #         collect(keys( filter(x -> τ1 < first(x), ck) )),
-    #         collect(keys( filter(x -> first(x) < τ2, ck) ))
-    #         )
-    # else# this also catches τ1 == τ2
-    #     collect(keys( filter(x -> τ1 < first(x) < τ2, ck) ))
-    # end
 end
