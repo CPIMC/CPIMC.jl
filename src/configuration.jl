@@ -79,7 +79,7 @@ Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
   const Kinks{T}
 Structure for storing of Kinks and their imaginarytimes
 """
-const Kinks{T} = Vector{Pair{ImgTime, Union{T2{T}, T4{T}}}}
+const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
 #const Kinks{T} = Array{Union{Pair{ImgTime,T2{T}}, Pair{ImgTime,T4{T}}},1}
 
 """

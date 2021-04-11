@@ -1,4 +1,5 @@
 #=
+Stuff to do at the start of a develepment session:
 ] activate .
 using Revise
 using BenchmarkTools
