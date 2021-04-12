@@ -76,37 +76,43 @@ Kink(i,j,k,l) = T4(i,j,k,l)
 Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
 
 """
-  const Kinks{T}
-Structure for storing of Kinks and their imaginary times
+    const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
+
+Structure for storing excitations and their imaginary times (kinks).
+
+Can also be constructed by passing such pairs directly.
+
+    Kinks(p::Pair{ImgTime,<:Kink{T}}...)
 """
 const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
 
-"""
-    Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}
-Outer constructor method to create Kinks-objekt from a bunch of ImgTime-Kink-Pairs.
-"""
 Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}  = Kinks{T}([p...])
 
 """
-values(ck::Kinks)
-returns a list of the Kink-objekts of a Kinks-objekt, used to allow the use of dictionary synthax.
+    values(ck::Kinks)
+
+Return a list of the excitations of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
 values(ck::Kinks) = map(p -> last(p), ck)
+
 """
     keys(ck::Kinks)
-returns a list of the imaginary-times of a Kinks-objekt, used to allow the use of dictionary synthax.
+
+Return a list of the imaginary-times of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
 keys(ck::Kinks) = map(p -> first(p), ck)
 
 """
     Base.haskey(ck::Kinks, key::ImgTime)
-Check if Kinks-objekt contains a kink at a spezific time.
+
+Check if a `Kinks`-object contains a kink at a specific time.
 """
 Base.haskey(ck::Kinks, key::ImgTime) = in(key, keys(ck))
 
 """
     Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
-Allow the kinks[τ]-synthax to get Kink at a spezific imaginary-time
+
+Allow the `kinks[τ]`-syntax to retrieve a `Kink` at a specific `ImgTime`.
 """
 function Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
     searchsortedfirst(kinks, by=first, τ)
@@ -125,8 +131,8 @@ Multi-particle trajectory in imaginary time.
 `Configuration{T}` is a parametric type depending on the single-particle basis `T <: Orbital`.
 
 **Fields**
-- `occupations :: Set{T}`                -- orbitals which are occupied initially τ=0
-- `kinks :: Kinks{T} -- `List` of pairs one- and two-particle excitations, using τ as key of the pair
+- `occupations :: Set{T}`  -- orbitals which are occupied initially (`τ=0`)
+- `kinks :: Kinks{T}`      -- collection of excitations and their imaginary times (kinks)
 
 """
 mutable struct Configuration{T}
