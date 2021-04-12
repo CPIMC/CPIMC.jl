@@ -254,7 +254,7 @@ end
 """
     excite(o::Set{T}, κ::Pair{ImgTime,T4{T}})
 
-Apply a `T4`-kink to a set of basis states for a pair of a time and a `T4`-kink. This is useful for iterating threw a Kinks-Objekt to get occupations at  a spezific time.
+Apply a `T4`-kink to a set of basis states for a pair of a time and a `T4`-kink. This is useful for iterating over a `Kinks`-object when calculating the occupations at a specific time.
 """
 excite(o::Set{T}, κ::Pair{Fixed{Int64,60},Union{T2{T}, T4{T}}}) where T = excite(o, last(κ))
 excite(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = excite(o, last(κ))
@@ -264,7 +264,7 @@ excite(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = excite(o, last(κ))
     excite!(o::Set{T}, κ::T4{T})
 
 Apply an excitation in-place to a set of basis states that is given by creating orbitals i, j
-and annihilating the orbitals k, l, or respecti
+and annihilating the orbitals k, l.
 """
 function excite!(o::Set{T}, i::T, j::T, k::T, l::T) where {T}
     @assert (in(k, o) & in(l, o)) "Kink ($(i),$(j),$(k),$(l)) cannot be applied: one or two of the annihilators $(k), $(l) is not occupied. (Pauli-Principle)"
@@ -317,8 +317,10 @@ end
 """
     prev(x, τ)
 
-Return first kink before given ::ImgTime. If there is no kink with ::ImgTime smaller than τ, return last kink.
-If ck is empty this will throw an error. This assumes that the x is in the order of the imaginary times.
+Return first kink earlier than `τ::ImgTime`. If there is no such kink the last kink is returned.
+If `ck` is empty this will throw an error.
+
+This function assumes that the kinks in `x` are ordered by their imaginary time!
 """
 function prev(x, τ)
     if isempty(x)
@@ -425,14 +427,15 @@ return a tuple of the interval bounds (ImgTime(0), ImgTime(1))."""
 
 Return if an orbital is not affected by any kink.
 """
+isunaffected(kinks, orb) = all(kink -> orb ∉ last(kink), kinks)
+
 Base.in(i, k::T2) = i == k.i || i == k.j
 Base.in(i, k::T4) = i == k.i || i == k.j || i == k.k || i == k.l
-isunaffected(kinks, orb) = all(kink -> orb ∉ last(kink), kinks)
 
 """
     in_open_interval(τ, τ_first, τ_last)
 
-Check if τ lies in the open ImgTime-interval between τ_first, τ_last, assuming that τ_first is the left boarder and τ_last the right one.
+Check if `τ` lies in the open `ImgTime`-interval `(τ_first,`τ_last)`, assuming that `τ_first` is the left border and `τ_last` the right one.
 """
 in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) & ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
 
@@ -499,7 +502,7 @@ drop(c::Configuration{T}, ck::Kinks) where {T <: Orbital} = Configuration(c.occu
 """
     drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
 
-Return a Kinks-objekt with the pairs `ps...` dropped from `ck`.
+Return a `Kinks`-object with the pairs `ps...` dropped from `ck`.
 """
 drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = setdiff(ck, Kinks(ps))
 
@@ -563,9 +566,9 @@ function drop!(c::Configuration, τ::ImgTime)
 end
 
 """
-    drop!(c::Configuration{T}, ck) where {T <: Orbital}
+    drop!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
 
-Drop all kinks given in a Container of ImgTime-kink-pairs from `c.kinks`.
+Drop all kinks given in `ck` from `c.kinks`.
 """
 function drop!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
     for (τ, k) in ck
@@ -636,17 +639,17 @@ add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(
 
 
 """
-    add(ck::Array{<:Pair}, p::Pair)
+    add(ck::Kinks, p::Pair)
 
-Return a Kinks-objekt with the pair p added to ck with respect to the sorting. Not mutating.
+Return a `Kinks`-object with the pair `p` added to `ck` with respect to the sorting.
 """
-add(ck::Array{<:Pair}, p::Pair) = insert(ck, searchsortedfirst(ck, by=first, first(p)), p)
+add(ck::Kinks, p::Pair) = insert(ck, searchsortedfirst(ck, by=first, first(p)), p)
 
 
 """
     add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 
-Return a Kinks-objekt with the pairs ps... added to ck.
+Return a `Kinks`-object with the pairs `ps...` added to `ck`.
 """
 function add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
     ck_copy = copy(ck)
@@ -659,7 +662,7 @@ end
 """
     add(ck1::Kinks, ck2::Kinks)
 
-Return a Kinks-objekt with the pairs form ck2 added to ck1.
+Return a `Kinks`-object with the pairs from `ck2` added to `ck1`.
 """
 function add(ck1::Kinks, ck2::Kinks) where {T <: Orbital}
     ck1_copy = copy(ck1)
@@ -724,20 +727,21 @@ function add!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
     union!(c.occupations, oc)
 end
 
- """
-     add!(ck::Kinks, τ::ImgTime, k::Kink)
-
- Return a Kinks-objekt with the pair τ => k added to ck with respect to the sorting. Mutating
- """
- add!(ck::Kinks, τ::ImgTime, k::Kink) = insert!(ck, searchsortedfirst(ck, by=first, τ), τ => k)
-
- function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
-     add!(ck::Kinks, τ::ImgTime, kink::Kink)
- end
 """
-    add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
+    add!(ck::Kinks, τ::ImgTime, k::Kink)
 
- Add a single kink at time first(p) to `c.kinks`.
+Add the pair `(τ, k)` to the `ck` with respect to the sorting.
+"""
+add!(ck::Kinks, τ::ImgTime, k::Kink) = insert!(ck, searchsortedfirst(ck, by=first, τ), τ => k)
+
+function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
+    add!(ck::Kinks, τ::ImgTime, kink::Kink)
+end
+
+"""
+  add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
+
+Add a single kink at time first(p) to `c.kinks`.
 """
 function add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
     add!(c.kinks, first(p), last(p))
@@ -760,7 +764,7 @@ end
 """
     add!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
 
-Add all kinks given in a Kinks-Objekt to `c.kinks`.
+Add all kinks given in `ck` to `c.kinks`.
 """
 function add!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
     add!(c.kinks, ck...)
