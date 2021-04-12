@@ -69,15 +69,17 @@ function main()
 
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N) # β only works for 3D
 
-    updates = [ (move_particle, UpdateCounter()) ]
+    updates = [ move_particle ]
 
     measurements = Dict(
       :Ekin => (Variance(UInt), Ekin)
     , :occs => (Group([Variance(UInt) for i in 1:100]), occupations))
 
     println("Start MC process ... ")
-    sweep!(FreeElectronGas(), e, c, updates, measurements, NMC, cyc, NEquil)
+    d = sweep!(FreeElectronGas(), e, c, updates, measurements, NMC, cyc, NEquil)
     println(" finished.")
+
+    print(d)
 
     print_results(measurements, e)
 

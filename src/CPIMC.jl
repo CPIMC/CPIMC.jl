@@ -22,13 +22,13 @@ include("DefaultUpdates.jl")
 include("UniformElectronGas.jl")
 
 
-export UpdateCounter, sweep!, print_results, Step, apply_step, apply_step!, update!, measure!
+export UpdateCounter, sweep!, print_results, print_rates, Step, apply_step, apply_step!, update!, measure!
 
 """
 Objects of this type are used to keep track of the acceptance ratio of a class of updates.
 
 **Fields**
-- `proposed` -- number of times updates have been proposed
+- `rejected` -- number of times updates have been rejected
 - `accepted` -- number of times updates have been accepted
 - `trivial`  -- number of times the changes proposed by updates of that class have been trivial, e.g. the Step returned by update has been empty
 
@@ -38,7 +38,7 @@ For convenience, an outer constructor with all counters set to zero is provided:
 
 """
 mutable struct UpdateCounter
-    proposed :: Int64
+    rejected :: Int64
     accepted :: Int64
     trivial  :: Int64
 end
@@ -116,23 +116,30 @@ end
 
 
 """
-    update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Update,1})
+    update!(m::Model, e::Ensemble, c::Configuration, updates)
 
 Obtain the next state of the Markov chain by randomly selecting an element of `updates`
-and applying the proposed changes to `c` with the calculated probability.
+and applying the proposed changes to `c` with the calculated probability. Returns a tuple
+containing the index of the chosen function and `:accept`, `:reject` or `:trivial` if
+the function yielded an empty `Step`.
 """
 function update!(m::Model, e::Ensemble, c::Configuration, updates)
     @assert !isempty(updates)
-    (update, counter) = rand(updates)
-    counter.proposed += 1
-    dv, Δ = update(m, e, c)
+
+    i = rand(1:length(updates))
+
+    dv, Δ = updates[i](m, e, c)
+
+    if Δ == Step()
+        return (i, :trivial)
+    end
+
     if rand() < dv
         apply_step!(c, Δ)
-        if Δ == Step()
-            counter.trivial += 1
-        else
-            counter.accepted += 1
-        end
+
+        return (i, :accept)
+    else
+        return (i, :reject)
     end
 end
 
@@ -154,12 +161,15 @@ end
 
 
 """
-    sweep!(m::Model, e::Ensemble, c::Configuration,updates::Array{Tuple{Function,UpdateCounter},1}, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
+    sweep!(m::Model, e::Ensemble, c::Configuration, updates, measurements, steps::Int, sampleEvery::Int, throwAway::Int)
 
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
+
+Returns a dictionary containing an `UpdateCounter` for every function given in `updates`.
 """
 function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
+    counters = [ UpdateCounter() for u in updates ]
 
     if (Threads.threadid() == 1)
         println("\nstarting equilibration")
@@ -186,7 +196,15 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, st
         end
 
         " MC step "
-        update!(m, e, c, updates)
+        (up, res) = update!(m, e, c, updates)
+
+        if res == :accept
+            counters[up].accepted += 1
+        elseif res == :reject
+            counters[up].rejected += 1
+        elseif res == :trivial
+            counters[up].trivial += 1
+        end
 
         " calculate estimators "
         if i % sampleEvery == 0
@@ -196,6 +214,8 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, st
         i += 1
     end
     println("\nThread",Threads.threadid(),"finished")
+
+    return Dict(zip(map(u -> typeof(u).name.mt.name, updates), counters))
 end
 
 """
@@ -233,5 +253,29 @@ function print_results(measurements, e::Ensemble)
     end
 end
 
+"""
+    print_rates(dict::Dict{Any,UpdateCounter})
+
+Calculate and print acceptance statistics.
+"""
+function print_rates(dict)
+    norm = 0
+
+    long = 31
+
+    println(rpad("update", long), lpad("accepted", 11), lpad("rejected", 11), lpad("trivial", 11))
+
+    for (up,cn) in dict
+        norm += cn.accepted + cn.rejected + cn.trivial
+        
+        println(rpad(up, long), lpad(cn.accepted, 11), lpad(cn.rejected, 11), lpad(cn.trivial, 11))
+    end
+
+    println("total rates:\n\n")
+
+    for (up,cn) in dict
+        println(rpad(up, long), lpad(cn.accepted/norm, 11), lpad(cn.rejected/norm, 11), lpad(cn.trivial/norm, 11))
+    end
+end
 
 end
