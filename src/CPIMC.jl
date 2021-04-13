@@ -8,6 +8,7 @@ using DataStructures
 using FixedPointNumbers
 import LinearAlgebra: dot, norm
 using OnlineStats
+using Printf
 
 export Group, Mean, Variance, Fixed
 
@@ -51,7 +52,7 @@ UpdateCounter() = UpdateCounter(0,0,0)
 Addition of counters for example to add counters from different Markov-chains.
 """
 function Base.:+(x::UpdateCounter, y::UpdateCounter)
-    UpdateCounter(x.proposed + y.proposed, x.accepted + y.accepted, x.trivial + y.trivial)
+    UpdateCounter(x.rejected + y.rejected, x.accepted + y.accepted, x.trivial + y.trivial)
 end
 
 
@@ -174,6 +175,7 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, st
     if (Threads.threadid() == 1)
         println("\nstarting equilibration")
     end
+
     k = 1 # progress counter
     for i in 1:throwAway
         # print progress
@@ -184,10 +186,12 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, st
         update!(m, e, c, updates)
     end
     if (Threads.threadid() == 1)
-        println("\n starting Simulation")
+        println("\nstarting simulation")
     end
+
     i = 0
     k = 1 # progress counter
+
     while i < steps
         # print progress
         if i % (steps/100) == 0
@@ -213,7 +217,7 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, st
 
         i += 1
     end
-    println("\nThread",Threads.threadid(),"finished")
+    println("\nthread ",Threads.threadid()," finished")
 
     return Dict(zip(map(u -> typeof(u).name.mt.name, updates), counters))
 end
@@ -259,23 +263,29 @@ end
 Calculate and print acceptance statistics.
 """
 function print_rates(dict)
-    norm = 0
-
     long = 31
 
+    println("\n")
     println(rpad("update", long), lpad("accepted", 11), lpad("rejected", 11), lpad("trivial", 11))
+    println("================================================================")
+    println("\ntotal:\n")
 
     for (up,cn) in dict
-        norm += cn.accepted + cn.rejected + cn.trivial
         
         println(rpad(up, long), lpad(cn.accepted, 11), lpad(cn.rejected, 11), lpad(cn.trivial, 11))
     end
 
-    println("total rates:\n\n")
+    println("\nrelative:\n")
 
     for (up,cn) in dict
-        println(rpad(up, long), lpad(cn.accepted/norm, 11), lpad(cn.rejected/norm, 11), lpad(cn.trivial/norm, 11))
+        proposed = cn.accepted + cn.rejected + cn.trivial
+        println(rpad(up, long),
+                lpad(@sprintf("%.2f", 100*cn.accepted/proposed), 10), "%",
+                lpad(@sprintf("%.2f", 100*cn.rejected/proposed), 10), "%",
+                lpad(@sprintf("%.2f", 100*cn.trivial/proposed), 10), "%")
     end
+
+    println("\n\n")
 end
 
 end
