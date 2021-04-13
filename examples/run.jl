@@ -34,7 +34,6 @@ function main()
     equilibrate_diagonal!(UEG(), e, c)
 
     updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    updates = map(x -> (x, UpdateCounter()), updates)
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
       :sign => (Variance(), signum)
@@ -46,7 +45,7 @@ function main()
     )
 
     println("Start MC process ... ")
-    sweep!(UEG(), e, c, updates, measurements, NMC, cyc, NEquil)
+    rates = sweep!(UEG(), e, c, updates, measurements, NMC, cyc, NEquil)
     println(" finished.")
 
     println("parameters:")
@@ -54,10 +53,7 @@ function main()
     println("rs: ", rs)
     println("N: ", N)
 
-    for u in updates
-        println("$(u[1]):\t$(u[2].proposed) proposed,\t$(u[2].accepted) accepted,\t$(u[2].trivial) trivial,\tratio(acc/prop) : $(u[2].accepted/u[2].proposed), ratio(acc/(prop-triv)) : $(u[2].accepted/(u[2].proposed-u[2].trivial))")
-    end
-
+    print_rates(rates)
 
     print_results(measurements, e)
 end
