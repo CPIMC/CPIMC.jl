@@ -32,8 +32,8 @@ b = PlaneWave((3,0,0))
 c = PlaneWave((0,0,0))
 d = PlaneWave((1,0,0))
 
-sd = SortedDict{ImgTime, Kink{<:Orbital}}( ImgTime(0.5) => T4(a,b,c,d),
-                                           ImgTime(0.6) => T4(c,d,a,b))
+sd = Kinks( ImgTime(0.5) => T4(a,b,c,d),
+            ImgTime(0.6) => T4(c,d,a,b))
 
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 conf_pol = Configuration(sphere_with_same_spin(PlaneWave((0,0,0),Up),dk=1),sd)

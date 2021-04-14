@@ -1,4 +1,4 @@
-export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite
+export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite, Kinks, haskey, Kinks, keys, values, getindex
 
 """
 Abstract type for single-particle basis states, implementation is required for each model.
@@ -27,7 +27,6 @@ The single-particle basis is represented by the type parameter `T`.
 struct T2{T}
   " creator "
   i :: T
-
   " annihilator "
   j :: T
 end
@@ -45,9 +44,10 @@ with creator orbitals `i`, `j` and an annihilator orbitals `k`, `l`.
 The single-particle basis is represented by the type parameter `T`.
 """
 struct T4{T}
+  " creator "
   i :: T
   j :: T
-
+  " annihilator "
   k :: T
   l :: T
 end
@@ -71,9 +71,58 @@ const Kink{T} = Union{T2{T}, T4{T}}
 Kink(i,j) = T2(i,j)
 # outer constructor method to construct a T4 kink, inferring the type parameter from the arguments
 Kink(i,j,k,l) = T4(i,j,k,l)
+
 # outer constructor method to extract a kink from a pair where the second element is a kink.
-#    This is useful for automatic conversion when looping over SortedDict{S,Kink{T}}
 Kink(p::Pair{S,T} where {T<:Kink} where {S}) = p[2]# first substitute S, then T
+
+"""
+    const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
+
+Structure for storing excitations and their imaginary times (kinks).
+
+Can also be constructed by passing such pairs directly.
+
+    Kinks(p::Pair{ImgTime,<:Kink{T}}...)
+"""
+const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
+
+Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}  = Kinks{T}([p...])
+
+"""
+    values(ck::Kinks)
+
+Return a list of the excitations of a `Kinks`-object, used to allow the use of dictionary syntax.
+"""
+values(ck::Kinks) = map(p -> last(p), ck)
+
+"""
+    keys(ck::Kinks)
+
+Return a list of the imaginary-times of a `Kinks`-object, used to allow the use of dictionary syntax.
+"""
+keys(ck::Kinks) = map(p -> first(p), ck)
+
+"""
+    Base.haskey(ck::Kinks, key::ImgTime)
+
+Check if a `Kinks`-object contains a kink at a specific time.
+"""
+Base.haskey(ck::Kinks, key::ImgTime) = in(key, keys(ck))
+
+"""
+    Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
+
+Allow the `kinks[τ]`-syntax to retrieve a `Kink` at a specific `ImgTime`.
+"""
+function Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
+    searchsortedfirst(kinks, by=first, τ)
+    τ_next, k = kinks[searchsortedfirst(kinks, by=first, τ)]
+    if τ_next != τ
+        Throw(KeyError(τ))
+    else
+        return k
+    end
+end
 
 
 """
@@ -82,25 +131,25 @@ Multi-particle trajectory in imaginary time.
 `Configuration{T}` is a parametric type depending on the single-particle basis `T <: Orbital`.
 
 **Fields**
-- `occupations :: Set{T}`                -- orbitals which are occupied initially τ=0
-- `kinks :: SortedDict{ImgTime, Kink{T}} -- `SortedDict` of one- and two-particle excitations, using τ as an index
+- `occupations :: Set{T}`  -- orbitals which are occupied initially (`τ=0`)
+- `kinks :: Kinks{T}`      -- collection of excitations and their imaginary times (kinks)
 
 """
 mutable struct Configuration{T}
   occupations :: Set{T}
-  kinks :: SortedDict{ImgTime, Kink{T}}
+  kinks :: Kinks{T}
 end
 
-" outer constructor method for a configuration with occupations given by o and kinks given by k. k can be anything from which a SortedDict can be constructed from. "
-Configuration(o::Set{T}, k) where {T} = Configuration(o, SortedDict{ImgTime,Kink{T}}(Base.Forward, k) )
+" outer constructor method for a configuration with occupations given by o and kinks given by k. "
+Configuration(o::Set{T}, k) where {T} = Configuration(o, Kinks{T}(k) )
 " outer constructor method for a configuration with occupations given by o and no kinks. "
-Configuration(o::Set{T}) where {T} = Configuration(o, SortedDict{ImgTime,Kink{T}}(Base.Forward))
-" outer constructor method for a configuriation with no occupations and kinks given by k. k can be anything from which a SortedDict can be constructed from. "
-Configuration(k::SortedDict{ImgTime,<:Kink{T}}) where {T} = Configuration(Set{T}(), k)
-" outer constructor method for a configuration with no occupations and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the SortedDict constructor "
-Configuration(p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(SortedDict{ImgTime,Kink{T}}(Base.Forward, p...))
-" outer constructor method for a configuration with occupations given by o and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the SortedDict constructor "
-Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(o, SortedDict{ImgTime,Kink{T}}(Base.Forward, p...))
+Configuration(o::Set{T}) where {T} = Configuration(o, Kinks{T}())
+" outer constructor method for a configuriation with no occupations and kinks given by k. "
+Configuration(k::Kinks{T}) where {T} = Configuration(Set{T}(), k)
+" outer constructor method for a configuration with no occupations and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the Kinks constructor "
+Configuration(p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(Kinks{T}([p...]))
+" outer constructor method for a configuration with occupations given by o and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the Kinks constructor "
+Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(o, Kinks{T}([p...]))
 
 " outer constructor method for empty Configurations{T} "
 Configuration{T}() where T = Configuration(Set{T}())
@@ -205,17 +254,17 @@ end
 """
     excite(o::Set{T}, κ::Pair{ImgTime,T4{T}})
 
-Apply a `T4`-kink to a set of basis states for a pair of a time and a `T4`-kink. This is useful for iteration of a `SortedDict{ImgTime, T4{T}}`.
+Apply a `T4`-kink to a set of basis states for a pair of a time and a `T4`-kink. This is useful for iterating over a `Kinks`-object when calculating the occupations at a specific time.
 """
+excite(o::Set{T}, κ::Pair{Fixed{Int64,60},Union{T2{T}, T4{T}}}) where T = excite(o, last(κ))
 excite(o::Set{T}, κ::Pair{ImgTime,T4{T}}) where T = excite(o, last(κ))
-
 
 """
     excite!(::Set{T}, i::T, j::T, k::T, l::T) where {T}
     excite!(o::Set{T}, κ::T4{T})
 
 Apply an excitation in-place to a set of basis states that is given by creating orbitals i, j
-and annihilating the orbitals k, l, or respecti
+and annihilating the orbitals k, l.
 """
 function excite!(o::Set{T}, i::T, j::T, k::T, l::T) where {T}
     @assert (in(k, o) & in(l, o)) "Kink ($(i),$(j),$(k),$(l)) cannot be applied: one or two of the annihilators $(k), $(l) is not occupied. (Pauli-Principle)"
@@ -230,11 +279,11 @@ excite!(o::Set{T}, κ::T4{T}) where T = excite!(o, κ.i, κ.j, κ.k, κ.l)
 
 
 """
-    occupations_at(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}})
+    occupations_at(o::Set{T}, kinks::Kinks{T})
 
 Return the occupied orbitals after applying all kinks to initial occupation.
 """
-function occupations_at(o::Set{T}, kinks::SortedDict{ImgTime,Kink{T}}) :: Set{T} where {T}
+function occupations_at(o::Set{T}, kinks::Kinks{T}) :: Set{T} where {T}
   foldl(excite, kinks; init=o)
 end
 
@@ -248,39 +297,43 @@ function occupations_at(c::Configuration, τ::ImgTime)
 end
 
 """
-    next(::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
+    next(x, τ)
 
 Return first kink after to the given `τ`. If there is no kink with `::ImgTime` larger than `τ`, return first kink.
 """
-function next(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
-    if isempty(ck)
-        throw(DomainError(ck, "Asked for next kink in an empty kink-container"))
+function next(x, τ)
+    if isempty(x)
+        throw(DomainError(" prev(::Excitation_arr, τ) is not supported for empty x. It makes no sense to get the element previous to some element for an empty collection. "))
     end
-    toc = searchsortedafter(ck, τ)
-    if toc == pastendsemitoken(ck)
-        first(ck)
+    index = findfirst(p -> first(p) > τ, x)
+    if isnothing(index)# if no entry is found with ImgTime < τ
+        x[begin]# return last entry (assuming x is sorted with respect to ImgTime)
     else
-        deref((ck, toc))
+        x[index]
     end
 end
 
-"""
-    prev(::SortedDict{ImgTime,<:Kink}, ::ImgTime)
 
-Return first kink before given ::ImgTime. If there is no kink with ::ImgTime smaller than τ, return last kink.
-If ck is empty this will throw an error.
 """
-function prev(ck::SortedDict{ImgTime,<:Kink}, τ::ImgTime)
-    if isempty(ck)
-        throw(DomainError(ck, "Asked for previus kink in an empty kink-container"))
+    prev(x, τ)
+
+Return first kink earlier than `τ::ImgTime`. If there is no such kink the last kink is returned.
+If `ck` is empty this will throw an error.
+
+This function assumes that the kinks in `x` are ordered by their imaginary time!
+"""
+function prev(x, τ)
+    if isempty(x)
+        throw(DomainError(" prev(::Excitation_arr, τ) is not supported for empty x. It makes no sense to get the element previous to some element for an empty collection. "))
     end
-    toc = regress((ck, searchsortedfirst(ck, τ)))
-    if toc == beforestartsemitoken(ck)
-        last(ck)
+    index = findlast(p -> first(p) < τ, x)
+    if isnothing(index)# if no entry is found with ImgTime < τ
+        x[end]# return last entry (assuming x is sorted with respect to ImgTime)
     else
-        deref((ck, toc))
+        x[index]
     end
 end
+
 
 """
      kinks_affecting_orbs(itr::Any, itr::Any)
@@ -356,7 +409,7 @@ function τ_next_affecting(ck, os, τ)
 end
 
 """
-     τ_borders(::SortedDict{ImgTime,<:Kink}, ::Set{T}, ::ImgTime) where {T <: Orbital}
+     τ_borders(::Kinks{T}, ::Set{T}, ::ImgTime) where {T <: Orbital}
 
 Return a tuple of
 the ImgTime of the closest kink to the right and
@@ -364,50 +417,34 @@ the ImgTime of the closest kink to the left of τ
 that affect one of the orbitals in os.
 If no orbital in os is affected by and kink from the collection in the first argument,
 return a tuple of the interval bounds (ImgTime(0), ImgTime(1))."""
-τ_borders(ck::SortedDict{ImgTime,<:Kink{T}}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, os, τ))
+τ_borders(ck::Kinks{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, os, τ))
 
 τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, os, τ)
 
 
 """
-    isunaffected(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T) where {T<:Orbital}
+    isunaffected(Kinks, orb)
 
 Return if an orbital is not affected by any kink.
 """
-function isunaffected(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T) where {T<:Orbital}
-    if isempty(ck)
-        return true
-    else
-        return !in(orbital, union( orbs.( values(ck))... ) )
-    end
-end
+isunaffected(kinks, orb) = all(kink -> orb ∉ last(kink), kinks)
+
+Base.in(i, k::T2) = i == k.i || i == k.j
+Base.in(i, k::T4) = i == k.i || i == k.j || i == k.k || i == k.l
 
 """
-    isunaffected_in_interval(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T, τ_first::ImgTime, τ_last::ImgTime)
+    in_open_interval(τ, τ_first, τ_last)
+
+Check if `τ` lies in the open `ImgTime`-interval `(τ_first,`τ_last)`, assuming that `τ_first` is the left border and `τ_last` the right one.
+"""
+in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) & ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
+
+"""
+    isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime)
 
 Return if an orbital is not affected by any of the kinks from `ck` in the open interval `(τ_first,τ_last)`.
 """
-function isunaffected_in_interval(ck::SortedDict{ImgTime,<:Kink{T}}, orbital::T, τ_first::ImgTime, τ_last::ImgTime) :: Bool where {T<:Orbital}
-    @assert τ_first != τ_last
-    if τ_first < τ_last
-        for (τ_kink,kink) in ck
-            if (τ_kink <= τ_first) | (τ_kink >= τ_last)
-                continue
-            elseif in(orbital, orbs(kink))
-                return false
-            end
-        end
-    else
-        for (τ_kink,kink) in ck
-            if ((τ_kink <= τ_first) & (τ_kink >= τ_last))
-                continue
-            elseif in(orbital, orbs(kink))
-                return false
-            end
-        end
-    end
-    return true
-end
+isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime) = all(kink -> ((orb ∉ last(kink)) && in_open_interval(first(kink), τ_first, τ_last) ), kinks)
 
 ## Method definitions for function drop
 # This function is mostly used for calculating the changes proposed by an update
@@ -449,25 +486,25 @@ Return a `Configuration` with the orbitals in `oc` dropped from `c.occupations`.
 drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(drop(c.occupations, oc), c.kinks)
 
 """
-    drop(ck1::SortedDict{ImgTime,<:Kink{T}}, ck2::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+    drop(ck1, ck2)
 
-Return a `SortedDict{ImgTime,<:Kink{<:Orbital}}` with the pairs in `ck2` dropped from `ck1`.
+Return a container with the elements in `ck2` dropped from `ck1`.
 """
-drop(ck1::SortedDict{ImgTime,<:Kink{T}}, ck2::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = setdiff(ck1, ck2)
+drop(ck1, ck2) = setdiff(ck1, ck2)
 
 """
-    drop(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+    drop(c::Configuration{T}, ck::Kinks)
 
 Return a `Configuration` with the pairs in `ck` dropped from `c.kinks`.
 """
-drop(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ck))
+drop(c::Configuration{T}, ck::Kinks) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ck))
 
 """
-    drop(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
+    drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
 
-Return a `SortedDict{ImgTime,<:Kink{<:Orbital}}` with the pairs `ps...` dropped from `ck`.
+Return a `Kinks`-object with the pairs `ps...` dropped from `ck`.
 """
-drop(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = setdiff(ck, SortedDict(ps...))
+drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = setdiff(ck, Kinks(ps))
 
 """
     drop(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
@@ -525,15 +562,15 @@ end
 Drop a single kink at time τ from `c.kinks`.
 """
 function drop!(c::Configuration, τ::ImgTime)
-    delete!(c.kinks, τ)
+    setdiff!(c.kinks, [τ => c.kinks[τ]])
 end
 
 """
-    drop!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+    drop!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
 
-Drop all kinks given in a `SortedDict` from `c.kinks`.
+Drop all kinks given in `ck` from `c.kinks`.
 """
-function drop!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+function drop!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
     for (τ, k) in ck
         drop!(c, τ)
     end
@@ -600,12 +637,40 @@ Return a configuration with the orbitals in oc added to c.occupations.
 """
 add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(c.occupations, oc), c.kinks)
 
-"""
-    add(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 
-Return a `SortedDict{ImgTime,<:Kink{<:Orbital}}` with the pairs ps... added to ck.
 """
-add(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = merge(ck, SortedDict(ps...))
+    add(ck::Kinks, p::Pair)
+
+Return a `Kinks`-object with the pair `p` added to `ck` with respect to the sorting.
+"""
+add(ck::Kinks, p::Pair) = insert(ck, searchsortedfirst(ck, by=first, first(p)), p)
+
+
+"""
+    add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
+
+Return a `Kinks`-object with the pairs `ps...` added to `ck`.
+"""
+function add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
+    ck_copy = copy(ck)
+    for k in ps
+        add!(ck_copy, k)
+    end
+    return ck_copy
+end
+
+"""
+    add(ck1::Kinks, ck2::Kinks)
+
+Return a `Kinks`-object with the pairs from `ck2` added to `ck1`.
+"""
+function add(ck1::Kinks, ck2::Kinks) where {T <: Orbital}
+    ck1_copy = copy(ck1)
+    for k in ck2
+        add!(ck1_copy, k)
+    end
+    return ck1_copy
+end
 
 """
     add(c::Configuration{T}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
@@ -615,24 +680,25 @@ Return a configuration with the pairs ps... added to `c.kinks`.
 add(c::Configuration{T}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, add(c.kinks, ps...))
 
 """
-    add(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+    add(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
 
 Return a configuration with the pairs in ck added to `c.kinks`.
 """
-add(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital} = add(c, ck...)
+add(c::Configuration{T}, ck::Kinks) where {T <: Orbital} = add(c, ck...)
 
 """
     add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
 
 Return a configuration with occupations and kinks in c2 dropped from c1.
 """
-add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} = Configuration(add(c1.occupations, c2.occupations), merge(c1.kinks, c2.kinks))
+add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} = Configuration(add(c1.occupations, c2.occupations), add(c1.kinks, c2.kinks))
 
 
 ## Method definitions for function add!.
 # This function is mostly for applying the changes determined in an MC Step Δ
 # to the current configuration c in function apply_step!(c, Δ). cf. CPIMC.jl
 # These methods change the first argument in-place.
+
 
 """
     add!(c::Configuration, n::Nothing)
@@ -662,35 +728,46 @@ function add!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
 end
 
 """
-    add!(c::Configuration{T}, τ::ImgTime, k::Kink{T}) where {T <: Orbital}
+    add!(ck::Kinks, τ::ImgTime, k::Kink)
 
-Add a single kink at time τ to `c.kinks`.
+Add the pair `(τ, k)` to the `ck` with respect to the sorting.
 """
-function add!(c::Configuration{T}, τ::ImgTime, k::Kink{T}) where {T <: Orbital}
-    insert!(c.kinks, τ, k)
+add!(ck::Kinks, τ::ImgTime, k::Kink) = insert!(ck, searchsortedfirst(ck, by=first, τ), τ => k)
+
+function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
+    add!(ck::Kinks, τ::ImgTime, kink::Kink)
 end
 
 """
-    add!(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
+  add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
 
-Add all kinks given by the pairs `ps...` to `ck::SortedDict{ImgTime,<:Kink{<:Orbital}}`.
+Add a single kink at time first(p) to `c.kinks`.
 """
-add!(ck::SortedDict{ImgTime,<:Kink{T}}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = merge!(ck, SortedDict(ps...))
+function add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
+    add!(c.kinks, first(p), last(p))
+end
 
-"""
-    add!(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
 
-Add all kinks given by the pairs `ps...` to `c.kinks`.
-"""
-add!(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = merge!(c.kinks, SortedDict(ps))
 
 """
-    add!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+    add!(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 
-Add all kinks given in a `SortedDict` to `c.kinks`.
+Add all kinks given by the pairs `ps` to `ck`.
 """
-function add!(c::Configuration{T}, ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
-    merge!(c.kinks, ck)
+function add!(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
+    for k in ps
+        add!(ck, first(k), last(k))
+    end
+    return ck
+end
+
+"""
+    add!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
+
+Add all kinks given in `ck` to `c.kinks`.
+"""
+function add!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
+    add!(c.kinks, ck...)
 end
 
 """
@@ -705,24 +782,24 @@ end
 
 
 @doc raw"""
-    time_ordered_orbs(x::T4)
+    ordered_orbs(x::T4)
 
 Get a list of orbitals that are affected by a kink in the conventional ordering i, j, k, l.
 This corresponds to the matrix element $w_{ijkl}$ in the same order.
 """
-time_ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
+ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
 
 
 """
-    time_ordered_orbs(ck::SortedDict{ImgTime,<:Kink{T}}) where T
+    time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
 
 Get a list of orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l.
 """
-function time_ordered_orbs(ck::SortedDict{ImgTime,<:Kink{T}}) where {T <: Orbital}
+function time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
     if isempty(ck)
         return Array{T,1}()
     else
-        return vcat([time_ordered_orbs(k) for k in values(ck)]...)
+        return vcat([ordered_orbs(k) for k in values(ck)]...)
     end
 end
 
@@ -749,12 +826,12 @@ end
 
 
 @doc raw"""
-    ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink})
+    ladder_operator_order_factor(ck::Kinks)
 
 Returns $1$ or $-1$ depending on the order of all ladder operators as given by the orbitals that affect each kink in the time-ordering of the kinks and in the conventional ordering i, j, k, l,
 used in the sign estimator.
 """
-ladder_operator_order_factor(ck::SortedDict{ImgTime,<:Kink}) = ladder_operator_order_factor(time_ordered_orbs(ck))
+ladder_operator_order_factor(ck::Kinks) = ladder_operator_order_factor(time_ordered_orbs(ck))
 
 
 """
@@ -778,7 +855,7 @@ end
 
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the right.
 """
-function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
+function right_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
     kink = ck[τ]
     next_kink = next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
     if is_type_1(ck[τ], last(next_kink)) & !in(τ, counted_τs)
@@ -790,11 +867,11 @@ function right_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_�
 end
 
 """
-    left_type_1_chain_length(ck, τ, count = 0)
+    left_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
 
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
 """
-function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τs = [])
+function left_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
     kink = ck[τ]
     prev_kink = prev(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
     if is_type_1(last(prev_kink), ck[τ]) & !in(τ, counted_τs)
@@ -806,11 +883,11 @@ function left_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink}, τ, counted_τ
 end
 
 """
-    longest_type_1_chain_length(ck)
+    longest_type_1_chain_length(ck::Kinks)
 
 Returns the longest chain of type-1-entaglements in ck.
 """
-function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink})
+function longest_type_1_chain_length(ck::Kinks)
     longest_length = 0
     for (τ, kink) in ck
         longest_length = max(right_type_1_chain_length(ck, τ),
@@ -820,11 +897,11 @@ function longest_type_1_chain_length(ck::SortedDict{ImgTime,<:Kink})
 end
 
 """
-    longest_type_1_chain_length(ck)
+    right_type_1_count(ck::Kinks)
 
-Returns the longest chain of type-1-entaglements in ck.
+Returns the number of kinks that are type 1 entagled with their right neighbour.
 """
-function right_type_1_count(ck::SortedDict{ImgTime,<:Kink})
+function right_type_1_count(ck::Kinks)
     count = 0
     for (τ, kink) in ck
         if is_type_1(kink, last(next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])),τ)))
@@ -880,31 +957,20 @@ shuffle_indices(κ::T4) = T4(shuffle_indices(κ.i, κ.j, κ.k, κ.l)...)
 
 
 """
-    kinks_from_periodic_interval(::SortedDict{ImgTime,<:Kink}, τ1, τ2)
+    kinks_from_periodic_interval(::Kinks, τ1, τ2)
 
 return kinks with τ ∈ (τ1,τ2) if τ1 < τ2 and τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2
 """
-function kinks_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1, τ2)
-    if τ1 > τ2# interval is periodically continued
-        filter(x -> ( τ1 < first(x) ) | ( first(x) < τ2 ), ck)
-    else# this also catches τ1 == τ2
-        filter(x -> τ1 < first(x) < τ2, ck)
-    end
+function kinks_from_periodic_interval(ck::Kinks, τ1, τ2)
+    filter(x-> in_open_interval(first(x), τ1, τ2), ck)
 end
 
 """
-    times_from_periodic_interval(::SortedDict{ImgTime,<:Kink}, ::ImgTime, ::ImgTime)
+    times_from_periodic_interval(::Kinks, ::ImgTime, ::ImgTime)
 
 return a list of all times of kinks with τ ∈ (τ1,τ2) if τ1 < τ2 or τ ∈ (τ2,1) ∪ (0,τ1) if τ1 > τ2
 in the periodic ordering suggested by the relation of the first time-argument τ1 to the second time-argument τ2
 """
-function times_from_periodic_interval(ck::SortedDict{ImgTime,<:Kink}, τ1::ImgTime, τ2::ImgTime)
-    if τ1 > τ2# interval is periodically continued
-        vcat(
-            collect(keys( filter(x -> τ1 < first(x), ck) )),
-            collect(keys( filter(x -> first(x) < τ2, ck) ))
-            )
-    else# this also catches τ1 == τ2
-        collect(keys( filter(x -> τ1 < first(x) < τ2, ck) ))
-    end
+function times_from_periodic_interval(ck::Kinks, τ1::ImgTime, τ2::ImgTime)
+    keys(filter(x-> in_open_interval(first(x), τ1, τ2), ck))
 end

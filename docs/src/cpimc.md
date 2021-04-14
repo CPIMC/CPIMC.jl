@@ -31,6 +31,7 @@ Configuration
 ImgTime
 Δ
 Kink
+Kinks
 T2
 T4
 basis

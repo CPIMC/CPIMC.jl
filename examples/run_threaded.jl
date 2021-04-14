@@ -1,8 +1,12 @@
-#] activate .
+#=
+Stuff to do at the start of a develepment session:
+] activate .
+using Revise
+using BenchmarkTools
+=#
 using DelimitedFiles
 using DataFrames
 using CSV
-using Revise
 using CPIMC
 using CPIMC.Estimators
 using CPIMC.PlaneWaves

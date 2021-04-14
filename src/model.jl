@@ -72,7 +72,7 @@ function ΔWoffdiag_element(m::Model, e::Ensemble, add_kinks, drop_kinks)
     end
 end
 
-ΔWoffdiag_element(m::Model, e::Ensemble, add_kinks::SortedDict{ImgTime,<:Kink}, drop_kinks::SortedDict{ImgTime,<:Kink}) = ΔWoffdiag_element(m, e, values(add_kinks), values(drop_kinks))
+ΔWoffdiag_element(m::Model, e::Ensemble, add_kinks::Kinks, drop_kinks::Kinks) = ΔWoffdiag_element(m, e, values(add_kinks), values(drop_kinks))
 
 
 """

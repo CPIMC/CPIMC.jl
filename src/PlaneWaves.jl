@@ -38,7 +38,7 @@ Representation of plane wave single-particle states with dimensionality `D`.
 
 """
 struct PlaneWave{D} <: Orbital
-    vec :: StaticVector{D,Int}
+    vec :: SVector{D,Int}
     spin :: Spin
 end
 
@@ -231,7 +231,7 @@ thus here no convention is made as to which spin component should be occupied mo
     find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_operator1, other_kind_ladder_operator2)
     Find the fourth orb to build a Kink accoring to spin/momentum conservation, where the Operator thats acts on the
     fourth orb is of the same kind (creator/ annihilator) as the one that acts on same_kind_ladder_operator,
-    While on other_kind_ladder_operator1 and other_kind_ladder_operator2 the other kind of operators will act. 
+    While on other_kind_ladder_operator1 and other_kind_ladder_operator2 the other kind of operators will act.
 """
 function find_fourth_orb_for_kink(same_kind_ladder_operator, other_kind_ladder_operator1, other_kind_ladder_operator2)
     @assert(in(same_kind_ladder_operator.spin, [other_kind_ladder_operator1.spin, other_kind_ladder_operator2.spin]))
