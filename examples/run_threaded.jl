@@ -78,8 +78,6 @@ function main()
 
 
     updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
-    update_counters = map(x -> UpdateCounter(), updates)
-
 
     measurements = Dict(
       :sign => (Variance(), signum)
@@ -101,21 +99,20 @@ function main()
     , :occs => (Group([Mean() for i in 1:100]), occupations)
     )
 
-    println("Start MC process ... ")
+    println("starting mc process using $(Threads.nthreads()) threads... ")
+
     measurements_of_runs = Set{Dict{Symbol,Tuple{OnlineStat,Function}}}()
 
+    total_rates = Dict()
 
     Threads.@threads for t in 1:N_Runs
         me = deepcopy(measurements_Mean)
-        updates_of_run = map(x -> (x, UpdateCounter()), updates)
         push!(measurements_of_runs,me)
         c_run = Configuration(copy(c.occupations))
             equilibrate_diagonal!(UEG(), e, c_run)
-        sweep!(UEG(), e, c_run, updates_of_run, me, NMC, cyc, NEquil)
+        rates = sweep!(UEG(), e, c_run, updates, me, NMC, cyc, NEquil)
         lock(ReentrantLock()) do
-            for i in 1:length(updates)
-                update_counters[i] += updates_of_run[i][2]
-            end
+            merge!(+, total_rates, rates)
         end
     end
     #Addup counters
@@ -185,14 +182,7 @@ function main()
     println(mean.(measurements[:occs][1].stats))
     println(std.(measurements[:occs][1].stats))
 
-    println("acceptance ratios:")
-    println("============")
-    for i in 1:length(update_counters)
-        uc = update_counters[i]
-        up = updates[i]
-        println("$(up):\t$(uc.proposed) proposed,\t$(uc.accepted) accepted,\t$(uc.trivial) trivial,\tratio(acc/prop) : $(uc.accepted/uc.proposed), ratio(acc/(prop-triv)) : $(uc.accepted/(uc.proposed-uc.trivial))")
-    end
-
+    print_rates(total_rates)
 
     # create resultsfile
     # add measurements to file
