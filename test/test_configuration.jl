@@ -75,7 +75,7 @@ end
     @test ordered_orbs(T4(a,b,c,d))[2] == b
     @test ordered_orbs(T4(a,b,c,d))[3] == c
     @test ordered_orbs(T4(a,b,c,d))[4] == d
-    @test ordered_orbs(T4(a,b,c,d)) == [a,b,c,d]
+    @test ordered_orbs(T4(a,b,c,d)) == (a,b,c,d)
 end
 
 
