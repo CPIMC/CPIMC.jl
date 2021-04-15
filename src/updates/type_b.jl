@@ -24,7 +24,6 @@ to the left of the first τ."""
 function left_type_B_pairs(ck)
     pairs_left = Set{Tuple{Int,Int}}()
     for (i,(τ,kink)) in enumerate(ck)
-        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
         i_left = index_prev_affecting(ck, orbs(kink), τ)
         if is_type_B(last(ck[τ_left]), kink)
             push!(pairs_left, (i, i_left))
