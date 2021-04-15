@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev_index, next_index, index_prev_affecting, index_next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -15,10 +15,10 @@ h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
 
 
-sd = Kinks{PlaneWave{3}}([ ImgTime(0.2) => T4(a,b,c,d),
+sd = Kinks( ImgTime(0.2) => T4(a,b,c,d),
        ImgTime(0.5) => T4(c,d,a,b),
        ImgTime(0.6) => T4(b,a,d,c),
-       ImgTime(0.8) => T4(d,c,b,a) ])
+       ImgTime(0.8) => T4(d,c,b,a) )
 
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 
@@ -51,6 +51,36 @@ end
     @test kinks_affecting_orbs(conf, Set([c])) == sd
     @test kinks_affecting_orbs(conf, Set([d])) == sd
     @test kinks_affecting_orbs(conf, Set([e])) == Kinks{PlaneWave}()
+end
+
+@testset "prev_index" begin
+    @test prev_index(conf.kinks, ImgTime(0.0)) == 4
+    @test prev_index(conf.kinks, ImgTime(0.5)) == 1
+    @test prev_index(conf.kinks, ImgTime(0.1)) == 4
+    @test prev_index(conf.kinks, ImgTime(0.7)) == 3
+end
+
+@testset "next_index" begin
+    @test next_index(conf.kinks, ImgTime(0.1)) == 1
+    @test next_index(conf.kinks, ImgTime(0.5)) == 3
+    @test next_index(conf.kinks, ImgTime(0.0)) == 1
+    @test next_index(conf.kinks, ImgTime(0.8)) == 1
+end
+
+@testset "index_prev_affecting" begin
+    @test index_prev_affecting(conf.kinks, (a,), ImgTime(0.0)) == 4
+    @test index_prev_affecting(conf.kinks, (a,e), ImgTime(0.5)) == 1
+    @test index_prev_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 4
+    @test index_prev_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 4
+    @test index_prev_affecting(conf.kinks, (e,f), ImgTime(0.1)) == 0
+end
+
+@testset "index_next_affecting" begin
+    @test index_next_affecting(conf.kinks, (a,), ImgTime(0.0)) == 1
+    @test index_next_affecting(conf.kinks, (a,e), ImgTime(0.5)) == 3
+    @test index_next_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 1
+    @test index_next_affecting(conf.kinks, (b,d), ImgTime(0.8)) == 1
+    @test index_next_affecting(conf.kinks, (e,f), ImgTime(0.1)) == 0
 end
 
 @testset "τ_prev_affecting" begin
