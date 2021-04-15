@@ -365,7 +365,7 @@ function index_next_affecting(a, orbs, τ)
     # otherwise, iterate forward periodically until first affecting kink is reached
     for _ = 1:length(a) - 1 # iterate until before the same kink it reached. note: this should not occur if o is affected by any kink since there should always be at least two kinks for each affected orbital due to periodicity (i.e. all creators have to pair up with a corresponding annihilator)
         i += 1 # increment
-        if i == 0 # periodicity: if last index is reached, start from beginning of collection
+        if i == length(a) + 1 # periodicity: if last index is reached, start from beginning of collection
             i = 1
         end
         if any( orbs .∈ ( last(a[i]) ,) )# if any orbs are affected by the kink at i
