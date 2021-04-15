@@ -30,12 +30,12 @@ import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_bord
         @test kink1.i.spin == kink1.k.spin
     end
     for pair in CPIMC.DefaultUpdates.right_type_C_removable_pairs(conf1.kinks)
-        kink1 = conf1.kinks[first(pair)]
+        (_,kink1) = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
     for pair in CPIMC.DefaultUpdates.left_type_C_removable_pairs(conf1.kinks)
-        kink1 = conf1.kinks[first(pair)]
+        (_,kink1) = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
