@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, ordered_orbs, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -23,7 +23,12 @@ sd = Kinks{PlaneWave{3}}([ ImgTime(0.2) => T4(a,b,c,d),
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 
 @testset "orbs" begin
-    @test orbs(T4(a,b,c,d)) == Set([a,b,c,d])
+    @test orbs(T4(a,b,c,d))[1] == a
+    @test orbs(T4(a,b,c,d))[2] == b
+    @test orbs(T4(a,b,c,d))[3] == c
+    @test orbs(T4(a,b,c,d))[4] == d
+    @test orbs(T4(a,b,c,d)) == (a,b,c,d)
+    @test orbs(T2(a,b)) == (a,b)
 end
 
 @testset "adjacent_kinks_affecting_orbs" begin
@@ -68,15 +73,6 @@ end
     @test !isunaffected(conf.kinks, d)
     @test isunaffected(conf.kinks, e)
 end
-
-@testset "ordered_orbs(::T4)" begin
-    @test ordered_orbs(T4(a,b,c,d))[1] == a
-    @test ordered_orbs(T4(a,b,c,d))[2] == b
-    @test ordered_orbs(T4(a,b,c,d))[3] == c
-    @test ordered_orbs(T4(a,b,c,d))[4] == d
-    @test ordered_orbs(T4(a,b,c,d)) == [a,b,c,d]
-end
-
 
 @testset "time_ordered_orbs(::SortedDict{ImgTime,<:Kink})" begin
     @test time_ordered_orbs(conf.kinks)[1] == a
@@ -159,7 +155,7 @@ end
 
 end
 
-@testset "find_fourth_orb_for_kink" for _ in (1:1000)
+@testset "find_fourth_orb_for_kink" for _ in (1:5)
     r = (1:100)
     orb1 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
     orb2 = orb1

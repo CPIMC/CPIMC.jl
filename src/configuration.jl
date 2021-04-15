@@ -82,25 +82,25 @@ Structure for storing excitations and their imaginary times (kinks).
 
 Can also be constructed by passing such pairs directly.
 
-    Kinks(p::Pair{ImgTime,<:Kink{T}}...)
+    Kinks(pairs::Pair{ImgTime,<:Kink{T}}...)
 """
 const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
 
-Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}  = Kinks{T}([p...])
+Kinks(pairs::Pair{ImgTime,<:Kink{T}}...) where {T}  = reduce(push!, pairs, init=Kinks{T}())
 
 """
     values(ck::Kinks)
 
 Return a list of the excitations of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
-values(ck::Kinks) = map(p -> last(p), ck)
+values(ck::Kinks) = last.(ck)
 
 """
     keys(ck::Kinks)
 
 Return a list of the imaginary-times of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
-keys(ck::Kinks) = map(p -> first(p), ck)
+keys(ck::Kinks) = first.(ck)
 
 """
     Base.haskey(ck::Kinks, key::ImgTime)
@@ -141,15 +141,15 @@ mutable struct Configuration{T}
 end
 
 " outer constructor method for a configuration with occupations given by o and kinks given by k. "
-Configuration(o::Set{T}, k) where {T} = Configuration(o, Kinks{T}(k) )
+Configuration(o::Set{T}, k) where {T} = Configuration(o, Kinks(k) )
 " outer constructor method for a configuration with occupations given by o and no kinks. "
 Configuration(o::Set{T}) where {T} = Configuration(o, Kinks{T}())
 " outer constructor method for a configuriation with no occupations and kinks given by k. "
 Configuration(k::Kinks{T}) where {T} = Configuration(Set{T}(), k)
 " outer constructor method for a configuration with no occupations and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the Kinks constructor "
-Configuration(p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(Kinks{T}([p...]))
+Configuration(p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(Kinks(p...))
 " outer constructor method for a configuration with occupations given by o and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the Kinks constructor "
-Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(o, Kinks{T}([p...]))
+Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(o, Kinks(p...))
 
 " outer constructor method for empty Configurations{T} "
 Configuration{T}() where T = Configuration(Set{T}())
@@ -164,30 +164,31 @@ basis(c::Configuration{T}) where T = T
 """
     orbs(::T2)
 
-return a set of all orbitals which are affected by a `T2`-kink.
+Return a Tuple of all orbitals that are affected by a `T2`-kink in the conventional ordering i, j.
 """
-orbs(x::T2) = Set([k.i, k.j])
+orbs(x::T2) = x.i, x.j
 
-"""
+@doc raw"""
     orbs(::T4)
 
-return a set of all orbitals which are affected by a `T4`-kink.
+Return a Tuple of all orbitals that are affected by a `T4`-kink in the conventional ordering i, j, k, l.
+This corresponds to the matrix element $w_{ijkl}$ in the same order.
 """
-orbs(x::T4) = Set([x.i, x.j, x.k, x.l])
+orbs(x::T4) = x.i, x.j, x.k, x.l
 
 """
     creators(::T4)
 
 return a set of the two creators which are affected by a T4 kink
 """
-creators(x::T4) = Set([x.i, x.j])
+creators(x::T4) = x.i, x.j
 
 """
     annihilators(x::T4)
 
 return a set of the two annihilators which are affected by a T4 kink
 """
-annihilators(x::T4) = Set([x.k, x.l])
+annihilators(x::T4) = x.k, x.l
 
 """
     ImgTime(t::Tuple{Nothing,Nothing})
@@ -409,17 +410,17 @@ function τ_next_affecting(ck, os, τ)
 end
 
 """
-     τ_borders(::Kinks{T}, ::Set{T}, ::ImgTime) where {T <: Orbital}
+     τ_borders(::Kinks{T}, orbs, ::ImgTime) where {T <: Orbital}
 
 Return a tuple of
 the ImgTime of the closest kink to the right and
 the ImgTime of the closest kink to the left of τ
-that affect one of the orbitals in os.
+that affect one of the orbitals in orbs.
 If no orbital in os is affected by and kink from the collection in the first argument,
 return a tuple of the interval bounds (ImgTime(0), ImgTime(1))."""
-τ_borders(ck::Kinks{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, os, τ))
+τ_borders(ck::Kinks{T}, orbs, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, orbs, τ))
 
-τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, os, τ)
+τ_borders(c::Configuration{T}, orbs, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, orbs, τ)
 
 
 """
@@ -477,6 +478,13 @@ drop(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(drop(c.occu
 Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
 """
 drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = setdiff(oc1, oc2)
+
+"""
+    drop(oc1::Set, oc2::Tuple)
+
+Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
+"""
+drop(oc1::Set, oc2::Tuple) = setdiff(oc1, oc2)
 
 """
     drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
@@ -780,16 +788,6 @@ function add!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
     add!(c1, c2.kinks)
 end
 
-
-@doc raw"""
-    ordered_orbs(x::T4)
-
-Get a list of orbitals that are affected by a kink in the conventional ordering i, j, k, l.
-This corresponds to the matrix element $w_{ijkl}$ in the same order.
-"""
-ordered_orbs(x::T4) = [x.i, x.j, x.k, x.l]
-
-
 """
     time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
 
@@ -799,7 +797,7 @@ function time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
     if isempty(ck)
         return Array{T,1}()
     else
-        return vcat([ordered_orbs(k) for k in values(ck)]...)
+        return collect( Iterators.flatten( orbs(k) for k in values(ck) ) )
     end
 end
 
