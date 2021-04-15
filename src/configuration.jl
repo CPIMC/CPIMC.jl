@@ -82,11 +82,11 @@ Structure for storing excitations and their imaginary times (kinks).
 
 Can also be constructed by passing such pairs directly.
 
-    Kinks(p::Pair{ImgTime,<:Kink{T}}...)
+    Kinks(pairs::Pair{ImgTime,<:Kink{T}}...)
 """
 const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
 
-Kinks(p::Pair{ImgTime,<:Kink{T}}...) where {T}  = Kinks{T}([p...])
+Kinks(pairs::Pair{ImgTime,<:Kink{T}}...) where {T}  = reduce(push!, pairs, init=Kinks{T}())
 
 """
     values(ck::Kinks)
@@ -141,15 +141,15 @@ mutable struct Configuration{T}
 end
 
 " outer constructor method for a configuration with occupations given by o and kinks given by k. "
-Configuration(o::Set{T}, k) where {T} = Configuration(o, Kinks{T}(k) )
+Configuration(o::Set{T}, k) where {T} = Configuration(o, Kinks(k) )
 " outer constructor method for a configuration with occupations given by o and no kinks. "
 Configuration(o::Set{T}) where {T} = Configuration(o, Kinks{T}())
 " outer constructor method for a configuriation with no occupations and kinks given by k. "
 Configuration(k::Kinks{T}) where {T} = Configuration(Set{T}(), k)
 " outer constructor method for a configuration with no occupations and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the Kinks constructor "
-Configuration(p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(Kinks{T}([p...]))
+Configuration(p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(Kinks(p...))
 " outer constructor method for a configuration with occupations given by o and kinks as given by varargs p... of Pair{ImgTime,<:Kink}, which are passed to the Kinks constructor "
-Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(o, Kinks{T}([p...]))
+Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuration(o, Kinks(p...))
 
 " outer constructor method for empty Configurations{T} "
 Configuration{T}() where T = Configuration(Set{T}())
