@@ -720,14 +720,6 @@ add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(
 
 
 """
-    add(ck::Kinks, p::Pair)
-
-Return a `Kinks`-object with the pair `p` added to `ck` with respect to the sorting.
-"""
-add(ck::Kinks, p::Pair) = insert(ck, searchsortedfirst(ck, by=first, first(p)), p)
-
-
-"""
     add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 
 Return a `Kinks`-object with the pairs `ps...` added to `ck`.
