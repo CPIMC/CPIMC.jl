@@ -93,14 +93,14 @@ Kinks(pairs::Pair{ImgTime,<:Kink{T}}...) where {T}  = reduce(push!, pairs, init=
 
 Return a list of the excitations of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
-values(ck::Kinks) = map(p -> last(p), ck)
+values(ck::Kinks) = last.(ck)
 
 """
     keys(ck::Kinks)
 
 Return a list of the imaginary-times of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
-keys(ck::Kinks) = map(p -> first(p), ck)
+keys(ck::Kinks) = first.(ck)
 
 """
     Base.haskey(ck::Kinks, key::ImgTime)
