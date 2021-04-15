@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev_index, next_index, index_prev_affecting, index_next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -53,34 +53,34 @@ end
     @test kinks_affecting_orbs(conf, Set([e])) == Kinks{PlaneWave}()
 end
 
-@testset "prev_index" begin
-    @test prev_index(conf.kinks, ImgTime(0.0)) == 4
-    @test prev_index(conf.kinks, ImgTime(0.5)) == 1
-    @test prev_index(conf.kinks, ImgTime(0.1)) == 4
-    @test prev_index(conf.kinks, ImgTime(0.7)) == 3
+@testset "prev" begin
+    @test prev(conf.kinks, ImgTime(0.0)) == 4
+    @test prev(conf.kinks, ImgTime(0.5)) == 1
+    @test prev(conf.kinks, ImgTime(0.1)) == 4
+    @test prev(conf.kinks, ImgTime(0.7)) == 3
 end
 
-@testset "next_index" begin
-    @test next_index(conf.kinks, ImgTime(0.1)) == 1
-    @test next_index(conf.kinks, ImgTime(0.5)) == 3
-    @test next_index(conf.kinks, ImgTime(0.0)) == 1
-    @test next_index(conf.kinks, ImgTime(0.8)) == 1
+@testset "next" begin
+    @test next(conf.kinks, ImgTime(0.1)) == 1
+    @test next(conf.kinks, ImgTime(0.5)) == 3
+    @test next(conf.kinks, ImgTime(0.0)) == 1
+    @test next(conf.kinks, ImgTime(0.8)) == 1
 end
 
-@testset "index_prev_affecting" begin
-    @test index_prev_affecting(conf.kinks, (a,), ImgTime(0.0)) == 4
-    @test index_prev_affecting(conf.kinks, (a,e), ImgTime(0.5)) == 1
-    @test index_prev_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 4
-    @test index_prev_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 4
-    @test index_prev_affecting(conf.kinks, (e,f), ImgTime(0.1)) == 0
+@testset "prev_affecting" begin
+    @test prev_affecting(conf.kinks, (a,), ImgTime(0.0)) == 4
+    @test prev_affecting(conf.kinks, (a,e), ImgTime(0.5)) == 1
+    @test prev_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 4
+    @test prev_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 4
+    @test prev_affecting(conf.kinks, (e,f), ImgTime(0.1)) == 0
 end
 
-@testset "index_next_affecting" begin
-    @test index_next_affecting(conf.kinks, (a,), ImgTime(0.0)) == 1
-    @test index_next_affecting(conf.kinks, (a,e), ImgTime(0.5)) == 3
-    @test index_next_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 1
-    @test index_next_affecting(conf.kinks, (b,d), ImgTime(0.8)) == 1
-    @test index_next_affecting(conf.kinks, (e,f), ImgTime(0.1)) == 0
+@testset "next_affecting" begin
+    @test next_affecting(conf.kinks, (a,), ImgTime(0.0)) == 1
+    @test next_affecting(conf.kinks, (a,e), ImgTime(0.5)) == 3
+    @test next_affecting(conf.kinks, (b,d), ImgTime(0.1)) == 1
+    @test next_affecting(conf.kinks, (b,d), ImgTime(0.8)) == 1
+    @test next_affecting(conf.kinks, (e,f), ImgTime(0.1)) == 0
 end
 
 @testset "τ_prev_affecting" begin
@@ -276,7 +276,7 @@ end
     for _ in 1:10
         kink = rand(conf1.kinks)
 
-        @test first(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_prev_affecting(conf1, orbs(last(kink)), first(kink))
-        @test last(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_next_affecting(conf1, orbs(last(kink)), first(kink))
+        @test first(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_prev_affecting(conf1.kinks, orbs(last(kink)), first(kink))
+        @test last(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_next_affecting(conf1.kinks, orbs(last(kink)), first(kink))
     end
 end

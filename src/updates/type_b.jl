@@ -24,7 +24,7 @@ to the left of the first τ."""
 function left_type_B_pairs(ck)
     pairs_left = Set{Tuple{Int,Int}}()
     for (i,(τ,kink)) in enumerate(ck)
-        i_left = index_prev_affecting(ck, orbs(kink), τ)
+        i_left = prev_affecting(ck, orbs(kink), τ)
         if is_type_B(last(ck[τ_left]), kink)
             push!(pairs_left, (i, i_left))
         end
@@ -44,7 +44,7 @@ The Set consists of the pairs where the Type-B-entanglement is oriented
 function right_type_B_pairs(ck)
     pairs_right = Set{Tuple{Int,Int}}()
     for (i,(τ,kink)) in enumerate(ck)
-        i_right = index_next_affecting(ck, orbs(kink), τ)
+        i_right = next_affecting(ck, orbs(kink), τ)
         if is_type_B(kink, last(ck[i_right]))
             push!(pairs_right, (i, i_right))
         end
@@ -64,7 +64,7 @@ The Set consists of the pairs where the Type-B-entanglement is oriented
 function right_type_B_removable_pairs(ck)
     pairs_right = Set{Tuple{Int,Int}}()
     for (i,(τ,kink)) in enumerate(ck)
-        i_right = index_next_affecting(ck, orbs(kink), τ)
+        i_right = next_affecting(ck, orbs(kink), τ)
         if is_type_B(kink, last(ck[i_right]))
             if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin

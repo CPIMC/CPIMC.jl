@@ -21,7 +21,7 @@ The Set consists of the pairs where the Type-C-entanglement is oriented
 function left_type_C_removable_pairs(ck)
     pairs_left = Set{Tuple{Int,Int}}()
     for (i,(τ,kink)) in enumerate(ck)
-        i_left = index_prev_affecting(ck, orbs(kink), τ)
+        i_left = prev_affecting(ck, orbs(kink), τ)
         if is_type_C(last(ck[i_left]), kink)
             if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin
@@ -44,7 +44,7 @@ The Set consists of the pairs where the Type-C-entanglement is oriented
 function right_type_C_removable_pairs(ck)
     pairs_right = Set{Tuple{Int,Int}}()
     for (i,(τ,kink)) in enumerate(ck)
-        i_right = index_next_affecting(ck, orbs(kink), τ)
+        i_right = next_affecting(ck, orbs(kink), τ)
         if is_type_C(kink, last(ck[i_right]))
             if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin
