@@ -23,7 +23,8 @@ sd = Kinks{PlaneWave{3}}([ ImgTime(0.2) => T4(a,b,c,d),
 conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 
 @testset "orbs" begin
-    @test orbs(T4(a,b,c,d)) == Set([a,b,c,d])
+    @test orbs(T4(a,b,c,d)) == (a,b,c,d)
+    @test orbs(T2(a,b)) == (a,b)
 end
 
 @testset "adjacent_kinks_affecting_orbs" begin
@@ -159,7 +160,7 @@ end
 
 end
 
-@testset "find_fourth_orb_for_kink" for _ in (1:1000)
+@testset "find_fourth_orb_for_kink" for _ in (1:5)
     r = (1:100)
     orb1 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
     orb2 = orb1

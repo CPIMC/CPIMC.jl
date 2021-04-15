@@ -86,11 +86,11 @@ and in the annihlation of two orbitals k, l
 function ΔW_diag(m::Model, i, j, k, l, occ)
     @assert (i ∉ occ) & (j ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum( wminus(m, ν,k,k,ν) + wminus(m, ν,l,l,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with k and l
+    Δ = sum( wminus(m, ν,k,k,ν) + wminus(m, ν,l,l,ν) for ν in drop(occ, (k,l)) )# interactions of mean field with k and l
     Δ += wminus(m, k,l,l,k)# interaction between k and l
     # contributions due to mean field interactions of the created orbitals
     # note: the annihilator orbitals k, l are not in the new occupation
-    Δ -= sum( wminus(m, ν,i,i,ν) + wminus(m, ν,j,j,ν) for ν in drop(occ, Set([k,l])) )# interactions of mean field with i and j
+    Δ -= sum( wminus(m, ν,i,i,ν) + wminus(m, ν,j,j,ν) for ν in drop(occ, (k,l)) )# interactions of mean field with i and j
     Δ -= wminus(m, i,j,j,i)# interaction between i and j
     return Δ
 end
@@ -106,9 +106,9 @@ and in the annihlation of one orbitals j
 function ΔW_diag(m::Model, i, j, occ)
     @assert (i ∉ occ) "Calculation of the change in the many-body diagonal interaction matrix element: This function assumes that the first two orbitals\n\t $(i)\n and\n\t $(j) given are the creator orbitals and thus that they are not occupied in the given occupation\n\t $(occ). "
     # contributions due to mean field interactions of the annihilated orbitals
-    Δ = sum( wminus(m, ν,j,j,ν) for ν in drop(occ, j) )# interactions of mean field with k
+    Δ = sum( wminus(m, ν,j,j,ν) for ν in drop(occ, (j,)) )# interactions of mean field with k
     # contributions due to mean field interactions of the created orbitals
-    Δ -= sum( wminus(m, ν,i,i,ν) for ν in drop(occ, j) )
+    Δ -= sum( wminus(m, ν,i,i,ν) for ν in drop(occ, (j,)) )
 end
 
 

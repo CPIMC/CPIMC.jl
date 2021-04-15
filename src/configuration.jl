@@ -166,28 +166,28 @@ basis(c::Configuration{T}) where T = T
 
 return a set of all orbitals which are affected by a `T2`-kink.
 """
-orbs(x::T2) = Set([k.i, k.j])
+orbs(x::T2) = x.i, x.j
 
 """
     orbs(::T4)
 
 return a set of all orbitals which are affected by a `T4`-kink.
 """
-orbs(x::T4) = Set([x.i, x.j, x.k, x.l])
+orbs(x::T4) = x.i, x.j, x.k, x.l
 
 """
     creators(::T4)
 
 return a set of the two creators which are affected by a T4 kink
 """
-creators(x::T4) = Set([x.i, x.j])
+creators(x::T4) = x.i, x.j
 
 """
     annihilators(x::T4)
 
 return a set of the two annihilators which are affected by a T4 kink
 """
-annihilators(x::T4) = Set([x.k, x.l])
+annihilators(x::T4) = x.k, x.l
 
 """
     ImgTime(t::Tuple{Nothing,Nothing})
@@ -409,17 +409,17 @@ function τ_next_affecting(ck, os, τ)
 end
 
 """
-     τ_borders(::Kinks{T}, ::Set{T}, ::ImgTime) where {T <: Orbital}
+     τ_borders(::Kinks{T}, orbs, ::ImgTime) where {T <: Orbital}
 
 Return a tuple of
 the ImgTime of the closest kink to the right and
 the ImgTime of the closest kink to the left of τ
-that affect one of the orbitals in os.
+that affect one of the orbitals in orbs.
 If no orbital in os is affected by and kink from the collection in the first argument,
 return a tuple of the interval bounds (ImgTime(0), ImgTime(1))."""
-τ_borders(ck::Kinks{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, os, τ))
+τ_borders(ck::Kinks{T}, orbs, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, orbs, τ))
 
-τ_borders(c::Configuration{T}, os::Set{T}, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, os, τ)
+τ_borders(c::Configuration{T}, orbs, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, orbs, τ)
 
 
 """
@@ -477,6 +477,13 @@ drop(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(drop(c.occu
 Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
 """
 drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = setdiff(oc1, oc2)
+
+"""
+    drop(oc1::Set, oc2::Tuple)
+
+Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
+"""
+drop(oc1::Set, oc2::Tuple) = setdiff(oc1, oc2)
 
 """
     drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
