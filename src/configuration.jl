@@ -164,14 +164,15 @@ basis(c::Configuration{T}) where T = T
 """
     orbs(::T2)
 
-return a set of all orbitals which are affected by a `T2`-kink.
+Return a Tuple of all orbitals that are affected by a `T2`-kink in the conventional ordering i, j.
 """
 orbs(x::T2) = x.i, x.j
 
-"""
+@doc raw"""
     orbs(::T4)
 
-return a set of all orbitals which are affected by a `T4`-kink.
+Return a Tuple of all orbitals that are affected by a `T4`-kink in the conventional ordering i, j, k, l.
+This corresponds to the matrix element $w_{ijkl}$ in the same order.
 """
 orbs(x::T4) = x.i, x.j, x.k, x.l
 
@@ -787,16 +788,6 @@ function add!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
     add!(c1, c2.kinks)
 end
 
-
-@doc raw"""
-    ordered_orbs(x::T4)
-
-Get a list of orbitals that are affected by a kink in the conventional ordering i, j, k, l.
-This corresponds to the matrix element $w_{ijkl}$ in the same order.
-"""
-ordered_orbs(x::T4) = x.i, x.j, x.k, x.l
-
-
 """
     time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
 
@@ -806,7 +797,7 @@ function time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
     if isempty(ck)
         return Array{T,1}()
     else
-        return collect( Iterators.flatten( ordered_orbs(k) for k in values(ck) ) )
+        return collect( Iterators.flatten( orbs(k) for k in values(ck) ) )
     end
 end
 
