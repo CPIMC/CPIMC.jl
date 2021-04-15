@@ -369,7 +369,7 @@ function index_next_affecting(a, orbs, τ)
             i = 1
         end
         if any( orbs .∈ ( last(a[i]) ,) )# if any orbs are affected by the kink at i
-            return  # if o is affected by the kink at i
+            return i # if o is affected by the kink at i
         end
     end
     return 0
