@@ -12,7 +12,7 @@ function is_type_B(left_kink::T4, right_kink::T4)
 end
 
 
-"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangled.
+"""Return pairs with indices of 'neighbouring' kinks that are Type-B-Entangled.
 This function has no use in the current update set. Removability of a Kink will therefore not be considered here.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
@@ -22,12 +22,12 @@ vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 to the left of the first τ."""
 function left_type_B_pairs(ck)
-    pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-    for (τ,kink) in ck
+    pairs_left = Set{Tuple{Int,Int}}()
+    for (i,(τ,kink)) in enumerate(ck)
         kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
-        if is_type_B(ck[τ_left], kink)
-            push!(pairs_left, (τ, τ_left))
+        i_left = index_prev_affecting(ck, orbs(kink), τ)
+        if is_type_B(last(ck[τ_left]), kink)
+            push!(pairs_left, (i, i_left))
         end
     end
     return pairs_left
@@ -43,8 +43,8 @@ vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
 function right_type_B_pairs(ck)
-    pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-    for (i,(τ,kink)) in ck
+    pairs_right = Set{Tuple{Int,Int}}()
+    for (i,(τ,kink)) in enumerate(ck)
         i_right = index_next_affecting(ck, orbs(kink), τ)
         if is_type_B(kink, last(ck[i_right]))
             push!(pairs_right, (i, i_right))
