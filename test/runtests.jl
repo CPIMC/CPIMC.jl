@@ -1,6 +1,6 @@
 using Test
 
-tests = [ "test_configuration.jl", "test_PlaneWaves.jl", "test_UniformElectronGas.jl", "test_Updates.jl" ]
+tests = [ "test_configuration.jl", "test_CPIMC.jl", "test_PlaneWaves.jl", "test_UniformElectronGas.jl", "test_Updates.jl" ]
 
 
 for t in tests

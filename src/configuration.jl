@@ -155,12 +155,16 @@ Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuratio
 Configuration{T}() where T = Configuration(Set{T}())
 
 
+drop_orbs(occ, ::Nothing) = occ
 drop_orbs(occ, s) = filter(o -> !in(o,s), occ)
 
+add_orbs(occ, ::Nothing) = occ
 add_orbs(occ, s) = union(occ, s)
 
+drop_kinks(ck, ::Nothing) = ck
 drop_kinks(ck, s) = filter(k -> !in(k,s), ck)
 
+add_kinks(ck::Kinks, ::Nothing) = ck
 
 function add_kinks(ck::Kinks, s)
     ck_copy = deepcopy(ck)
@@ -168,13 +172,16 @@ function add_kinks(ck::Kinks, s)
     return ck_copy
 end
 
-
+drop_orbs!(occ, ::Nothing) = nothing
 drop_orbs!(occ, s) = filter!(o -> !in(o,s), occ)
 
+add_orbs!(occ, ::Nothing) = nothing
 add_orbs!(occ, s) = union!(occ, s)
 
+drop_kinks!(ck, ::Nothing) = nothing
 drop_kinks!(ck, s) = filter!(k -> !in(k,s), ck)
 
+add_kinks!(ck::Kinks, ::Nothing) = nothing
 function add_kinks!(ck::Kinks, s)
     for k in s
         insert!(ck, searchsortedfirst(ck, by=first, first(k)), first(k) => last(k))

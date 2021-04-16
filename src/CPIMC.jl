@@ -85,21 +85,13 @@ Step(a,b) = Step(a,nothing,b,nothing)
 Apply the changes given by the second argument to a `Configuration`.
 """
 function apply_step!(c::Configuration, s::Step)
-    if !isnothing(s.drop_orbs)
-        drop_orbs!(c.occupations, s.drop_orbs)
-    end
-    if !isnothing(s.drop_kinks)
-        drop_kinks!(c.kinks, s.drop_kinks)
-    end
-    if !isnothing(s.add_orbs)
-        add_orbs!(c.occupations, s.add_orbs)
-    end
-    if !isnothing(s.add_kinks)
-        add_kinks!(c.kinks, s.add_kinks)
-    end
+    drop_orbs!(c.occupations, s.drop_orbs)
+    drop_kinks!(c.kinks, s.drop_kinks)
+    add_orbs!(c.occupations, s.add_orbs)
+    add_kinks!(c.kinks, s.add_kinks)
 end
 
-function apply_step!(c::Configuration, steps)
+function apply_step!(c::Configuration, steps::Array)
     for step in steps
         apply_step!(c, step)
     end

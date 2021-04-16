@@ -282,6 +282,7 @@ end
     c2 = Set{PlaneWave{3}}()
     @test add_orbs(c2,(a,)) == Set([a])
     @test add_orbs(c2,(a,b,c,)) == Set([a,b,c])
+    @test add_orbs(c2,nothing) == c2
 end
 
 @testset "add_orbs!" begin
@@ -290,15 +291,20 @@ end
     @test c2 == Set([a])
     add_orbs!(c2,(b,c))
     @test c2 == Set([a,b,c])
+    add_orbs!(c2,nothing)
+    @test c2 == Set([a,b,c])
 end
 
 @testset "drop_orbs" begin
     @test drop_orbs(Set([a,b,c]), (a,b)) == Set([c])
     @test drop_orbs(Set([a,b,c]), (c,)) == Set([a,b])
+    @test drop_orbs(Set([a,b,c]), nothing) == Set([a,b,c])
 end
 
 @testset "drop_orbs!" begin
     c2 = Set([a,b,c])
+    drop_orbs!(c2, nothing)
+    @test c2 == Set([a,b,c])
     drop_orbs!(c2, (a,))
     @test c2 == Set([b,c])
     drop_orbs!(c2, (b,c))
@@ -310,6 +316,7 @@ end
     @test add_kinks(Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c) )
 ,(ImgTime(0.25) => T2(b,d),)) == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.25) => T2(b,d), ImgTime(0.3) => T2(a,c) )
     @test add_kinks(Kinks( ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a) ), (ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c))) == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a) )
+    @test add_kinks(sd, nothing) == sd
 end
 
 @testset "add_kinks!" begin
@@ -318,6 +325,9 @@ end
     @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e))
     add_kinks!(c2,(ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a)))
     @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    add_kinks!(c2,nothing)
+    @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+
 end
 
 @testset "drop_kinks!" begin
@@ -326,11 +336,14 @@ end
     @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
     drop_kinks!(c2, (ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b)))
     @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+    drop_kinks!(c2, nothing)
+    @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
 end
 
 @testset "drop_kinks" begin
     c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
     @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b),)) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
     @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b))) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+    @test drop_kinks(sd, nothing) == sd
 end
 
