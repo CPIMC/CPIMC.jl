@@ -18,7 +18,7 @@ sd = Kinks( ImgTime(0.2) => T4(a,b,c,d),
        ImgTime(0.6) => T4(b,a,d,c),
        ImgTime(0.8) => T4(d,c,b,a) )
 
-conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
+conf = Configuration(S,sd)
 
 @testset "apply_step" begin
     @test apply_step(conf, Step()) == conf
@@ -26,7 +26,7 @@ conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
 end
 
 @testset "apply_step!" begin
-    c2 = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1),sd)
+    c2 = Configuration(S,sd)
     apply_step!(c2, Step())
     @test c2 == conf
     apply_step!(c2, Step((c,d),nothing,(e,f),nothing))
