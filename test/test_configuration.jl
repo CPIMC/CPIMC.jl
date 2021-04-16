@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, add_orbs, add_orbs!, drop_orbs, drop_orbs!
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, add_orbs, add_orbs!, drop_orbs, drop_orbs!, drop_kinks, drop_kinks!, add_kinks, add_kinks!
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -149,25 +149,22 @@ end
     h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
     Type_1_chain = Kinks( ImgTime(0.2) => T4(a,b,c,d),
-                                               ImgTime(0.5) => T4(f,g,e,a),
-                                               ImgTime(0.6) => T4(c,d,h,g),
-                                               ImgTime(0.8) => T4(e,h,b,f) )
+                          ImgTime(0.5) => T4(f,g,e,a),
+                          ImgTime(0.6) => T4(c,d,h,g),
+                          ImgTime(0.8) => T4(e,h,b,f) )
 
     @test (a.vec + b.vec - c.vec - d.vec) == PlaneWave((0,0,0)).vec
     @test (f.vec + g.vec - e.vec - a.vec) == PlaneWave((0,0,0)).vec
     @test (c.vec + d.vec - h.vec - g.vec) == PlaneWave((0,0,0)).vec
     @test (e.vec + h.vec - b.vec - f.vec) == PlaneWave((0,0,0)).vec
 
-    occs = setdiff!(union!(sphere(PlaneWave((0,0,0),Up),dk=1),
-                        Set([e,h])),
-                Set([g,f]))
+    occs = setdiff!(union!(sphere(PlaneWave((0,0,0),Up),dk=1), Set([e,h])), Set([g,f]))
     conf_Type_1 = Configuration(occs,Type_1_chain)
     @test (occupations_at(conf_Type_1, ImgTime(0.9)) == occs)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
-    Type_1_chain[ImgTime(0.52)] = T4(e,a,g,f)
-    Type_1_chain[ImgTime(0.54)] = T4(g,f,a,e)
+    add_kinks!(Type_1_chain, (ImgTime(0.52) => T4(e,a,g,f), ImgTime(0.54) => T4(g,f,a,e)))
 
     conf_Type_1 = Configuration(occs,Type_1_chain)
 
@@ -176,8 +173,7 @@ end
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
-    Type_1_chain[ImgTime(0.82)] = T4(b,a,d,c)
-    Type_1_chain[ImgTime(0.84)] = T4(c,d,a,b)
+    add_kinks!(Type_1_chain, (ImgTime(0.82) => T4(b,a,d,c), ImgTime(0.84) => T4(c,d,a,b)))
 
     conf_Type_1 = Configuration(occs,Type_1_chain)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 3
