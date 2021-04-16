@@ -115,15 +115,18 @@ Base.haskey(ck::Kinks, key::ImgTime) = in(key, keys(ck))
 Allow the `kinks[τ]`-syntax to retrieve a `Kink` at a specific `ImgTime`.
 """
 function Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
-    searchsortedfirst(kinks, by=first, τ)
     τ_next, k = kinks[searchsortedfirst(kinks, by=first, τ)]
     if τ_next != τ
-        Throw(KeyError(τ))
+        throw(KeyError(τ))
     else
         return k
     end
 end
 
+
+function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
+    add!(ck::Kinks, τ::ImgTime, kink::Kink)
+end
 
 """
 Multi-particle trajectory in imaginary time.
@@ -557,14 +560,14 @@ Base.in(i, k::T4) = i == k.i || i == k.j || i == k.k || i == k.l
 
 Check if `τ` lies in the open `ImgTime`-interval `(τ_first,`τ_last)`, assuming that `τ_first` is the left border and `τ_last` the right one.
 """
-in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) & ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
+in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) && ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
 
 """
     isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime)
 
 Return if an orbital is not affected by any of the kinks from `ck` in the open interval `(τ_first,τ_last)`.
 """
-isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime) = all(kink -> ((orb ∉ last(kink)) && in_open_interval(first(kink), τ_first, τ_last) ), kinks)
+isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime) = all(kink -> ((orb ∉ last(kink)) || !in_open_interval(first(kink), τ_first, τ_last) ), kinks)
 
 ## Method definitions for function drop
 # This function is mostly used for calculating the changes proposed by an update
@@ -765,13 +768,6 @@ Return a configuration with the orbitals in oc added to c.occupations.
 add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(c.occupations, oc), c.kinks)
 
 
-"""
-    add(ck::Kinks, p::Pair)
-
-Return a `Kinks`-object with the pair `p` added to `ck` with respect to the sorting.
-"""
-add(ck::Kinks, p::Pair) = insert(ck, searchsortedfirst(ck, by=first, first(p)), p)
-
 
 """
     add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
@@ -791,7 +787,7 @@ end
 
 Return a `Kinks`-object with the pairs from `ck2` added to `ck1`.
 """
-function add(ck1::Kinks, ck2::Kinks) where {T <: Orbital}
+function add(ck1::Kinks, ck2::Kinks)
     ck1_copy = copy(ck1)
     for k in ck2
         add!(ck1_copy, k)
@@ -861,9 +857,6 @@ Add the pair `(τ, k)` to the `ck` with respect to the sorting.
 """
 add!(ck::Kinks, τ::ImgTime, k::Kink) = insert!(ck, searchsortedfirst(ck, by=first, τ), τ => k)
 
-function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
-    add!(ck::Kinks, τ::ImgTime, kink::Kink)
-end
 
 """
   add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
