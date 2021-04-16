@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, add_orbs, add_orbs!, drop_orbs, drop_orbs!
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -280,3 +280,61 @@ end
         @test last(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_next_affecting(conf1.kinks, orbs(last(kink)), first(kink))
     end
 end
+
+
+@testset "add_orbs" begin
+    c2 = Set{PlaneWave{3}}()
+    @test add_orbs(c2,(a,)) == Set([a])
+    @test add_orbs(c2,(a,b,c,)) == Set([a,b,c])
+end
+
+@testset "add_orbs!" begin
+    c2 = Set{PlaneWave{3}}()
+    add_orbs!(c2,(a,))
+    @test c2 == Set([a])
+    add_orbs!(c2,(b,c))
+    @test c2 == Set([a,b,c])
+end
+
+@testset "drop_orbs" begin
+    @test drop_orbs(Set([a,b,c]), (a,b)) == Set([c])
+    @test drop_orbs(Set([a,b,c]), (c,)) == Set([a,b])
+end
+
+@testset "drop_orbs!" begin
+    c2 = Set([a,b,c])
+    drop_orbs!(c2, (a,))
+    @test c2 == Set([b,c])
+    drop_orbs!(c2, (b,c))
+    @test c2 == Set{PlaneWave{3}}([])
+end
+
+
+@testset "add_kinks" begin
+    @test add_kinks(Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c) )
+,(ImgTime(0.25) => T2(b,d),)) == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.25) => T2(b,d), ImgTime(0.3) => T2(a,c) )
+    @test add_kinks(Kinks( ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a) ), (ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c))) == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a) )
+end
+
+@testset "add_kinks!" begin
+    c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c) )
+    add_kinks!(c2,(ImgTime(0.4) => T2(d,e),))
+    @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e))
+    add_kinks!(c2,(ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a)))
+    @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+end
+
+@testset "drop_kinks!" begin
+    c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    drop_kinks!(c2, (ImgTime(0.1) => T2(a,b),))
+    @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    drop_kinks!(c2, (ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b)))
+    @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+end
+
+@testset "drop_kinks" begin
+    c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b),)) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b))) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+end
+

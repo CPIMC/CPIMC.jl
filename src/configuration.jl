@@ -154,6 +154,34 @@ Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuratio
 " outer constructor method for empty Configurations{T} "
 Configuration{T}() where T = Configuration(Set{T}())
 
+
+drop_orbs(occ, s) = filter(o -> !in(o,s), occ)
+
+add_orbs(occ, s) = union(occ, s)
+
+drop_kinks(ck, s) = filter(k -> !in(k,s), ck)
+
+
+function add_kinks(ck::Kinks, s)
+    ck_copy = deepcopy(ck)
+    add_kinks!(ck_copy,s)
+    return ck_copy
+end
+
+
+drop_orbs!(occ, s) = filter!(o -> !in(o,s), occ)
+
+add_orbs!(occ, s) = union!(occ, s)
+
+drop_kinks!(ck, s) = filter!(k -> !in(k,s), ck)
+
+function add_kinks!(ck::Kinks, s)
+    for k in s
+        insert!(ck, searchsortedfirst(ck, by=first, first(k)), first(k) => last(k))
+    end
+end
+
+
 """
     basis(c::Configuration{T})
 
@@ -520,338 +548,6 @@ Return if an orbital is not affected by any of the kinks from `ck` in the open i
 """
 isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime) = all(kink -> ((orb ∉ last(kink)) && in_open_interval(first(kink), τ_first, τ_last) ), kinks)
 
-## Method definitions for function drop
-# This function is mostly used for calculating the changes proposed by an update
-# in order to calculate proposal and/or acceptance probabilities.
-
-"""
-    drop(c::Configuration, n::Nothing)
-
-Return the configuration c without dropping anything.
-"""
-drop(c::Configuration, n::Nothing) = c
-
-"""
-    drop(oc::Set{T}, o::T) where {T <: Orbital}
-
-Return a set with the orbital o dropped from oc.
-"""
-drop(oc::Set{T}, o::T) where {T <: Orbital} = setdiff(oc, Set([o]))
-
-"""
-    drop(c::Configuration{T}, o::T) where {T <: Orbital}
-
-Return a configuration with the `Orbital` `o` dropped from `c.occupations`.
-"""
-drop(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(drop(c.occupations, Set([o])),c.kinks)
-
-"""
-    drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital}
-
-Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
-"""
-drop(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = setdiff(oc1, oc2)
-
-"""
-    drop(oc1::Set, oc2::Tuple)
-
-Return a `Set` with the orbitals in `oc2` dropped from `oc1`.
-"""
-drop(oc1::Set, oc2::Tuple) = setdiff(oc1, oc2)
-
-"""
-    drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
-
-Return a `Configuration` with the orbitals in `oc` dropped from `c.occupations`.
-"""
-drop(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(drop(c.occupations, oc), c.kinks)
-
-"""
-    drop(ck1, ck2)
-
-Return a container with the elements in `ck2` dropped from `ck1`.
-"""
-drop(ck1, ck2) = setdiff(ck1, ck2)
-
-"""
-    drop(c::Configuration{T}, ck::Kinks)
-
-Return a `Configuration` with the pairs in `ck` dropped from `c.kinks`.
-"""
-drop(c::Configuration{T}, ck::Kinks) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ck))
-
-"""
-    drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
-
-Return a `Kinks`-object with the pairs `ps...` dropped from `ck`.
-"""
-drop(ck::Kinks, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = setdiff(ck, Kinks(ps))
-
-"""
-    drop(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
-
-Return a `Configuration` with the pairs `ps...` dropped from `c.kinks`.
-"""
-drop(c::Configuration{T}, ps::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, drop(c.kinks, ps...))
-
-"""
-    drop(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
-
-Return a `Configuration` with occupations and kinks in `c2` dropped from `c1`.
-"""
-drop(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} = Configuration(drop(c1.occupations,c2.occupations), drop(c1.kinks,c2.kinks))
-
-
-## Method definitions for function drop!
-# This function is mostly for applying the changes determined in an MC Step Δ
-# to the current configuration c in function apply_step!(c, Δ). cf. CPIMC.jl
-# These methods change the first argument in-place.
-
-"""
-    drop!(c::Configuration, n::Nothing)
-
-Drop nothing.
-"""
-function drop!(c::Configuration, n::Nothing)
-    nothing
-end
-
-"""
-    drop!(c::Configuration{T}, o::T) where {T <: Orbital}
-
-Drop a single orbital.
-"""
-function drop!(c::Configuration{T}, o::T) where {T <: Orbital}
-    delete!(c.occupations, o)
-end
-
-"""
-    drop!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
-
-Drop all orbitals given in a set `oc` from `c.occupations`.
-"""
-function drop!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
-    for o in oc
-        drop!(c, o)
-    end
-end
-
-
-"""
-    drop!(c::Configuration, τ::ImgTime)
-
-Drop a single kink at time τ from `c.kinks`.
-"""
-function drop!(c::Configuration, τ::ImgTime)
-    setdiff!(c.kinks, [τ => c.kinks[τ]])
-end
-
-"""
-    drop!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
-
-Drop all kinks given in `ck` from `c.kinks`.
-"""
-function drop!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
-    for (τ, k) in ck
-        drop!(c, τ)
-    end
-end
-
-"""
-    drop!(c::Configuration{T}, pk::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
-
-Drop all kinks given by `Varargs{Pair{ImgTime,<:Kink{T}}}` from `c.kinks`.
-"""
-function drop!(c::Configuration{T}, pk::Pair{ImgTime,<:Kink{T}}...) where {T <: Orbital}
-    for (τ, k) in pk
-        drop!(c, τ)
-    end
-end
-
-"""
-    drop!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
-
-Drop occupations and kinks given by second argument `c2` from first argument `c1`.
-"""
-function drop!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
-    drop!(c1, c2.occupations)
-    drop!(c1, c2.kinks)
-end
-
-
-## Method definitions for function add.
-# This function is mostly used for calculating the changes proposed by an update
-# in order to calculate proposal and/or acceptance probabilities.
-
-"""
-    add(c::Configuration, n::Nothing)
-
-Return the `Configuration` `c` without adding anything.
-"""
-add(c::Configuration, n::Nothing) = c
-
-"""
-    add(oc::Set{T}, o::T) where {T <: Orbital}
-
-Return a set with the orbital o added to oc.
-"""
-add(oc::Set{T}, o::T) where {T <: Orbital} = union(oc, Set([o]))
-
-"""
-    add(c::Configuration{T}, o::T) where {T <: Orbital}
-
-Return a configuration with the orbital o added to c.occupations.
-"""
-add(c::Configuration{T}, o::T) where {T <: Orbital} = Configuration(add(c.occupations, o), c.kinks)
-
-"""
-    add(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital}
-
-Return a set with the orbitals in oc2 added to oc1.
-"""
-add(oc1::Set{T}, oc2::Set{T}) where {T <: Orbital} = union(oc1, oc2)
-
-"""
-    add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
-
-Return a configuration with the orbitals in oc added to c.occupations.
-"""
-add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(c.occupations, oc), c.kinks)
-
-
-"""
-    add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
-
-Return a `Kinks`-object with the pairs `ps...` added to `ck`.
-"""
-function add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
-    ck_copy = copy(ck)
-    for k in ps
-        add!(ck_copy, k)
-    end
-    return ck_copy
-end
-
-"""
-    add(ck1::Kinks, ck2::Kinks)
-
-Return a `Kinks`-object with the pairs from `ck2` added to `ck1`.
-"""
-function add(ck1::Kinks, ck2::Kinks) where {T <: Orbital}
-    ck1_copy = copy(ck1)
-    for k in ck2
-        add!(ck1_copy, k)
-    end
-    return ck1_copy
-end
-
-"""
-    add(c::Configuration{T}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
-
-Return a configuration with the pairs ps... added to `c.kinks`.
-"""
-add(c::Configuration{T}, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital} = Configuration(c.occupations, add(c.kinks, ps...))
-
-"""
-    add(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
-
-Return a configuration with the pairs in ck added to `c.kinks`.
-"""
-add(c::Configuration{T}, ck::Kinks) where {T <: Orbital} = add(c, ck...)
-
-"""
-    add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
-
-Return a configuration with occupations and kinks in c2 dropped from c1.
-"""
-add(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital} = Configuration(add(c1.occupations, c2.occupations), add(c1.kinks, c2.kinks))
-
-
-## Method definitions for function add!.
-# This function is mostly for applying the changes determined in an MC Step Δ
-# to the current configuration c in function apply_step!(c, Δ). cf. CPIMC.jl
-# These methods change the first argument in-place.
-
-
-"""
-    add!(c::Configuration, n::Nothing)
-
-Add nothing.
-"""
-function add!(c::Configuration, n::Nothing)
-    nothing
-end
-
-"""
-    add!(c::Configuration{T}, o::T) where {T <: Orbital}
-
-Add a single orbital.
-"""
-function add!(c::Configuration{T}, o::T) where {T <: Orbital}
-    push!(c.occupations, o)
-end
-
-"""
-    add!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
-
-Add all orbitals given in a set oc to c.occupations.
-"""
-function add!(c::Configuration{T}, oc::Set{T}) where {T <: Orbital}
-    union!(c.occupations, oc)
-end
-
-"""
-    add!(ck::Kinks, τ::ImgTime, k::Kink)
-
-Add the pair `(τ, k)` to the `ck` with respect to the sorting.
-"""
-add!(ck::Kinks, τ::ImgTime, k::Kink) = insert!(ck, searchsortedfirst(ck, by=first, τ), τ => k)
-
-function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
-    add!(ck::Kinks, τ::ImgTime, kink::Kink)
-end
-
-"""
-  add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
-
-Add a single kink at time first(p) to `c.kinks`.
-"""
-function add!(c::Configuration{T}, p::Pair ) where {T <: Orbital}
-    add!(c.kinks, first(p), last(p))
-end
-
-
-
-"""
-    add!(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
-
-Add all kinks given by the pairs `ps` to `ck`.
-"""
-function add!(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
-    for k in ps
-        add!(ck, first(k), last(k))
-    end
-    return ck
-end
-
-"""
-    add!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
-
-Add all kinks given in `ck` to `c.kinks`.
-"""
-function add!(c::Configuration{T}, ck::Kinks) where {T <: Orbital}
-    add!(c.kinks, ck...)
-end
-
-"""
-    add!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
-
-Add occupations and kinks given by second argument `c2` from first argument `c1`.
-"""
-function add!(c1::Configuration{T}, c2::Configuration{T}) where {T <: Orbital}
-    add!(c1, c2.occupations)
-    add!(c1, c2.kinks)
-end
 
 """
     time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
