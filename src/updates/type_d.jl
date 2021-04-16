@@ -242,11 +242,11 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         #see if c.occupations change
         if removed_kink_τ > changed_kink_τ
-            drop_orbs = Set([removed_kink.i, removed_kink.j])
-            add_orbs = Set([removed_orb1, removed_orb2])
+            drop_orbs = (removed_kink.i, removed_kink.j)
+            add_orbs = (removed_orb1, removed_orb2)
         else
-            drop_orbs = Set{basis(c)}()
-            add_orbs = Set{basis(c)}()
+            drop_orbs = nothing
+            add_orbs = nothing
         end
 
         add_kinks = (changed_kink_τ => T4(removed_kink.i, removed_kink.j, changed_kink.k, changed_kink.l),)
@@ -306,8 +306,8 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
             orbs_drop = (removed_kink.k, removed_kink.l)
             orbs_add = (removed_orb1, removed_orb2)
         else
-            drop_orbs = nothing
-            add_orbs = nothing
+            orbs_drop = nothing
+            orbs_add = nothing
         end
 
         kinks_add = (changed_kink_τ => T4(changed_kink.i, changed_kink.j, removed_kink.k, removed_kink.l),)

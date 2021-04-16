@@ -333,7 +333,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         # see if c.occupations change
         if removed_kink_τ > changed_kink_τ
-            orbs_add = (removed_kink.i,removed_kink.j)
+            orbs_drop = (removed_kink.i,removed_kink.j)
             orbs_add = (removed_kink.k,removed_kink.l)
         else
             orbs_drop = nothing
