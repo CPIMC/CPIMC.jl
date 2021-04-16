@@ -28,7 +28,7 @@ function move_particle(m::Model, e::Ensemble, c::Configuration)
     # quotient of proposal probabilities
     δv = length(oe)/length(oe2)
 
-    δv * dw, Step(x,y)
+    δv * dw, Step((x,),(y,))
 end
 
 function Ekin(m::Model, e::Ensemble, c::Configuration) :: UInt

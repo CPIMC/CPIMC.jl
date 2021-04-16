@@ -64,10 +64,14 @@ wminus
 Step
 apply_step
 apply_step!
-drop
-drop!
-add
-add!
+add_orbs
+add_orbs!
+drop_orbs
+drop_orbs!
+add_kinks
+add_kinks!
+remove_kinks
+remove_kinks!
 UpdateCounter
 ```
 
