@@ -21,7 +21,7 @@ import CPIMC.DefaultUpdates: isuseful
 function update!(m::Model, e::Ensemble, c::Configuration, updates)
     usefull_update_inds = findall(up -> isuseful(c, up), updates)
     @assert !isempty(usefull_update_inds)
-    i = rand(usefull_updates_inds)
+    i = rand(usefull_update_inds)
     dv, Δ = updates[i](m, e, c)
     dv *= length(usefull_update_inds)/length(findall(up -> isuseful(apply_step(c, Δ), up), updates))
     if Δ == Step()
@@ -37,6 +37,7 @@ function update!(m::Model, e::Ensemble, c::Configuration, updates)
     end
 end
 =#
+
 W_off_diag(e::Ensemble, avg_K::Float64) = -avg_K/e.β
 abs_E_madelung(N::Int, λ::Float64) = 2.83729747948527 * pi/2.0 * N * λ
 E_int_from_Hartree(E_Ha::Float64, λ::Float64) = E_Ha /(16/((2*pi)^4 * (λ/2)^2) * 0.5)

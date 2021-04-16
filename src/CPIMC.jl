@@ -163,7 +163,7 @@ end
 
 """
     sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, steps::Int, sampleEvery::Int, throwAway::Int)
-    
+
 Generate a markov chain of length `steps` using the Metropolis-Hastings algorithm with the updates given in `updates`.
 After `throwAway` steps have been performed, the observables given in `estimators` are calculated every `sampleEvery` steps.
 
@@ -271,10 +271,11 @@ function print_rates(dict)
     println("\ntotal:\n")
 
     for (up,cn) in dict
-        
+
         println(rpad(up, long), lpad(cn.accepted, 11), lpad(cn.rejected, 11), lpad(cn.trivial, 11))
     end
-
+    overall_counters = sum(values(dict))
+    println(rpad("all", long), lpad(overall_counters.accepted, 11), lpad(overall_counters.rejected, 11), lpad(overall_counters.trivial, 11))
     println("\nrelative:\n")
 
     for (up,cn) in dict
@@ -284,7 +285,11 @@ function print_rates(dict)
                 lpad(@sprintf("%.2f", 100*cn.rejected/proposed), 10), "%",
                 lpad(@sprintf("%.2f", 100*cn.trivial/proposed), 10), "%")
     end
-
+    proposed = overall_counters.accepted + overall_counters.rejected + overall_counters.trivial
+    println(rpad("all", long),
+            lpad(@sprintf("%.2f", 100*overall_counters.accepted/proposed), 10), "%",
+            lpad(@sprintf("%.2f", 100*overall_counters.rejected/proposed), 10), "%",
+            lpad(@sprintf("%.2f", 100*overall_counters.trivial/proposed), 10), "%")
     println("\n\n")
 end
 
