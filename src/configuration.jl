@@ -1,4 +1,4 @@
-export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite, Kinks, haskey, Kinks, keys, values, getindex
+export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite, Kinks, haskey, Kinks, keys, values, getindex, (==)
 
 """
 Abstract type for single-particle basis states, implementation is required for each model.
@@ -153,6 +153,8 @@ Configuration(o::Set{T}, p::Pair{ImgTime,<:Kink{T}}...) where {T} = Configuratio
 
 " outer constructor method for empty Configurations{T} "
 Configuration{T}() where T = Configuration(Set{T}())
+
+Base.:(==)(c1::Configuration, c2::Configuration) = (c1.occupations == c2.occupations) && (c1.kinks == c2.kinks)
 
 
 drop_orbs(occ, ::Nothing) = occ
