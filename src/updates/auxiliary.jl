@@ -12,10 +12,10 @@ function shuffle_indices(m::Model, e::Ensemble, c::Configuration)
     kink = rand(c.kinks)
     if rand() > 0.5
         # shuffle creators
-        Δ = Step(Configuration(kink), Configuration(first(kink) => T4(last(kink).j,last(kink).i,last(kink).k,last(kink).l)))
+        Δ = Step(nothing, (kink,), nothing, (first(kink) => T4(last(kink).j,last(kink).i,last(kink).k,last(kink).l),))
     else
         # shuffle annihilators
-        Δ = Step(Configuration(kink), Configuration(first(kink) => T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k)))
+        Δ = Step(nothing, (kink,), nothing, (first(kink) => T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k),))
     end
     return 1.0, Δ
 end
