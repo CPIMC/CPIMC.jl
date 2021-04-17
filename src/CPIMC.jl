@@ -55,6 +55,14 @@ function Base.:+(x::UpdateCounter, y::UpdateCounter)
     UpdateCounter(x.rejected + y.rejected, x.accepted + y.accepted, x.trivial + y.trivial)
 end
 
+"""
+    Diff = Union{Nothing,Tuple}
+
+Type alias for Union{Nothing,Tuple}. This is used as type parameters for the fields of struct Step.
+Mainly for convenient construction of any combination of ::Nothing, ::Tuple.
+"""
+const Diff = Union{Nothing,Tuple}
+Diff(::Nothing) = nothing
 
 """
 Represents a change which can be applied to a `Configuration`.
@@ -67,12 +75,13 @@ Represents a change which can be applied to a `Configuration`.
 - `add_kinks`  -- pairs of `ImgTime` and `Kinks` which are added
 
 """
-struct Step
-    drop_orbs :: Union{SVector, Nothing}
-    drop_kinks :: Union{SVector, Nothing}
-    add_orbs :: Union{SVector, Nothing}
-    add_kinks :: Union{SVector, Nothing}
+struct Step{T<:Diff, S<:Diff, R<:Diff, Q<:Diff}
+    drop_orbs :: T
+    drop_kinks :: S
+    add_orbs :: R
+    add_kinks :: Q
 end
+
 
 # outer constructor method for an empty Step
 Step() = Step(nothing,nothing,nothing,nothing)
