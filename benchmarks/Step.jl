@@ -4,7 +4,7 @@ using StaticArrays
     Diff = Union{Nothing,NTuple}
 
 Type alias for Union{Nothing,NTuple}. This is used as type parameters for the fields of struct Step.
-Mainly for convenient construction of any combination of ::Nothing, ::NTuple .
+Mainly for convenient construction of any combination of ::Nothing, ::TTuple.
 """
 const Diff_svec = Union{Nothing,SVector}
 Diff_svec(::Nothing) = nothing
@@ -21,6 +21,12 @@ struct StepA{T<:Diff_svec, S<:Diff_svec, R<:Diff_svec, Q<:Diff_svec}
 end
 
 StepA() = StepA(nothing, nothing, nothing, nothing)
+"""
+    StepA(a,b,c,d)
+
+Construct a Step for any combination of ::Nothing and ::SVector.
+"""
+# Without using Diff_svec it would be needed to define 4! constructors for all combinations
 StepA(a,b,c,d) = StepA(Diff_svec(a), Diff_svec(b), Diff_svec(c), Diff_svec(d))
 
 struct StepB{T<:Diff_tuple, S<:Diff_tuple, R<:Diff_tuple, Q<:Diff_tuple}
@@ -60,23 +66,55 @@ struct StepE
 end
 
 emptyStepE(T::DataType) = StepE(SVector{0,T}(),SVector{0,T}(),SVector{0,T}(),SVector{0,T}())
-StepE(a,b,c,d) = StepE(Diff_svec(a), Diff_svec(b), Diff_svec(c), Diff_svec(d))
+
+struct StepF{T<:Tuple, S<:Tuple, R<:Tuple, Q<:Tuple}
+    drop_orbs :: T
+    drop_kinks :: S
+    add_orbs :: R
+    add_kinks :: Q
+end
+
+StepF() = StepF((),(),(),())
+StepF(a,b,c,d) = StepF(Diff_tuple(a), Diff_tuple(b), Diff_tuple(c), Diff_tuple(d))
+
+struct StepF{T<:Tuple, S<:Tuple, R<:Tuple, Q<:Tuple}
+    drop_orbs :: T
+    drop_kinks :: S
+    add_orbs :: R
+    add_kinks :: Q
+end
+
+StepF() = StepF((),(),(),())
+StepF(a,b,c,d) = StepF(Diff_tuple(a), Diff_tuple(b), Diff_tuple(c), Diff_tuple(d))
+
+struct StepG
+    drop_orbs :: Tuple
+    drop_kinks :: Tuple
+    add_orbs :: Tuple
+    add_kinks :: Tuple
+end
+
+StepG() = StepG((),(),(),())
 
 drop_orbs!(occ, ::Nothing) = nothing
 drop_orbs!(occ, s::SVector{0,T}) where T = nothing
+drop_orbs!(occ, s::Tuple{}) where T = nothing
 drop_orbs!(occ, s) = setdiff!(occ, s)
 
 
 add_orbs!(occ, ::Nothing) = nothing
 add_orbs!(occ, s::SVector{0,T}) where T = nothing
+add_orbs!(occ, s::Tuple{}) where T = nothing
 add_orbs!(occ, s) = union!(occ, s)
 
 drop_kinks!(ck, ::Nothing) = nothing
 drop_kinks!(ck, s::SVector{0,T}) where T = nothing
+drop_kinks!(ck, s::Tuple{}) where T = nothing
 drop_kinks!(ck, s) = setdiff!(ck , s)
 
 add_kinks!(ck, ::Nothing) = nothing
 add_orbs!(ck, s::SVector{0,T}) where T = nothing
+add_orbs!(ck, s::Tuple{}) where T = nothing
 function add_kinks!(ck, s)
     for k in s
         insert!(ck, searchsortedfirst(ck, by=first, first(k)), first(k) => last(k))
@@ -208,7 +246,12 @@ println("\n")
 print(typeof(emptyStepE(Nothing)), "\t:\t")
 @btime emptyStepE(Nothing);
 println("\n")
-
+print(typeof(StepF()), "\t:\t")
+@btime StepF();
+println("\n")
+print(typeof(StepG()), "\t:\t")
+@btime StepG();
+println("\n")
 print("old version \t:\t")
 @btime Step();
 println("\n")
@@ -229,13 +272,17 @@ println("\n")
 print(StepC, "\t:\t")
 @btime StepC(droporbs,dropkinks,addorbs,addkinks);
 println("\n")
-println("\n")
 print(StepD, "\t:\t")
 @btime StepD(droporbs,dropkinks,addorbs,addkinks);
 println("\n")
-println("\n")
 print(StepE, "\t:\t")
 @btime StepE(droporbs,dropkinks,addorbs,addkinks);
+println("\n")
+print(StepF, "\t:\t")
+@btime StepF(droporbs,dropkinks,addorbs,addkinks);
+println("\n")
+print(StepG, "\t:\t")
+@btime StepG(droporbs,dropkinks,addorbs,addkinks);
 println("\n")
 print("old version \t:\t")
 @btime Step(Configuration(Set(droporbs), dropkinks...), Configuration(Set(addorbs), addkinks...));
@@ -264,6 +311,14 @@ print(typeof(x), "\t:\t")
 @btime apply_step!(co,$x) setup=(co=$conf);
 println("\n")
 x = StepE(droporbs,dropkinks,addorbs,addkinks);
+print(typeof(x), "\t:\t")
+@btime apply_step!(co,$x) setup=(co=$conf);
+println("\n")
+x = StepF(droporbs,dropkinks,addorbs,addkinks);
+print(typeof(x), "\t:\t")
+@btime apply_step!(co,$x) setup=(co=$conf);
+println("\n")
+x = StepG(droporbs,dropkinks,addorbs,addkinks);
 print(typeof(x), "\t:\t")
 @btime apply_step!(co,$x) setup=(co=$conf);
 println("\n")
