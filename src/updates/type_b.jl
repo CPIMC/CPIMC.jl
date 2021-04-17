@@ -330,7 +330,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         orbs_add = (new_orb_i, new_orb_j)
         delta_τ = first(kink2)-first(kink1) + 1.0
     else
-        orbs_add = nothng
+        orbs_add = nothing
         orbs_drop = nothing
         delta_τ = first(kink2)-first(kink1)
     end
