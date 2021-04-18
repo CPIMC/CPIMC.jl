@@ -1,5 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_index, next_index, index_prev_affecting, index_next_affecting, next_affecting, prev_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, isunaffected_in_interval, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
 
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
@@ -102,6 +102,17 @@ end
     @test !isunaffected(conf.kinks, c)
     @test !isunaffected(conf.kinks, d)
     @test isunaffected(conf.kinks, e)
+end
+
+@testset "isunaffected_in_interval" begin
+    @test !isunaffected_in_interval(conf.kinks, a, ImgTime(0.1), ImgTime(0.7))
+    @test isunaffected_in_interval(conf.kinks, a, ImgTime(0.05), ImgTime(0.15))
+    @test isunaffected_in_interval(conf.kinks, a, ImgTime(0.9), ImgTime(0.15))
+    @test !isunaffected_in_interval(conf.kinks, b, ImgTime(0.1), ImgTime(0.9))
+    @test isunaffected_in_interval(conf.kinks, b, ImgTime(0.9), ImgTime(0.1))
+    @test !isunaffected_in_interval(conf.kinks, c, ImgTime(0.1), ImgTime(0.7))
+    @test !isunaffected_in_interval(conf.kinks, d, ImgTime(0.1), ImgTime(0.7))
+    @test isunaffected_in_interval(conf.kinks, e, ImgTime(0.1), ImgTime(0.7))
 end
 
 @testset "time_ordered_orbs(::SortedDict{ImgTime,<:Kink})" begin
