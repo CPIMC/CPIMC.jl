@@ -326,12 +326,12 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     # see if occupations change
     if first(kink1) > first(kink2)
-        drop_orbs = creators(last(kink1))
-        add_orbs = (new_orb_i, new_orb_j)
+        drop_orbs = Set(creators(last(kink1)))
+        add_orbs = Set((new_orb_i, new_orb_j))
         delta_τ = first(kink2)-first(kink1) + 1.0
     else
-        add_orbs = ()
-        drop_orbs = ()
+        add_orbs = Set{basis(c)}()
+        drop_orbs = Set{basis(c)}()
         delta_τ = first(kink2)-first(kink1)
     end
 
@@ -340,8 +340,8 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     delta_di = ΔWdiag_element(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
 
     # shuffle indices of the new orbs in the second kink
-    drop_kinks = (kink1,kink2)
-    add_kinks = (
+    drop_kinks = Kinks(kink1,kink2)
+    add_kinks = Kinks(
                 first(kink1) => T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l),
                 # shuffle creators and shuffle annihilators
                 first(kink2) => T4( random_shuffle(last(kink2).i, last(kink2).j)..., random_shuffle(new_orb_i, new_orb_j)...)
