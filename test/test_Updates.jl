@@ -2,7 +2,7 @@ using CPIMC, CPIMC.PlaneWaves, DataStructures, CPIMC.DefaultUpdates
 import LinearAlgebra: dot
 import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count
 
-@testset "removable_pairs" for _ in (1:50)
+@testset "removable_pairs" for _ in (1:200)
     conf1 = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1))
     m = UEG()
     ens = CEnsemble(2,2,7)
