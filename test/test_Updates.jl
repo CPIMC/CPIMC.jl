@@ -2,7 +2,7 @@ using CPIMC, CPIMC.PlaneWaves, DataStructures, CPIMC.DefaultUpdates
 import LinearAlgebra: dot
 import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count
 
-@testset "removable_pairs" for _ in (1:50)
+@testset "removable_pairs" for _ in (1:200)
     conf1 = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1))
     m = UEG()
     ens = CEnsemble(2,2,7)
@@ -40,12 +40,12 @@ import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_bord
         @test kink1.i.spin == kink1.k.spin
     end
     for pair in CPIMC.DefaultUpdates.right_type_D_removable_pairs(conf1.kinks)
-        kink1 = conf1.kinks[first(pair)]
+        (_,kink1) = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
     for pair in CPIMC.DefaultUpdates.left_type_D_removable_pairs(conf1.kinks)
-        kink1 = conf1.kinks[first(pair)]
+        (_,kink1) = conf1.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
@@ -107,8 +107,6 @@ end
         @test length(Set([new_orb2, new_orb1, last(old_kink).i, last(old_kink).j])) == 4
     end
 
-
-    new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator
     for new_kink_old_creator in [last(old_kink).i, last(old_kink).j]
         changed_kink_old_creator = setdiff([last(old_kink).i, last(old_kink).j], [new_kink_old_creator])[1]
         for new_kink_old_annihilator in [last(old_kink).k, last(old_kink).l]

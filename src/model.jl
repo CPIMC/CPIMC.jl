@@ -72,7 +72,7 @@ function ΔWoffdiag_element(m::Model, e::Ensemble, add_kinks, drop_kinks)
     end
 end
 
-ΔWoffdiag_element(m::Model, e::Ensemble, add_kinks::Kinks, drop_kinks::Kinks) = ΔWoffdiag_element(m, e, values(add_kinks), values(drop_kinks))
+ΔWoffdiag_element(m::Model, e::Ensemble, add_kinks::Kinks, drop_kinks::Kinks) = ΔWoffdiag_element(m, e, excitations(add_kinks), excitations(drop_kinks))
 
 
 """
@@ -214,7 +214,7 @@ used for the calculation the sign of the weight function
 """
 function sign_offdiagonal_product(m::Model, c::Configuration)
     s = 1
-    for κ in values(c.kinks)
+    for κ in excitations(c.kinks)
         s *= sign(wminus(m, κ.i, κ.j, κ.k, κ.l))
     end
     return s

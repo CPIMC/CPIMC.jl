@@ -1,6 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_affecting, next_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, add_orbs, add_orbs!, drop_orbs, drop_orbs!, drop_kinks, drop_kinks!, add_kinks, add_kinks!
-
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, next_affecting, prev_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, isunaffected_in_interval, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, add_orbs, add_orbs!, drop_orbs, drop_orbs!, drop_kinks, drop_kinks!, add_kinks, add_kinks!
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
 a = PlaneWave((-2,0,0))
@@ -102,6 +101,17 @@ end
     @test !isunaffected(conf.kinks, c)
     @test !isunaffected(conf.kinks, d)
     @test isunaffected(conf.kinks, e)
+end
+
+@testset "isunaffected_in_interval" begin
+    @test !isunaffected_in_interval(conf.kinks, a, ImgTime(0.1), ImgTime(0.7))
+    @test isunaffected_in_interval(conf.kinks, a, ImgTime(0.05), ImgTime(0.15))
+    @test isunaffected_in_interval(conf.kinks, a, ImgTime(0.9), ImgTime(0.15))
+    @test !isunaffected_in_interval(conf.kinks, b, ImgTime(0.1), ImgTime(0.9))
+    @test isunaffected_in_interval(conf.kinks, b, ImgTime(0.9), ImgTime(0.1))
+    @test !isunaffected_in_interval(conf.kinks, c, ImgTime(0.1), ImgTime(0.7))
+    @test !isunaffected_in_interval(conf.kinks, d, ImgTime(0.1), ImgTime(0.7))
+    @test isunaffected_in_interval(conf.kinks, e, ImgTime(0.1), ImgTime(0.7))
 end
 
 @testset "time_ordered_orbs(::SortedDict{ImgTime,<:Kink})" begin
@@ -346,4 +356,3 @@ end
     @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b))) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
     @test drop_kinks(sd, nothing) == sd
 end
-

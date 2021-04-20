@@ -32,7 +32,7 @@ function main()
     e = CEnsemble(λ(N, rs, d), β(θ, N, ξ, d), N)
     equilibrate_diagonal!(UEG(), e, c)
 
-    updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
+    updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, shuffle_indices]
 
     measurements = Dict(# TODO: type-specification in the construction of the statistic objects (use @code_warntype)
       :sign => (Variance(), signum)

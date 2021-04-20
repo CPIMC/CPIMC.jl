@@ -1,8 +1,9 @@
 #=
 Stuff to do at the start of a develepment session:
-] activate .
+using Profile
 using Revise
 using BenchmarkTools
+] activate .
 =#
 using DelimitedFiles
 using DataFrames
@@ -13,27 +14,29 @@ using CPIMC.PlaneWaves
 using CPIMC.UniformElectronGas
 using CPIMC.DefaultUpdates
 using StaticArrays
-
-
 using OnlineStats
 
+#=
+import CPIMC.DefaultUpdates: isuseful
+function update!(m::Model, e::Ensemble, c::Configuration, updates)
+    usefull_update_inds = findall(up -> isuseful(c, up), updates)
+    @assert !isempty(usefull_update_inds)
+    i = rand(usefull_update_inds)
+    dv, Δ = updates[i](m, e, c)
+    dv *= length(usefull_update_inds)/length(findall(up -> isuseful(apply_step(c, Δ), up), updates))
+    if Δ == Step()
+        return (i, :trivial)
+    end
 
-"""function update!(m::Model, e::Ensemble, c::Configuration, updates::Array{Tuple{Function,UpdateCounter},1})
-    usefull_updates = filter(up -> isuseful(c, up[1]), updates)
-    @assert !isempty(usefull_updates)
-    up = rand(usefull_updates)
-    up[2].proposed += 1
-    dv, Δ = up[1](m, e, c)
-    dv *= length(usefull_updates)/length(filter(up -> isuseful(apply_step(c, Δ), up[1]), updates))
     if rand() < dv
         apply_step!(c, Δ)
-        if Δ == Step()
-            up[2].trivial += 1
-        else
-            up[2].accepted += 1
-        end
+
+        return (i, :accept)
+    else
+        return (i, :reject)
     end
-end"""
+end
+=#
 
 W_off_diag(e::Ensemble, avg_K::Float64) = -avg_K/e.β
 abs_E_madelung(N::Int, λ::Float64) = 2.83729747948527 * pi/2.0 * N * λ
@@ -77,7 +80,7 @@ function main()
     e = CEnsemble(λ(N,rs,d), β(θ,N,ξ,d), N)
 
 
-    updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, add_remove_kink_chain, shuffle_indices]
+    updates = [move_particle, add_type_B, remove_type_B, add_type_C, remove_type_C, add_type_D, remove_type_D, add_type_E, remove_type_E, shuffle_indices]#
 
     measurements = Dict(
       :sign => (Variance(), signum)

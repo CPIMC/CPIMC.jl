@@ -1,4 +1,4 @@
-export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite, Kinks, haskey, Kinks, keys, values, getindex, (==)
+export Configuration, Orbital, Kink, T2, T4, ImgTime, excite!, excite, Kinks, haskey, Kinks, times, excitations, keys, values, getindex, (==)
 
 """
 Abstract type for single-particle basis states, implementation is required for each model.
@@ -7,7 +7,7 @@ abstract type Orbital end
 
 """
 Type alias for imaginary time.
-`FixedPointNumbers` are used since these are stable for `==` and are thus stable as keys in `Dict`.
+`FixedPointNumbers` are used since these are stable for `==` and are thus stable as times in `Dict`.
 """
 const ImgTime = Fixed{Int64,60}
 
@@ -88,26 +88,28 @@ const Kinks{T} = Vector{Pair{ImgTime, Kink{T}}}
 
 Kinks(pairs::Pair{ImgTime,<:Kink{T}}...) where {T}  = reduce(push!, pairs, init=Kinks{T}())
 
+
 """
-    values(ck::Kinks)
+    excitations(ck::Kinks)
 
 Return a list of the excitations of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
-values(ck::Kinks) = last.(ck)
+excitations(ck::Kinks) = last.(ck)
+
 
 """
-    keys(ck::Kinks)
+    times(ck::Kinks)
 
 Return a list of the imaginary-times of a `Kinks`-object, used to allow the use of dictionary syntax.
 """
-keys(ck::Kinks) = first.(ck)
+times(ck::Kinks) = first.(ck)
 
 """
     Base.haskey(ck::Kinks, key::ImgTime)
 
 Check if a `Kinks`-object contains a kink at a specific time.
 """
-Base.haskey(ck::Kinks, key::ImgTime) = in(key, keys(ck))
+Base.haskey(ck::Kinks, key::ImgTime) = in(key, times(ck))
 
 """
     Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
@@ -115,15 +117,18 @@ Base.haskey(ck::Kinks, key::ImgTime) = in(key, keys(ck))
 Allow the `kinks[τ]`-syntax to retrieve a `Kink` at a specific `ImgTime`.
 """
 function Base.getindex(kinks::Kinks{T}, τ::ImgTime) where {T}
-    searchsortedfirst(kinks, by=first, τ)
     τ_next, k = kinks[searchsortedfirst(kinks, by=first, τ)]
     if τ_next != τ
-        Throw(KeyError(τ))
+        throw(KeyError(τ))
     else
         return k
     end
 end
 
+
+function Base.setindex!(ck::Kinks, kink::Kink, τ::ImgTime)
+    add!(ck::Kinks, τ::ImgTime, kink::Kink)
+end
 
 """
 Multi-particle trajectory in imaginary time.
@@ -548,14 +553,14 @@ Base.in(i, k::T4) = i == k.i || i == k.j || i == k.k || i == k.l
 
 Check if `τ` lies in the open `ImgTime`-interval `(τ_first,`τ_last)`, assuming that `τ_first` is the left border and `τ_last` the right one.
 """
-in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) & ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
+in_open_interval(τ, τ_first, τ_last) = (τ_first != τ != τ_last != τ_first) && ((τ_first < τ_last) == ((τ < τ_first) != (τ < τ_last)))
 
 """
     isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime)
 
 Return if an orbital is not affected by any of the kinks from `ck` in the open interval `(τ_first,τ_last)`.
 """
-isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime) = all(kink -> ((orb ∉ last(kink)) && in_open_interval(first(kink), τ_first, τ_last) ), kinks)
+isunaffected_in_interval(kinks, orb, τ_first::ImgTime, τ_last::ImgTime) = all(kink -> ((orb ∉ last(kink)) || !in_open_interval(first(kink), τ_first, τ_last) ), kinks)
 
 
 """
@@ -567,7 +572,7 @@ function time_ordered_orbs(ck::Kinks{T}) where {T <: Orbital}
     if isempty(ck)
         return Array{T,1}()
     else
-        return collect( Iterators.flatten( orbs(k) for k in values(ck) ) )
+        return collect( Iterators.flatten( orbs(k) for k in excitations(ck) ) )
     end
 end
 
@@ -738,5 +743,5 @@ return a list of all times of kinks with τ ∈ (τ1,τ2) if τ1 < τ2 or τ ∈
 in the periodic ordering suggested by the relation of the first time-argument τ1 to the second time-argument τ2
 """
 function times_from_periodic_interval(ck::Kinks, τ1::ImgTime, τ2::ImgTime)
-    keys(filter(x-> in_open_interval(first(x), τ1, τ2), ck))
+    times(filter(x-> in_open_interval(first(x), τ1, τ2), ck))
 end
