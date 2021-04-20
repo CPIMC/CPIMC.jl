@@ -12,7 +12,7 @@ function is_type_B(left_kink::T4, right_kink::T4)
 end
 
 
-"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangled.
+"""Return pairs with indices of 'neighbouring' kinks that are Type-B-Entangled.
 This function has no use in the current update set. Removability of a Kink will therefore not be considered here.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
@@ -22,19 +22,18 @@ vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 to the left of the first τ."""
 function left_type_B_pairs(ck)
-    pairs_left = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-    for (τ,kink) in ck
-        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
-        if is_type_B(ck[τ_left], kink)
-            push!(pairs_left, (τ, τ_left))
+    pairs_left = Set{Tuple{Int,Int}}()
+    for (i,(τ,kink)) in enumerate(ck)
+        i_left = prev_affecting(ck, orbs(kink), τ)
+        if is_type_B(last(ck[τ_left]), kink)
+            push!(pairs_left, (i, i_left))
         end
     end
     return pairs_left
 end
 
 
-"""Return a Tuple of 2 imaginary times of 'neighbouring' kinks that are Type-B-Entangeld. Removablility of Kinks will
+"""Return pairs with indices of 'neighbouring' kinks that are Type-B-Entangeld. Removablility of Kinks will
 no be looked at. 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -43,19 +42,18 @@ vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
 function right_type_B_pairs(ck)
-    pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-    for (τ,kink) in ck
-        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
-        if is_type_B(kink, ck[τ_right])
-            push!(pairs_right, (τ, τ_right))
+    pairs_right = Set{Tuple{Int,Int}}()
+    for (i,(τ,kink)) in enumerate(ck)
+        i_right = next_affecting(ck, orbs(kink), τ)
+        if is_type_B(kink, last(ck[i_right]))
+            push!(pairs_right, (i, i_right))
         end
     end
     return pairs_right
 end
 
 
-"""Return a Tuple of 2 imaginary times of 'neighbouring' Kinks that are Type-B-Entangeld AND removable.
+"""Return pairs with indices of 'neighbouring' Kinks that are Type-B-Entangeld AND removable.
 'neighbouring' refers to that only Tuples of Kinks that are the closest Kink to act on an orbital of the
 other kink in the corresponding direktion are looked at.
 The Tuples are always arranged in a way that the Kink who gets neighboured by
@@ -64,14 +62,13 @@ vice versa case)
 The Set consists of the pairs where the Type-B-entanglement is oriented
 #to the right of the first τ."""
 function right_type_B_removable_pairs(ck)
-    pairs_right = Set{Tuple{Fixed{Int64,60},Fixed{Int64,60}}}()
-    for (τ,kink) in ck
-        kink_orb_set = Set([kink.i, kink.j, kink.k, kink.l])
-        τ_left,τ_right = τ_borders(ck, kink_orb_set ,τ)
-        if is_type_B(kink, ck[τ_right])
+    pairs_right = Set{Tuple{Int,Int}}()
+    for (i,(τ,kink)) in enumerate(ck)
+        i_right = next_affecting(ck, orbs(kink), τ)
+        if is_type_B(kink, last(ck[i_right]))
             if norm(kink.i.vec - kink.k.vec) <= ex_radius
                 if kink.i.spin == kink.k.spin
-                    push!(pairs_right, (τ, τ_right))
+                    push!(pairs_right, (i, i_right))
                 end
             end
         end
@@ -233,9 +230,9 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     #If a kink1 is entangeld to the right with the nearest kink, that
     # acts on one of his orbs, in a type-B-way that implies the vice versa case
     # therefor there is no value in distingusihing between left and right entanglement
-    τ_kink1, τ_kink2 = rand(opportunities)
-    kink1 = τ_kink1 => c.kinks[τ_kink1]
-    kink2 = τ_kink2 => c.kinks[τ_kink2]
+    i1, i2 = rand(opportunities)
+    kink1 = c.kinks[i1]
+    kink2 = c.kinks[i2]
     prop_prob = 1.0/length(opportunities)
 
     #change configuration
@@ -256,15 +253,17 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     @assert(delta_τ > 0)
     @assert(delta_τ <= 1)
 
+    c_new = apply_step(c,Δ)
+
     # calculate inverse prop_prob (see add_type_B)
     ijkl = Set([last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l])
-    borders = τ_borders(apply_step(c,Δ).kinks, ijkl, first(kink1))
+    borders = τ_borders(c_new.kinks, ijkl, first(kink1))
     possible_τ2_interval = borders[2]-borders[1]
     if possible_τ2_interval < 0
         possible_τ2_interval = 1 + possible_τ2_interval
     end
-    occs_τ_kink1 = occupations_at(apply_step(c,Δ), first(kink1))
-    occs_τ_kink2 = occupations_at(apply_step(c,Δ), first(kink2))
+    occs_τ_kink1 = occupations_at(c_new, first(kink1))
+    occs_τ_kink2 = occupations_at(c_new, first(kink2))
     orb_a = last(kink1).i
     orb_b = last(kink1).j
     orb_c = last(kink1).k
@@ -281,7 +280,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     dv = inverse_prop_prob/prop_prob
 
     # calculate change in diagonal interaction energy
-    delta_di = ΔWdiag_element(m, e, apply_step(c, Δ), last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
+    delta_di = ΔWdiag_element(m, e, c_new, last(kink1).i, last(kink1).j, last(kink1).k, last(kink1).l, first(kink1), first(kink2))
     # weight factor
     dw = (1.0/(e.β)^2) * (1.0/(abs(Woffdiag_element(m, e, last(kink1))))^2) * exp((delta_τ)*e.β * (energy(m, orb_a) + energy(m, orb_b) - energy(m, orb_c) - energy(m, orb_d)) + e.β * delta_di)
 
@@ -301,9 +300,9 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     if isempty(kink_opportunities)
         return 1.0, Step()
     end
-    τ1, τ2 = rand(kink_opportunities)
-    kink1 = τ1 => c.kinks[τ1]
-    kink2 = τ2 => c.kinks[τ2]
+    i1, i2 = rand(kink_opportunities)
+    kink1 = c.kinks[i1]
+    kink2 = c.kinks[i2]
     occs = occupations_at(c, first(kink1))
 
 
@@ -327,8 +326,8 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     # see if occupations change
     if first(kink1) > first(kink2)
-        drop_orbs = Set([last(kink1).i, last(kink1).j])
-        add_orbs = Set([new_orb_i, new_orb_j])
+        drop_orbs = Set(creators(last(kink1)))
+        add_orbs = Set((new_orb_i, new_orb_j))
         delta_τ = first(kink2)-first(kink1) + 1.0
     else
         add_orbs = Set{basis(c)}()
@@ -341,8 +340,8 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     delta_di = ΔWdiag_element(m, e, c, new_orb_i, new_orb_j, last(kink1).i, last(kink1).j, first(kink1), first(kink2))
 
     # shuffle indices of the new orbs in the second kink
-    drop_kinks = (kink1,kink2)
-    add_kinks = (
+    drop_kinks = Kinks(kink1,kink2)
+    add_kinks = Kinks(
                 first(kink1) => T4(new_orb_i, new_orb_j, last(kink1).k, last(kink1).l),
                 # shuffle creators and shuffle annihilators
                 first(kink2) => T4( random_shuffle(last(kink2).i, last(kink2).j)..., random_shuffle(new_orb_i, new_orb_j)...)
@@ -355,8 +354,10 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     # MC Step generated by this update
     Δ = Step(Configuration(drop_orbs, drop_kinks...), Configuration(add_orbs, add_kinks...))
 
-    kink_opportunities_reverse = right_type_B_pairs(apply_step(c,Δ).kinks)
-    opportunities_reverse = filter( x -> isunaffected_in_interval(apply_step(c,Δ).kinks, x, first(kink1), first(kink2))
+    new_kinks = add(drop(c.kinks, drop_kinks), add_kinks)
+
+    kink_opportunities_reverse = right_type_B_pairs(new_kinks)
+    opportunities_reverse = filter( x -> isunaffected_in_interval(new_kinks, x, first(kink1), first(kink2))
                                 ,possible_new_orb_a(occs, new_orb_i, new_orb_j))
     delete!(opportunities_reverse, last(kink1).k)
     delete!(opportunities_reverse, last(kink1).l)

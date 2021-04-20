@@ -3,4 +3,5 @@
 **/out/**
 *.pdf
 *.mem
+profile.pb.gz
 Manifest.toml

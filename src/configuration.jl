@@ -303,38 +303,19 @@ function occupations_at(c::Configuration, τ::ImgTime)
 end
 
 """
-    next(x, τ)
-
-Return first kink after to the given `τ`. If there is no kink with `::ImgTime` larger than `τ`, return first kink.
-This function assumes that the kinks in `x` are ordered by their imaginary time!
-"""
-function next(x, τ)
-    if isempty(x)
-        throw(DomainError(" prev(::Excitation_arr, τ) is not supported for empty x. It makes no sense to get the element previous to some element for an empty collection. "))
-    end
-    index = findfirst(p -> first(p) > τ, x)
-    if isnothing(index)# if no entry is found with ImgTime < τ
-        x[begin]# return last entry (assuming x is sorted with respect to ImgTime)
-    else
-        x[index]
-    end
-end
-
-
-"""
-    next_index(a, τ)
+    next(a, τ)
 
 Return index of the first kink after to the given `τ`. If there is no kink with `::ImgTime` larger than `τ`, return index of first kink.
 Throw a `DomainError` if an empty list is passed as first argument.
 
 This function assumes that the kinks in `a` are ordered with respect to their imaginary time!
 """
-function next_index(a, τ)
+function next(a, τ)
     if isempty(a)
-        throw(DomainError(" next_index(x::Kinks, τ) is not supported for empty x. It makes no sense to get the element next to some element for an empty collection. "))
+        throw(DomainError(" next(x::Kinks, τ) is not supported for empty x. It makes no sense to get the element next to some element for an empty collection. "))
     end
     index = searchsortedfirst(a, τ, by=first) # find first element x ∈ a with first(x) >= τ
-    if index == 0 # if there is no element x ∈ a with first(x) >= τ
+    if index == length(a) + 1 # if there is no element x ∈ a with first(x) >= τ
         return 1#  return index of the first element in a
     end
     # catch equality:
@@ -352,29 +333,28 @@ function next_index(a, τ)
 end
 
 """
-     index_next_affecting(a::Any, orbs::Any, τ::Any)
+     next_affecting(a::Any, orbs::Any, τ::Any)
 
 Return the index of the closest kink to the right of τ
 that affects one of the orbitals in orbs.
-If no orbital in orbs is affected by and kink,
-return 0.
+If no orbital in orbs is affected by any kink return 0.
 """
-function index_next_affecting(a, orbs, τ)
-    i = next_index(a, τ)
-    if i == 0# if there is no other kink. note: this should not occur because there have to be at least two kinks to ensure periodicity of the configuration path
+function next_affecting(a, orbs, τ)
+    if isempty(a)
         return 0
     end
+    i = next(a, τ)
     if any( orbs .∈ ( last(a[i]) ,) ) # if any orbs affected by the kink at i
         return i
     end
     # otherwise, iterate forward periodically until first affecting kink is reached
     for _ = 1:length(a) - 1 # iterate until before the same kink it reached. note: this should not occur if o is affected by any kink since there should always be at least two kinks for each affected orbital due to periodicity (i.e. all creators have to pair up with a corresponding annihilator)
         i += 1 # increment
-        if i == 0 # periodicity: if last index is reached, start from beginning of collection
+        if i == length(a) + 1 # periodicity: if last index is reached, start from beginning of collection
             i = 1
         end
         if any( orbs .∈ ( last(a[i]) ,) )# if any orbs are affected by the kink at i
-            return  # if o is affected by the kink at i
+            return i # if o is affected by the kink at i
         end
     end
     return 0
@@ -382,36 +362,16 @@ end
 
 
 """
-    prev(x, τ)
-
-Return first kink earlier than `τ::ImgTime`. If there is no such kink the last kink is returned.
-Throw a `DomainError` if an empty list is passed as first argument.
-
-This function assumes that the kinks in `a` are ordered with respect to their imaginary time!
-"""
-function prev(x, τ)
-    if isempty(x)
-        throw(DomainError(" prev(::Excitation_arr, τ) is not supported for empty x. It makes no sense to get the element previous to some element for an empty collection. "))
-    end
-    index = findlast(p -> first(p) < τ, x)
-    if isnothing(index)# if no entry is found with ImgTime < τ
-        x[end]# return last entry (assuming x is sorted with respect to ImgTime)
-    else
-        x[index]
-    end
-end
-
-"""
-    prev_index(a, τ)
+    prev(a, τ)
 
 Return the index of the first kink earlier than `τ::ImgTime`. If there is no such kink the last kink is returned.
 Throw a `DomainError` if an empty list is passed as first argument.
 
 This function assumes that the kinks in `x` are ordered with respect to their imaginary time!
 """
-function prev_index(a, τ)
+function prev(a, τ)
     if isempty(a)
-        throw(DomainError(" prev_index(x::Kinks, τ) is not supported for empty x. It makes no sense to get the element previous to some element for an empty collection. "))
+        throw(DomainError(" prev(x::Kinks, τ) is not supported for empty x. It makes no sense to get the element previous to some element for an empty collection. "))
     end
     index = searchsortedlast(a, τ, by=first) # find last element x ∈ a with first(x) <= τ
     if index == 0 # if there is no element x ∈ a with first(x) <= τ
@@ -432,18 +392,17 @@ function prev_index(a, τ)
 end
 
 """
-     index_prev_affecting(a::Any, orbs::Any, τ::Any)
+     prev_affecting(a::Any, orbs::Any, τ::Any)
 
 Return the index of the closest kink to the left of τ
 that affects one of the orbitals in orbs.
-If no orbital in orbs is affected by and kink,
-return 0.
+If no orbital in orbs is affected by any kink return 0.
 """
-function index_prev_affecting(a, orbs, τ)
-    i = prev_index(a, τ)
-    if i == 0# if there is no other kink. note: this should not occur because there have to be at least two kinks to ensure periodicity of the configuration path
+function prev_affecting(a, orbs, τ)
+    if isempty(a)
         return 0
     end
+    i = prev(a, τ)
     if any( orbs .∈ ( last(a[i]), ) ) # if any orbs are affected by the kink at i
         return i
     end
@@ -482,7 +441,7 @@ This expects that methods for the functions `next()` and `prev()` are defined
 for the given argument types.
 Used for getting a tuple of the neighbouring kinks from some imaginary time.
 """
-adjacent_kinks(ck::Any, τ::Any) = prev(ck, τ), next(ck, τ)
+adjacent_kinks(ck::Any, τ::Any) = ck[prev(ck, τ)], ck[next(ck, τ)]
 
 
 """
@@ -497,11 +456,12 @@ kinks in the first argument.
 The third argument is expected to be an imaginary time from which the neighbouring kinks affected by any orbitals from the
 second argument are to be determined."""
 function adjacent_kinks_affecting_orbs(ck, os, τ)
-    k = kinks_affecting_orbs(ck, os)
-    if isempty(k)
+    l = prev_affecting(ck, os, τ)
+
+    if l == 0
         return (nothing,nothing)
     else
-        return adjacent_kinks(k, τ)
+        return ck[l], ck[next_affecting(ck, os, τ)]
     end
 end
 adjacent_kinks_affecting_orbs(c::Configuration, os, τ) = adjacent_kinks_affecting_orbs(c.kinks, os, τ)
@@ -512,12 +472,9 @@ adjacent_kinks_affecting_orbs(c::Configuration, os, τ) = adjacent_kinks_affecti
 
 Return the ImgTime of the closest kink to the left of τ
 that affects one of the orbitals in os.
-If no orbital in os is affected by and kink,
-return the lower interval bound ImgTime(0).
 """
-function τ_prev_affecting(ck, os, τ)
-    κs = kinks_affecting_orbs(ck, os)
-    ImgTime(prev(κs, τ))
+function τ_prev_affecting(ck, os, τ)  # TODO: remove
+    first(ck[prev_affecting(ck, os, τ)])
 end
 
 
@@ -526,12 +483,9 @@ end
 
 Return the ImgTime of the closest kink to the right of τ
 that affects one of the orbitals in os.
-If no orbital in os is affected by and kink,
-return the lower interval bound ImgTime(0).
 """
-function τ_next_affecting(ck, os, τ)
-    κs = kinks_affecting_orbs(ck, os)
-    ImgTime(next(κs, τ))
+function τ_next_affecting(ck, os, τ)  # TODO: remove
+    first(ck[next_affecting(ck, os, τ)])
 end
 
 """
@@ -543,7 +497,7 @@ the ImgTime of the closest kink to the left of τ
 that affect one of the orbitals in orbs.
 If no orbital in os is affected by and kink from the collection in the first argument,
 return a tuple of the interval bounds (ImgTime(0), ImgTime(1))."""
-τ_borders(ck::Kinks{T}, orbs, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, orbs, τ))
+τ_borders(ck::Kinks{T}, orbs, τ::ImgTime) where {T <: Orbital} = ImgTime(adjacent_kinks_affecting_orbs(ck, orbs, τ))  # TODO: remove
 τ_borders(c::Configuration{T}, orbs, τ::ImgTime) where {T <: Orbital} = τ_borders(c.kinks, orbs, τ)
 
 
@@ -770,7 +724,6 @@ Return a configuration with the orbitals in oc added to c.occupations.
 add(c::Configuration{T}, oc::Set{T}) where {T <: Orbital} = Configuration(union(c.occupations, oc), c.kinks)
 
 
-
 """
     add(ck::Kinks, ps::Pair{ImgTime, <:Kink{T}}...) where {T <: Orbital}
 
@@ -968,8 +921,7 @@ end
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the right.
 """
 function right_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
-    kink = ck[τ]
-    next_kink = next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
+    next_kink = ck[next_affecting(ck, orbs(ck[τ]), τ)]
     if is_type_1(ck[τ], last(next_kink)) & !in(τ, counted_τs)
         push!(counted_τs,τ)
         return right_type_1_chain_length(ck, first(next_kink), counted_τs)
@@ -984,8 +936,7 @@ end
 Returns the length of the chain of type-1-entaglements starting with the Kink at τ counting to the left.
 """
 function left_type_1_chain_length(ck::Kinks, τ, counted_τs = [])
-    kink = ck[τ]
-    prev_kink = prev(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])), τ)
+    prev_kink = ck[prev(kinks_affecting_orbs(ck, orbs(ck[τ])), τ)]
     if is_type_1(last(prev_kink), ck[τ]) & !in(τ, counted_τs)
         push!(counted_τs,τ)
         return left_type_1_chain_length(ck, first(prev_kink), counted_τs)
@@ -1016,7 +967,7 @@ Returns the number of kinks that are type 1 entagled with their right neighbour.
 function right_type_1_count(ck::Kinks)
     count = 0
     for (τ, kink) in ck
-        if is_type_1(kink, last(next(kinks_affecting_orbs(ck, Set([kink.i, kink.j, kink.k, kink.l])),τ)))
+        if is_type_1(kink, last(ck[next_affecting(ck, orbs(kink),τ)]))
             count += 1
         end
     end

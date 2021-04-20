@@ -81,6 +81,10 @@ adjacent_kinks_affecting_orbs
 τ_prev_affecting
 τ_next_affecting
 τ_borders
+prev
+next
+prev_affecting
+next_affecting
 isunaffected
 isunaffected_in_interval
 ```
