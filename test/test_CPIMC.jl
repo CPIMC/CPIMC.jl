@@ -34,7 +34,7 @@ import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, n
             apply_step!(c1, Δ)
         end
     end
-    for i in (1:2)
+    for i in (1:3)
         dv, Δ = remove_type_B(m, ens, c1)
 
         if dv != 0

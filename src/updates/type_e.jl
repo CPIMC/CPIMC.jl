@@ -202,7 +202,6 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
         new_kinks = add( drop(c.kinks, (old_kink,)), add_kink1, add_kink2 )
 
         @assert (is_type_E(last(add_kink2), last(add_kink1)) != false)
-
         # calculate weight difference
         delta_di = ΔWdiag_element(m, e, c, new_kink_old_creator, new_kink_new_creator, new_kink_new_annihilator, new_kink_old_annihilator, τ_new_kink, first(old_kink))
         dw_off_diag = abs( Woffdiag_element(m, e, last(add_kink2)) * Woffdiag_element(m, e, last(add_kink1)) / Woffdiag_element(m, e, last(old_kink)) )
