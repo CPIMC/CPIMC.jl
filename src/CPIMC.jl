@@ -55,33 +55,37 @@ function Base.:+(x::UpdateCounter, y::UpdateCounter)
     UpdateCounter(x.rejected + y.rejected, x.accepted + y.accepted, x.trivial + y.trivial)
 end
 
+"""
+    Diff = Union{Nothing,Tuple}
+
+Type alias for Union{Nothing,Tuple}. This is used as type parameters for the fields of struct Step.
+Mainly for convenient construction of any combination of ::Nothing, ::Tuple.
+"""
+const Diff = Union{Nothing,Tuple}
+Diff(::Nothing) = nothing
 
 """
 Represents a change which can be applied to a `Configuration`.
 
 **Fields**
 
-- `drop`
-- `add`
+- `drop_orbs`  -- `Orbital`s which are to be removed from the initial occupation
+- `drop_kinks` -- pairs of `ImgTime` and `Kink`s which are to be removed
+- `add_orbs`   -- `Orbital`s which are added to the initial occupation
+- `add_kinks`  -- pairs of `ImgTime` and `Kinks` which are added
 
 """
-struct Step{S<:Union{Nothing,<:Orbital,Configuration},T<:Union{Nothing,<:Orbital,Configuration}}
-    drop :: S
-    add :: T
+struct Step{T<:Diff, S<:Diff, R<:Diff, Q<:Diff}
+    drop_orbs :: T
+    drop_kinks :: S
+    add_orbs :: R
+    add_kinks :: Q
 end
-# TODO Configuration is a mutable type. it may be more efficient to use an immutable dataType for passing the changes in occupations and excitations
+
 
 # outer constructor method for an empty Step
-Step() = Step(nothing,nothing)
-
-
-# it is possible to define a general outer constructor method Step(d,a) = Step(Configuration(d),Configuration(a))
-# this might be bad style and is possibly more difficult to diagnose/debug
-# here only specific cases are defined to include the possibility to pass Set{<:Orbital} directly to Step()
-# other use-cases are covered by the default constructors
-Step(drop::Set{T}, add) where {T <: Orbital} = Step(Configuration(drop), add)
-Step(drop, add::Set{T}) where {T <: Orbital} = Step(drop, Configuration(add))
-Step(drop::Set{T}, add::Set{T}) where {T <: Orbital} = Step(Configuration(drop), Configuration(add))
+Step() = Step(nothing,nothing,nothing,nothing)
+Step(a,b) = Step(a,nothing,b,nothing)
 
 """
     apply_step!(c::Configuration, step::Step)
@@ -89,13 +93,14 @@ Step(drop::Set{T}, add::Set{T}) where {T <: Orbital} = Step(Configuration(drop),
 
 Apply the changes given by the second argument to a `Configuration`.
 """
-function apply_step!(c::Configuration, step::Step)
-    drop!(c, step.drop)
-    add!(c, step.add)
-    nothing
+function apply_step!(c::Configuration, s::Step)
+    drop_orbs!(c.occupations, s.drop_orbs)
+    drop_kinks!(c.kinks, s.drop_kinks)
+    add_orbs!(c.occupations, s.add_orbs)
+    add_kinks!(c.kinks, s.add_kinks)
 end
 
-function apply_step!(c::Configuration, steps)
+function apply_step!(c::Configuration, steps::Array)
     for step in steps
         apply_step!(c, step)
     end
@@ -107,12 +112,10 @@ end
 
 Return the result of applying the changes given by the second argument to a `Configuration`.
 """
-apply_step(c::Configuration, step::Step) = add(drop(c, step.drop), step.add)
-apply_step(c::Configuration, steps) = foldl(apply_step, steps, init=c)
-
-#empty Step: do nothing
-function apply_step!(c::Configuration, Δ::Step{Nothing,Nothing})
-    nothing
+function apply_step(c::Configuration, steps)
+    c1 = deepcopy(c)
+    apply_step!(c1,steps)
+    return c1
 end
 
 

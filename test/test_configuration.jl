@@ -1,6 +1,5 @@
 using CPIMC, CPIMC.PlaneWaves, CPIMC.UniformElectronGas, CPIMC.DefaultUpdates, DataStructures
-import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, prev_index, next_index, index_prev_affecting, index_next_affecting, next_affecting, prev_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, isunaffected_in_interval, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag
-
+import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, prev, next, next_affecting, prev_affecting, τ_prev_affecting, τ_next_affecting, τ_borders, isunaffected, isunaffected_in_interval, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count, kinks_from_periodic_interval, times_from_periodic_interval, Δ, Woffdiag_element, ΔWoffdiag_element, ΔWdiag_element, ΔW_diag, add_orbs, add_orbs!, drop_orbs, drop_orbs!, drop_kinks, drop_kinks!, add_kinks, add_kinks!
 
 S = sphere_with_same_spin(PlaneWave((0,0,0)),dk=1)
 a = PlaneWave((-2,0,0))
@@ -160,25 +159,22 @@ end
     h = PlaneWave(c.vec + d.vec - g.vec, Up)
 
     Type_1_chain = Kinks( ImgTime(0.2) => T4(a,b,c,d),
-                                               ImgTime(0.5) => T4(f,g,e,a),
-                                               ImgTime(0.6) => T4(c,d,h,g),
-                                               ImgTime(0.8) => T4(e,h,b,f) )
+                          ImgTime(0.5) => T4(f,g,e,a),
+                          ImgTime(0.6) => T4(c,d,h,g),
+                          ImgTime(0.8) => T4(e,h,b,f) )
 
     @test (a.vec + b.vec - c.vec - d.vec) == PlaneWave((0,0,0)).vec
     @test (f.vec + g.vec - e.vec - a.vec) == PlaneWave((0,0,0)).vec
     @test (c.vec + d.vec - h.vec - g.vec) == PlaneWave((0,0,0)).vec
     @test (e.vec + h.vec - b.vec - f.vec) == PlaneWave((0,0,0)).vec
 
-    occs = setdiff!(union!(sphere(PlaneWave((0,0,0),Up),dk=1),
-                        Set([e,h])),
-                Set([g,f]))
+    occs = setdiff!(union!(sphere(PlaneWave((0,0,0),Up),dk=1), Set([e,h])), Set([g,f]))
     conf_Type_1 = Configuration(occs,Type_1_chain)
     @test (occupations_at(conf_Type_1, ImgTime(0.9)) == occs)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
-    Type_1_chain[ImgTime(0.52)] = T4(e,a,g,f)
-    Type_1_chain[ImgTime(0.54)] = T4(g,f,a,e)
+    add_kinks!(Type_1_chain, (ImgTime(0.52) => T4(e,a,g,f), ImgTime(0.54) => T4(g,f,a,e)))
 
     conf_Type_1 = Configuration(occs,Type_1_chain)
 
@@ -187,8 +183,7 @@ end
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 4
     @test right_type_1_count(conf_Type_1.kinks) == 4
 
-    Type_1_chain[ImgTime(0.82)] = T4(b,a,d,c)
-    Type_1_chain[ImgTime(0.84)] = T4(c,d,a,b)
+    add_kinks!(Type_1_chain, (ImgTime(0.82) => T4(b,a,d,c), ImgTime(0.84) => T4(c,d,a,b)))
 
     conf_Type_1 = Configuration(occs,Type_1_chain)
     @test longest_type_1_chain_length(conf_Type_1.kinks) == 3
@@ -290,4 +285,74 @@ end
         @test first(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_prev_affecting(conf1.kinks, orbs(last(kink)), first(kink))
         @test last(τ_borders(conf1, orbs(last(kink)), first(kink))) == τ_next_affecting(conf1.kinks, orbs(last(kink)), first(kink))
     end
+end
+
+
+@testset "add_orbs" begin
+    c2 = Set{PlaneWave{3}}()
+    @test add_orbs(c2,(a,)) == Set([a])
+    @test add_orbs(c2,(a,b,c,)) == Set([a,b,c])
+    @test add_orbs(c2,nothing) == c2
+end
+
+@testset "add_orbs!" begin
+    c2 = Set{PlaneWave{3}}()
+    add_orbs!(c2,(a,))
+    @test c2 == Set([a])
+    add_orbs!(c2,(b,c))
+    @test c2 == Set([a,b,c])
+    add_orbs!(c2,nothing)
+    @test c2 == Set([a,b,c])
+end
+
+@testset "drop_orbs" begin
+    @test drop_orbs(Set([a,b,c]), (a,b)) == Set([c])
+    @test drop_orbs(Set([a,b,c]), (c,)) == Set([a,b])
+    @test drop_orbs(Set([a,b,c]), nothing) == Set([a,b,c])
+end
+
+@testset "drop_orbs!" begin
+    c2 = Set([a,b,c])
+    drop_orbs!(c2, nothing)
+    @test c2 == Set([a,b,c])
+    drop_orbs!(c2, (a,))
+    @test c2 == Set([b,c])
+    drop_orbs!(c2, (b,c))
+    @test c2 == Set{PlaneWave{3}}([])
+end
+
+
+@testset "add_kinks" begin
+    @test add_kinks(Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c) )
+,(ImgTime(0.25) => T2(b,d),)) == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.25) => T2(b,d), ImgTime(0.3) => T2(a,c) )
+    @test add_kinks(Kinks( ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a) ), (ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c))) == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a) )
+    @test add_kinks(sd, nothing) == sd
+end
+
+@testset "add_kinks!" begin
+    c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c) )
+    add_kinks!(c2,(ImgTime(0.4) => T2(d,e),))
+    @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e))
+    add_kinks!(c2,(ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a)))
+    @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    add_kinks!(c2,nothing)
+    @test c2 == Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+
+end
+
+@testset "drop_kinks!" begin
+    c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    drop_kinks!(c2, (ImgTime(0.1) => T2(a,b),))
+    @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    drop_kinks!(c2, (ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b)))
+    @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+    drop_kinks!(c2, nothing)
+    @test c2 == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+end
+
+@testset "drop_kinks" begin
+    c2 = Kinks( ImgTime(0.1) => T2(a,b), ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b),)) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b), ImgTime(0.95) => T2(b,a))
+    @test drop_kinks(c2, (ImgTime(0.1) => T2(a,b), ImgTime(0.4) => T2(d,e), ImgTime(0.9) => T2(a,b))) == Kinks( ImgTime(0.2) => T2(b,a), ImgTime(0.3) => T2(a,c), ImgTime(0.95) => T2(b,a))
+    @test drop_kinks(sd, nothing) == sd
 end
