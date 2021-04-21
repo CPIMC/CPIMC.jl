@@ -132,7 +132,11 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     end
     while haskey(c.kinks, τ_new_kink)
         delta_τ = ImgTime(rand()*τ_interval)
-        τ_new_kink = old_τ - delta_τ
+        if dir == :left
+            τ_new_kink = old_τ - delta_τ
+        else
+            τ_new_kink = old_τ + delta_τ
+        end
         if τ_new_kink < 0
             change_occupations = true
             τ_new_kink += 1
