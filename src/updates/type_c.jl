@@ -248,33 +248,24 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     if direction == :left
         (removed_orb1, removed_orb2, retained_orb1, retained_orb2) = orbs(removed_kink)
         (changed_orb1, changed_orb2, _, _) = orbs(changed_kink)
-
+        
         @assert removed_kink.i != removed_kink.k
-
-        # see if c.occupations change
-        if removed_kink_τ > changed_kink_τ
-            drop_orbs = (removed_orb1, removed_orb2)
-            add_orbs = (retained_orb1, retained_orb2)
-        else
-            drop_orbs = nothing
-            add_orbs = nothing
-        end
 
         add_kinks = (changed_kink_τ => T4(changed_orb1, changed_orb2, retained_orb1, retained_orb2),)
     else
         (retained_orb1, retained_orb2, removed_orb1, removed_orb2) = orbs(removed_kink)
         (_, _, changed_orb1, changed_orb2) = orbs(changed_kink)
 
-        # see if c.occupations change
-        if removed_kink_τ < changed_kink_τ # new kink was added right of old kink
-            drop_orbs = (removed_orb1, removed_orb2)
-            add_orbs = (retained_orb1, retained_orb2)
-        else
-            drop_orbs = nothing
-            add_orbs = nothing
-        end
-
         add_kinks = (changed_kink_τ => T4(retained_orb1, retained_orb2, changed_orb1, changed_orb2),)
+    end
+
+    # see if c.occupations change
+    if (direction == :left && removed_kink_τ > changed_kink_τ) || (direction == :right && removed_kink_τ < changed_kink_τ)
+        drop_orbs = (removed_orb1, removed_orb2)
+        add_orbs = (retained_orb1, retained_orb2)
+    else
+        drop_orbs = nothing
+        add_orbs = nothing
     end
    
     drop_kinks = (changed_kink_τ => changed_kink, removed_kink_τ => removed_kink)
@@ -289,9 +280,9 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     opportunities_reverse_new_orb1 = possible_new_orb1_C(occs, retained_orb1, retained_orb2, changed_orb1, changed_orb2)
    
     if direction == :left
-        τ_interval = changed_kink_τ - τ_prev_affecting( new_c.kinks, Set([removed_orb1, removed_orb2, retained_orb1, retained_orb2]), changed_kink_τ )
+        τ_interval = changed_kink_τ - τ_prev_affecting( new_c.kinks, (removed_orb1, removed_orb2, retained_orb1, retained_orb2), changed_kink_τ )
     else
-        τ_interval = τ_next_affecting( new_c.kinks, Set([removed_orb1, removed_orb2, retained_orb1, retained_orb2]), changed_kink_τ ) - changed_kink_τ
+        τ_interval = τ_next_affecting( new_c.kinks, (removed_orb1, removed_orb2, retained_orb1, retained_orb2), changed_kink_τ ) - changed_kink_τ
     end
     
     @assert in(removed_orb1, opportunities_reverse_new_orb1)
