@@ -191,21 +191,6 @@ end
 
 end
 
-@testset "find_fourth_orb_for_kink" for _ in (1:5)
-    r = (1:100)
-    orb1 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
-    orb2 = orb1
-    while orb1 == orb2
-        orb2 = PlaneWave((rand(r),rand(r),rand(r)),rand([Up,Down]))
-    end
-    orb3 = orb1
-    while (orb3 == orb2) || (orb3 == orb1)
-        orb3 = PlaneWave((rand(r),rand(r),rand(r)),rand([orb1.spin,orb2.spin]))
-    end
-    @test in(find_fourth_orb_for_kink(orb3, orb1, orb2).spin, [orb1.spin, orb2.spin])
-    @test (find_fourth_orb_for_kink(orb3, orb1, orb2).spin == orb3.spin) == (orb1.spin == orb2.spin)
-    @test find_fourth_orb_for_kink(orb3, orb1, orb2).vec + orb3.vec == orb1.vec + orb2.vec
-end
 
 @testset "ΔWoffdiag_element" begin
 

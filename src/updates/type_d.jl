@@ -23,7 +23,7 @@ function left_type_D_removable_pairs(ck)
     for (i,(τ,kink)) in enumerate(ck)
         i_left = prev_affecting(ck, orbs(kink) ,τ)
         if is_type_D(last(ck[i_left]), kink)
-            if norm(kink.i.vec - kink.k.vec) <= ex_radius
+            if (norm(kink.i.vec-kink.k.vec) <= ex_radius)
                 if kink.i.spin == kink.k.spin
                     push!(pairs_left, (i, i_left))
                 end
@@ -45,7 +45,7 @@ function right_type_D_removable_pairs(ck)
     for (i,(τ,kink)) in enumerate(ck)
         i_right = next_affecting(ck, orbs(kink), τ)
         if is_type_D(kink, last(ck[i_right]))
-            if norm(kink.i.vec-kink.k.vec) <= ex_radius
+            if (norm(kink.i.vec-kink.k.vec) <= ex_radius)
                 if kink.i.spin == kink.k.spin
                     push!(pairs_right, (i, i_right))
                 end
@@ -80,26 +80,29 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     prop_prob *= 0.5 #left or right
     if rand() >= 0.5
         dir = :left
+        old_kink_old_orb1 = old_kink.k
+        old_kink_old_orb2 = old_kink.l
+        new_kink_old_orb1 = old_kink.i
+        new_kink_old_orb2 = old_kink.j
     else
         dir = :right
+        old_kink_old_orb1 = old_kink.i
+        old_kink_old_orb2 = old_kink.j
+        new_kink_old_orb1 = old_kink.k
+        new_kink_old_orb2 = old_kink.l
     end
     #add kink left
-    if dir == :left
-        opportunities_new_orb1 = possible_new_orb1_D(occs, orbs(old_kink)...)
-    else
-        opportunities_new_orb1 = possible_new_orb1_D(occs, old_kink.k, old_kink.l, old_kink.i, old_kink.j)
-    end
+    opportunities_new_orb1 = possible_new_orb1_D(occs, new_kink_old_orb1, new_kink_old_orb2, old_kink_old_orb1, old_kink_old_orb2)
     if isempty(opportunities_new_orb1)
         return 1.0, Step()
     end
     new_orb1 = rand(opportunities_new_orb1)
     prop_prob *= 1.0/length(opportunities_new_orb1)
-    if dir == :left
-        new_orb2 = find_fourth_orb_for_kink(new_orb1, old_kink.k, old_kink.l)
-    else
-        new_orb2 = find_fourth_orb_for_kink(new_orb1, old_kink.i, old_kink.j)
-    end
+    new_orb2 = find_fourth_orb_for_kink(new_orb1, new_kink_old_orb1, new_kink_old_orb2)
+
     @assert(in(new_orb2, occs) & (new_orb1 != new_orb2))
+
+
     if dir == :left
         τ_interval = old_τ - τ_prev_affecting( c.kinks, Set([old_kink.i, old_kink.j, new_orb1, new_orb2]), old_τ )
     else
@@ -108,116 +111,89 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     if τ_interval < 0
         τ_interval +=1
     end
-
-    if dir == :left
-        τ_new_kink = old_τ - ImgTime(rand()*τ_interval)
-    else
-        τ_new_kink = old_τ + ImgTime(rand()*τ_interval)
-    end
-
-    if dir == :left
-        if τ_new_kink < 0
-            τ_new_kink += 1
-            delta_τ = float(old_τ - τ_new_kink + 1)
-        else
-            delta_τ = float(old_τ - τ_new_kink)
-        end
-    else
-        if τ_new_kink > 1
-            τ_new_kink -= 1
-            delta_τ = float(τ_new_kink - old_τ + 1)
-        else
-            delta_τ = float(τ_new_kink - old_τ)
-        end
-    end
     @assert τ_interval > 0
-    #no 2 kinks at same τ
+
+    delta_τ = ImgTime(rand()*τ_interval)
     if dir == :left
-        while haskey(c.kinks, τ_new_kink)
-            τ_new_kink = old_τ - ImgTime(rand()*τ_interval)
-            if τ_new_kink < 0
-                τ_new_kink += 1
-                delta_τ = float(old_τ - τ_new_kink + 1)
-            else
-                delta_τ = float(old_τ - τ_new_kink)
-            end
-        end
+        τ_new_kink = old_τ - delta_τ
     else
-        while haskey(c.kinks, τ_new_kink)
-            τ_new_kink = old_τ + ImgTime(rand()*τ_interval)
-            if τ_new_kink > 1
-                τ_new_kink -= 1
-                delta_τ = float(τ_new_kink - old_τ + 1)
-            else
-                delta_τ = float(τ_new_kink - old_τ)
-            end
-        end
+        τ_new_kink = old_τ + delta_τ
     end
 
+
+    if τ_new_kink < 0
+        change_occupations = true
+        τ_new_kink += 1
+    elseif τ_new_kink >= 1
+        change_occupations = true
+        τ_new_kink -= 1
+    else
+        change_occupations = false
+    end
+    while haskey(c.kinks, τ_new_kink)
+        delta_τ = ImgTime(rand()*τ_interval)
+        τ_new_kink = old_τ - delta_τ
+        if τ_new_kink < 0
+            change_occupations = true
+            τ_new_kink += 1
+        elseif τ_new_kink > 1
+            change_occupations = true
+            τ_new_kink -= 1
+        else
+            change_occupations = false
+        end
+    end
+    if dir == :left
+        τ_left = τ_new_kink
+        τ_right = old_τ
+    else
+        τ_left = old_τ
+        τ_right = τ_new_kink
+    end
+    delta_τ = abs(delta_τ)
+    #no 2 kinks at same τ
     prop_prob *= 1.0/float(τ_interval)
 
-    if dir == :left
-        # see if c.occupations change
-        if τ_new_kink > old_τ  #new kink was added left of old kink
-            orbs_drop = (new_orb1, new_orb2)
-            orbs_add = (old_kink.i, old_kink.j)
-        else
-            orbs_drop = nothing
-            orbs_add = nothing
-        end
+    if change_occupations
+        orbs_drop = (new_orb1, new_orb2)
+        orbs_add = (new_kink_old_orb1, new_kink_old_orb2)
     else
-        #see if c.occupations change
-        if τ_new_kink < old_τ  #new kink was added right of old kink
-            orbs_drop = (new_orb1, new_orb2)
-            orbs_add = (old_kink.k, old_kink.l)
-        else
-            orbs_drop = nothing
-            orbs_add = nothing
-        end
+        orbs_drop = nothing
+        orbs_add = nothing
     end
     prop_prob *= 0.5# shuffle creators of the changed kink
+
     if dir == :left
         kinks_add =(
-                    τ_new_kink => T4(old_kink.i, old_kink.j, new_orb1, new_orb2),
+                    τ_left => T4(old_kink.i, old_kink.j, new_orb1, new_orb2),
                     # shuffle creators
-                    old_τ => T4( random_shuffle( new_orb2, new_orb1 )..., old_kink.k, old_kink.l )
+                    τ_right => T4( random_shuffle( new_orb2, new_orb1 )..., old_kink.k, old_kink.l )
                     )
     else
         kinks_add = (
-                    τ_new_kink => T4(new_orb1, new_orb2, old_kink.k, old_kink.l),
                     # shuffle annihilators
-                    old_τ => T4( old_kink.i, old_kink.j, random_shuffle(new_orb2, new_orb1 )... )
+                    τ_left => T4( old_kink.i, old_kink.j, random_shuffle(new_orb2, new_orb1 )... ),
+                    τ_right => T4(new_orb1, new_orb2, old_kink.k, old_kink.l)
                     )
     end
 
+    @assert is_type_D(last(first(kinks_add)), last(last(kinks_add)))
 
-    if dir == :left
-        @assert is_type_D(last(first(kinks_add)), last(last(kinks_add)))
-    else
-        @assert is_type_D(last(last(kinks_add)), last(first(kinks_add)))
-    end
     kinks_drop = (old_τ => old_kink,)
 
     # MC Step generated by this update
     Δ = Step(orbs_drop, kinks_drop, orbs_add, kinks_add)
 
     # calculate weight differance
-    if dir == :left
-        dw_off_diag = abs(Woffdiag_element(m, e, old_kink.i, old_kink.j, new_orb1, new_orb2) * Woffdiag_element(m, e, last(last(kinks_add))) /
-                        Woffdiag_element(m, e, old_kink))
-        delta_di = ΔWdiag_element(m, e, c, old_kink.i, old_kink.j, new_orb1, new_orb2, τ_new_kink, old_τ)
-        dw = e.β * dw_off_diag * exp(-(e.β * delta_τ*(energy(m, old_kink.i) + energy(m, old_kink.j) - energy(m, new_orb1) - energy(m, new_orb2)) + e.β * delta_di))
-    else
-        dw_off_diag = abs( Woffdiag_element(m, e, last(first(kinks_add))) * Woffdiag_element(m, e, last(last(kinks_add))) / Woffdiag_element(m, e, old_kink) )
-        delta_di = ΔWdiag_element(m, e, c, old_kink.k, old_kink.l, new_orb1, new_orb2, old_τ, τ_new_kink)
-        dw = e.β * dw_off_diag * exp(-(e.β * delta_τ*(energy(m, old_kink.k) + energy(m, old_kink.l) - energy(m, new_orb1) - energy(m, new_orb2)) + e.β * delta_di))
-    end
+    dw_off_diag = abs( Woffdiag_element(m, e, last(first(kinks_add))) * Woffdiag_element(m, e, last(last(kinks_add))) / Woffdiag_element(m, e, old_kink) )
+    delta_di = ΔWdiag_element(m, e, c, new_kink_old_orb1, new_kink_old_orb2, new_orb1, new_orb2, τ_left, τ_right)
+    dw = e.β * dw_off_diag * exp(-(e.β * delta_τ*(energy(m, new_kink_old_orb1) + energy(m, new_kink_old_orb2) - energy(m, new_orb1) - energy(m, new_orb2)) + e.β * delta_di))
+
     if dir == :left
         inverse_prop_prob = 0.5 / length( right_type_D_removable_pairs( apply_step(c,Δ).kinks ) )
     else
         inverse_prop_prob = 0.5 / length( left_type_D_removable_pairs( apply_step(c,Δ).kinks ) )
     end
-
     @assert delta_τ > 0
     @assert !isinf((inverse_prop_prob/prop_prob)*dw)
     return (inverse_prop_prob/prop_prob)*dw, Δ
@@ -265,7 +241,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         # calculate reverse_prop_prob
         occs = occupations_at(new_c, changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, removed_kink.i, removed_kink.j, changed_kink.k, changed_kink.l)
-        @assert in(removed_orb1, opportunities_reverse_new_orb1)
+        @assert(in(removed_orb1, opportunities_reverse_new_orb1) || in(removed_orb2, opportunities_reverse_new_orb1))
         τ_interval = changed_kink_τ - τ_prev_affecting( new_c.kinks, Set([removed_orb1, removed_orb2, last(first(kinks_add)).i, last(first(kinks_add)).j]), changed_kink_τ )
 
         if τ_interval < 0
@@ -273,7 +249,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         end
 
         # number of kinks is reduced by one with this update
-        inverse_prop_prob = (0.5/(length(c.kinks)-1)) * (1.0/length(opportunities_reverse_new_orb1)) * (1.0/float(τ_interval)) * (1/2)
+        inverse_prop_prob = (0.5/(length(c.kinks)-1)) * (1.0/length(opportunities_reverse_new_orb1)) * (1.0/float(τ_interval)) * 0.5
 
         # calculate weight change
         delta_di = ΔWdiag_element(m, e, new_c, last(first(kinks_add)).i, last(first(kinks_add)).j, removed_orb1, removed_orb2, removed_kink_τ, changed_kink_τ)
@@ -325,7 +301,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
         # calculate reverse_proposal probability
         occs = occupations_at(new_c, changed_kink_τ)
         opportunities_reverse_new_orb1 = possible_new_orb1_D(occs, last(first(kinks_add)).k, last(first(kinks_add)).l, last(first(kinks_add)).i, last(first(kinks_add)).j)
-        @assert(in(removed_orb1, opportunities_reverse_new_orb1))
+        @assert(in(removed_orb1, opportunities_reverse_new_orb1) || in(removed_orb2, opportunities_reverse_new_orb1))
         τ_interval =  τ_next_affecting( new_c.kinks, Set([ last(first(kinks_add)).k, last(first(kinks_add)).l, removed_orb1, removed_orb2]), changed_kink_τ ) - changed_kink_τ
         if τ_interval < 0
             τ_interval +=1
@@ -333,7 +309,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
         # the number of kinks is reduced by one in this update
         inverse_prop_prob = (0.5/(length(c.kinks)-1)) * (1.0/length(opportunities_reverse_new_orb1)) *
-                                 (1.0/float(τ_interval)) * (1/2)
+                                 (1.0/float(τ_interval)) * 0.5
 
         #calculate weight change
         delta_di = ΔWdiag_element(m, e, new_c, last(first(kinks_add)).k, last(first(kinks_add)).l, removed_orb1, removed_orb2, changed_kink_τ, removed_kink_τ)
