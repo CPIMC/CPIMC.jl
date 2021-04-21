@@ -274,8 +274,8 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 
     inverse_prop_prob = (0.5/(length(c.kinks)-1)) * (1.0/length(opportunities_reverse_new_orb1)) * (1.0/float(τ_interval)) * (1/2)
 
-    dw_off_diag = abs( Woffdiag_element(m, e, removed_orb1, removed_orb2, last(first(add_kinks)).k, last(first(add_kinks)).l) *
-                       Woffdiag_element(m, e, last(first(add_kinks)).i, last(first(add_kinks)).j, removed_orb1, removed_orb2) /
+    dw_off_diag = abs( Woffdiag_element(m, e, last(first(drop_kinks))) *
+                       Woffdiag_element(m, e, last(last(drop_kinks))) /
                        Woffdiag_element(m, e, last(first(add_kinks)) ))
 
     delta_di = ΔWdiag_element(m, e, new_c, removed_orb1, removed_orb2, retained_orb1, retained_orb2, τ_left, τ_right)
