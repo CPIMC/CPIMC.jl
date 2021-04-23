@@ -23,7 +23,7 @@ include("DefaultUpdates.jl")
 include("UniformElectronGas.jl")
 
 
-export UpdateCounter, sweep!, print_results, print_rates, Step, apply_step, apply_step!, update!, measure!
+export UpdateCounter, sweep!, print_results, print_rates, Step, apply_step, apply_step!, apply_back_step!, update!, measure!
 
 """
 Objects of this type are used to keep track of the acceptance ratio of a class of updates.
@@ -100,9 +100,22 @@ function apply_step!(c::Configuration, s::Step)
     add_kinks!(c.kinks, s.add_kinks)
 end
 
+function apply_back_step!(c::Configuration, s::Step)
+    drop_orbs!(c.occupations, s.add_orbs)
+    drop_kinks!(c.kinks, s.add_kinks)
+    add_orbs!(c.occupations, s.drop_orbs)
+    add_kinks!(c.kinks, s.drop_kinks)
+end
+
 function apply_step!(c::Configuration, steps::Array)
     for step in steps
         apply_step!(c, step)
+    end
+end
+
+function apply_back_step!(c::Configuration, steps::Array)
+    for i in 0:-1:-(length(steps)-1)
+        apply_back_step!(c, steps[length(steps)-i])
     end
 end
 
@@ -129,9 +142,7 @@ the function yielded an empty `Step`.
 """
 function update!(m::Model, e::Ensemble, c::Configuration, updates)
     @assert !isempty(updates)
-
     i = rand(1:length(updates))
-
     dv, Δ = updates[i](m, e, c)
 
     if Δ == Step()
@@ -139,10 +150,9 @@ function update!(m::Model, e::Ensemble, c::Configuration, updates)
     end
 
     if rand() < dv
-        apply_step!(c, Δ)
-
         return (i, :accept)
     else
+        apply_back_step!(c, Δ)
         return (i, :reject)
     end
 end
