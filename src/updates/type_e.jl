@@ -1,4 +1,4 @@
-export add_type_E, remove_type_E
+export add_type_E!, remove_type_E!
 
 """If left kink and right_kink are type-E-entangled it returns a tuple of the two kinks whos orbs
 are sorted in a way that k an j of both kinks are the common orbitals.
@@ -78,7 +78,7 @@ end
 
 """
     possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
-This function will find possibilites for the choice of the new Orbital that is occupied in occs and should be part of both Kinks after an add_type_E-update,
+This function will find possibilites for the choice of the new Orbital that is occupied in occs and should be part of both Kinks after an add_type_E!-update,
 when which orbital of the old-Kink is new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator and changed_kink_old_annihilator
 is already selected.
 To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
@@ -93,7 +93,7 @@ end
 
 """
     possible_new_kink_new_occ_orb(occs, new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator, changed_kink_old_annihilator)
-This function will find possibilites for the choice of the new Orbital that is unoccupied in occs and should be part of both Kinks after an add_type_E-update,
+This function will find possibilites for the choice of the new Orbital that is unoccupied in occs and should be part of both Kinks after an add_type_E!-update,
 when which orbital of the old-Kink is new_kink_old_creator, changed_kink_old_creator, new_kink_old_annihilator and changed_kink_old_annihilator
 is already selected.
 To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
@@ -107,7 +107,7 @@ function possible_new_kink_new_unocc_orb(occs, new_kink_old_creator, changed_kin
 end
 
 
-function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
+function add_type_E!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     #After the updates the i and l komponents of both kinks will contain the old kink, while the j and k components contain the old orbitals
     prop_prob = 1.0
     if isempty(c.kinks)
@@ -251,7 +251,7 @@ function add_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     return (inverse_prop_prob/prop_prob)*dw, Δ
 end
 
-function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
+function remove_type_E!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     prop_prob = 0.5
     direction = rand([:left, :right])
     #removed kink left of changed kink
@@ -341,7 +341,7 @@ function remove_type_E(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     return (inverse_prop_prob/prop_prob) * dw, Δ
 end
 
-function isuseful(c::Configuration, up::typeof(add_type_E))
+function isuseful(c::Configuration, up::typeof(add_type_E!))
     if isempty(c.kinks)
         return false
     else
@@ -349,7 +349,7 @@ function isuseful(c::Configuration, up::typeof(add_type_E))
     end
 end
 
-function isuseful(c::Configuration, up::typeof(remove_type_E))
+function isuseful(c::Configuration, up::typeof(remove_type_E!))
     if length(c.kinks) < 3
         return false
     else

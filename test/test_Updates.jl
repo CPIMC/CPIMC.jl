@@ -7,19 +7,19 @@ import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_bord
     m = UEG()
     ens = CEnsemble(2,2,7)
     for _ in (1:5)
-        dv, Δ = add_type_B(m, ens, conf)
+        dv, Δ = add_type_B!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_C(m, ens, conf)
+        dv, Δ = add_type_C!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_D(m, ens, conf)
+        dv, Δ = add_type_D!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_E(m, ens, conf)
+        dv, Δ = add_type_E!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
@@ -66,19 +66,19 @@ end
     m = UEG()
     ens = CEnsemble(2,2,7)
     for _ in (1:5)
-        dv, Δ = add_type_B(m, ens, conf)
+        dv, Δ = add_type_B!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_C(m, ens, conf)
+        dv, Δ = add_type_C!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_D(m, ens, conf)
+        dv, Δ = add_type_D!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_E(m, ens, conf)
+        dv, Δ = add_type_E!(m, ens, conf)
         if dv == 0
             apply_back_step!(conf, Δ)
         end

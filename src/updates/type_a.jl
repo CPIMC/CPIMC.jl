@@ -1,10 +1,10 @@
-export move_particle, equilibrate_diagonal!
+export move_particle!, equilibrate_diagonal!
 
 """
-    move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
+    move_particle!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
 Update that removes occupation in one kinkfree Orbital and adds it to another.
 """
-function move_particle(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
+function move_particle!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     free_orbitals = filter(x -> isunaffected(c.kinks, x), c.occupations)
     if isempty(free_orbitals)
         return 1.0, Step()
@@ -45,12 +45,12 @@ end
 """
     equilibrate_diagonal(m::Model, e::Ensemble, c::Configuration)
 This function will propose 100 type-a-updates for each particle in c::Configuration.
-As move_particle can only be called on kinkfreee orbitals, calling this before starting the true equilibration
+As move_particle! can only be called on kinkfreee orbitals, calling this before starting the true equilibration
 might reduce the error of the kinetic energy in runs with lots of kinks.
 """
 function equilibrate_diagonal!(m::Model, e::Ensemble, c::Configuration)
     for _ in 1:e.N*1e2
-        dv, Δ = move_particle(m, e, c)
+        dv, Δ = move_particle!(m, e, c)
         if rand() > dv
             #deny step
             apply_back_step!(c, Δ)

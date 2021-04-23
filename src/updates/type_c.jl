@@ -1,4 +1,4 @@
-export add_type_C, remove_type_C
+export add_type_C!, remove_type_C!
 
 """Returns True if left_kink and right_kink are entangled in a Type-C way.
 This does not check wether the two kinks are neighbouring"""
@@ -59,7 +59,7 @@ end
 
 """
     possible_new_orb1_C(occs, orb_c, orb_d)
-This function will find possibilites for the choice of the first Orbital that should be part of both Kinks after an add_type_C-update,
+This function will find possibilites for the choice of the first Orbital that should be part of both Kinks after an add_type_C!-update,
 when the two old orbitals of the old Kink are already selected.
 To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
 """
@@ -70,7 +70,7 @@ function possible_new_orb1_C(occs, exite_orb1, exite_orb2, old_orb1, old_orb2)
     return setdiff!(opprtunities, Set([exite_orb1, exite_orb2, old_orb1, old_orb2]))
 end
 
-function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
+function add_type_C!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     prop_prob = 1.0
     if isempty(c.kinks)
         return 1.0, Step()
@@ -197,7 +197,7 @@ function add_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
     return (inverse_prop_prob/prop_prob)*dw, Δ
 end
 
-function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
+function remove_type_C!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     prop_prob = 0.5
     direction = rand([:left, :right])
 
@@ -293,7 +293,7 @@ function remove_type_C(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     return (inverse_prop_prob/prop_prob)*dw, Δ
 end
 
-function isuseful(c::Configuration, up::typeof(add_type_C))
+function isuseful(c::Configuration, up::typeof(add_type_C!))
     if isempty(c.kinks)
         return false
     else
@@ -301,7 +301,7 @@ function isuseful(c::Configuration, up::typeof(add_type_C))
     end
 end
 
-function isuseful(c::Configuration, up::typeof(remove_type_C))
+function isuseful(c::Configuration, up::typeof(remove_type_C!))
     if length(c.kinks) < 3
         return false
     else

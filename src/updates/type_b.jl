@@ -1,4 +1,4 @@
-export add_type_B, remove_type_B, change_type_B
+export add_type_B!, remove_type_B!, change_type_B!
 
 """Returns True if left_kink and right_kink are entangled in a Type-B way.
 This does not check wether the two kinks are neighbouring"""
@@ -86,7 +86,7 @@ function possible_new_orb_a(occs, orb_c, orb_d)
                     setdiff!(sphere_with_same_spin(orb_c, dk = ex_radius), occs))
 end
 
-function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
+function add_type_B!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     #sampling propability
     prop_prob = 1
     #get first τ
@@ -217,7 +217,7 @@ function add_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, S
     return dv*dw, Δ
 end
 
-function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
+function remove_type_B!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64, Step}
     if isempty(c.kinks)
         return 1.0, Step()
     end
@@ -289,7 +289,7 @@ function remove_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
 end
 
 
-function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step} #This update is redundant wif we have add- and remove-Type-C-Updates
+function change_type_B!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step} #This update is redundant wif we have add- and remove-Type-C-Updates
     if isempty(c.kinks)
         return 1.0, Step()
     end
@@ -371,7 +371,7 @@ function change_type_B(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     return dw*dv, Δ
 end
 
-function isuseful(c::Configuration, up::typeof(remove_type_B))
+function isuseful(c::Configuration, up::typeof(remove_type_B!))
     if isempty(c.kinks) || length(c.kinks) == 3
         return false
     else
@@ -379,7 +379,7 @@ function isuseful(c::Configuration, up::typeof(remove_type_B))
     end
 end
 
-function isuseful(c::Configuration, up::typeof(change_type_B))
+function isuseful(c::Configuration, up::typeof(change_type_B!))
     if isempty(c.kinks) || length(c.kinks) == 3
         return false
     else

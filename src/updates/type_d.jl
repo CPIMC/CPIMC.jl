@@ -1,4 +1,4 @@
-export add_type_D, remove_type_D
+export add_type_D!, remove_type_D!
 
 """Returns True if left_kink and right_kink are entangled in a Type-D way
 This does not check wether the two kinks are neighbouring"""
@@ -58,7 +58,7 @@ end
 
 """
     possible_new_orb1_D(occs, excite_orb1, excite_orb2, old_orb1, old_orb2)
-This function will find possibilites for the choice of the first Orbital that should be part of both Kinks after an add_type_D-update,
+This function will find possibilites for the choice of the first Orbital that should be part of both Kinks after an add_type_D!-update,
 when the two old orbitals of the old Kink are already selected.
 To check possibility this will in particular check conservation laws and the occupation of the resulting fourth orb.
 """
@@ -69,7 +69,7 @@ function possible_new_orb1_D(occs, excite_orb1, excite_orb2, old_orb1, old_orb2)
     return setdiff!(opportunities, Set([excite_orb1, excite_orb2, old_orb1, old_orb2]))
 end
 
-function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
+function add_type_D!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     prop_prob = 1.0
     if isempty(c.kinks)
         return 1.0, Step()
@@ -200,7 +200,7 @@ function add_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,St
 end
 
 
-function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
+function remove_type_D!(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64,Step}
     prop_prob = 0.5
     direction = rand([:left, :right])
 
@@ -296,7 +296,7 @@ function remove_type_D(m::Model, e::Ensemble, c::Configuration) :: Tuple{Float64
     return (inverse_prop_prob/prop_prob)*dw, Δ
 end
 
-function isuseful(c::Configuration, up::typeof(add_type_D))
+function isuseful(c::Configuration, up::typeof(add_type_D!))
     if isempty(c.kinks)
         return false
     else
@@ -304,7 +304,7 @@ function isuseful(c::Configuration, up::typeof(add_type_D))
     end
 end
 
-function isuseful(c::Configuration, up::typeof(remove_type_D))
+function isuseful(c::Configuration, up::typeof(remove_type_D!))
     if length(c.kinks) < 3
         return false
     else
