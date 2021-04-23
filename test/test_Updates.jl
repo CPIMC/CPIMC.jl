@@ -3,57 +3,57 @@ import LinearAlgebra: dot
 import CPIMC: orbs, adjacent_kinks_affecting_orbs, kinks_affecting_orbs, τ_borders, isunaffected, time_ordered_orbs, occupations_at, longest_type_1_chain_length, right_type_1_count
 
 @testset "removable_pairs" for _ in (1:200)
-    conf1 = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1))
+    conf = Configuration(sphere(PlaneWave((0,0,0),Up),dk=1))
     m = UEG()
     ens = CEnsemble(2,2,7)
     for _ in (1:5)
-        dv, Δ = add_type_B(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        dv, Δ = add_type_B(m, ens, conf)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_C(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        dv, Δ = add_type_C(m, ens, conf)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_D(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        dv, Δ = add_type_D(m, ens, conf)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
-        dv, Δ = add_type_E(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        dv, Δ = add_type_E(m, ens, conf)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
     end
-    for pair in CPIMC.DefaultUpdates.right_type_B_removable_pairs(conf1.kinks)
-        (_,kink1) = conf1.kinks[first(pair)]
+    for pair in CPIMC.DefaultUpdates.right_type_B_removable_pairs(conf.kinks)
+        (_,kink1) = conf.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.DefaultUpdates.right_type_C_removable_pairs(conf1.kinks)
-        (_,kink1) = conf1.kinks[first(pair)]
+    for pair in CPIMC.DefaultUpdates.right_type_C_removable_pairs(conf.kinks)
+        (_,kink1) = conf.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.DefaultUpdates.left_type_C_removable_pairs(conf1.kinks)
-        (_,kink1) = conf1.kinks[first(pair)]
+    for pair in CPIMC.DefaultUpdates.left_type_C_removable_pairs(conf.kinks)
+        (_,kink1) = conf.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.DefaultUpdates.right_type_D_removable_pairs(conf1.kinks)
-        (_,kink1) = conf1.kinks[first(pair)]
+    for pair in CPIMC.DefaultUpdates.right_type_D_removable_pairs(conf.kinks)
+        (_,kink1) = conf.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.DefaultUpdates.left_type_D_removable_pairs(conf1.kinks)
-        (_,kink1) = conf1.kinks[first(pair)]
+    for pair in CPIMC.DefaultUpdates.left_type_D_removable_pairs(conf.kinks)
+        (_,kink1) = conf.kinks[first(pair)]
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
         @test kink1.i.spin == kink1.k.spin
     end
-    for pair in CPIMC.DefaultUpdates.right_type_E_removable_pairs(conf1.kinks)
+    for pair in CPIMC.DefaultUpdates.right_type_E_removable_pairs(conf.kinks)
         kink1 = last(first(pair))
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
     end
-    for pair in CPIMC.DefaultUpdates.left_type_E_removable_pairs(conf1.kinks)
+    for pair in CPIMC.DefaultUpdates.left_type_E_removable_pairs(conf.kinks)
         kink1 = last(first(pair))
         @test dot(kink1.i.vec-kink1.k.vec, kink1.i.vec-kink1.k.vec) <= ex_radius^2
     end
@@ -67,20 +67,20 @@ end
     ens = CEnsemble(2,2,7)
     for _ in (1:5)
         dv, Δ = add_type_B(m, ens, conf)
-        if dv != 0
-            apply_step!(conf, Δ)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
         dv, Δ = add_type_C(m, ens, conf)
-        if dv != 0
-            apply_step!(conf, Δ)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
         dv, Δ = add_type_D(m, ens, conf)
-        if dv != 0
-            apply_step!(conf, Δ)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
         dv, Δ = add_type_E(m, ens, conf)
-        if dv != 0
-            apply_step!(conf, Δ)
+        if dv == 0
+            apply_back_step!(conf, Δ)
         end
     end
     old_kink = rand(conf.kinks)

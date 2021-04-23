@@ -17,12 +17,14 @@ function shuffle_indices(m::Model, e::Ensemble, c::Configuration)
         # shuffle annihilators
         Δ = Step(nothing, (kink,), nothing, (first(kink) => T4(last(kink).i,last(kink).j,last(kink).l,last(kink).k),))
     end
+    apply_step!(c,Δ)
     return 1.0, Δ
 end
 
 """ perform a number of subsequent updates
     first perform a number of updates which add kinks
-    second perform the same number of updates which remove kinks """
+    second perform the same number of updates which remove kinks
+    THIS DOES NOT WORK CORRECTLY RIGHT NOW"""
 function add_remove_kink_chain(m::Model, e::Ensemble, c::Configuration)
     if isempty(c.kinks)
         return 1.0, Step()

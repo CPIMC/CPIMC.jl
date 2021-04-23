@@ -247,20 +247,20 @@ end
     ens = CEnsemble(2,2,7)
     for _ in (1:5)
         dv, Δ = add_type_B(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        if dv == 0
+            apply_back_step!(conf1, Δ)
         end
         dv, Δ = add_type_C(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        if dv == 0
+            apply_back_step!(conf1, Δ)
         end
         dv, Δ = add_type_D(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        if dv == 0
+            apply_back_step!(conf1, Δ)
         end
         dv, Δ = add_type_E(m, ens, conf1)
-        if dv != 0
-            apply_step!(conf1, Δ)
+        if dv == 0
+            apply_back_step!(conf1, Δ)
         end
     end
 
