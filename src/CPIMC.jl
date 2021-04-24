@@ -114,7 +114,7 @@ function apply_step!(c::Configuration, steps::Array)
 end
 
 function apply_back_step!(c::Configuration, steps::Array)
-    for i in 0:-1:-(length(steps)-1)
+    for i in 0:(length(steps)-1)
         apply_back_step!(c, steps[length(steps)-i])
     end
 end
@@ -231,8 +231,11 @@ function sweep!(m::Model, e::Ensemble, c::Configuration, updates, estimators, st
         i += 1
     end
     println("\nthread ",Threads.threadid()," finished")
-
-    return Dict(zip(map(u -> typeof(u).name.mt.name, updates), counters))
+    update_counters_dict = Dict(map(u -> typeof(u).name.mt.name => UpdateCounter(), updates))
+    for i in 1:length(updates)
+        update_counters_dict[typeof(updates[i]).name.mt.name] += counters[i]
+    end
+    return update_counters_dict#Dict(zip(map(u -> typeof(u).name.mt.name, updates), counters))
 end
 
 """

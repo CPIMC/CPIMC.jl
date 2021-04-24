@@ -113,7 +113,7 @@ end
     for _ in 1:100
         old_occs = copy(c1.occupations)
         old_kinks = copy(c1.kinks)
-        coin = last(update!(UEG(), ens, c1, [move_particle!, add_type_B!, remove_type_B!, add_type_C!, remove_type_C!, add_type_D!, remove_type_D!, add_type_E!, remove_type_E!, shuffle_indices]))
+        coin = last(update!(UEG(), ens, c1, [move_particle!, add_type_B!, remove_type_B!, add_type_C!, remove_type_C!, add_type_D!, remove_type_D!, add_type_E!, remove_type_E!, shuffle_indices!]))
         if coin == :accept
             @test ((c1.occupations != old_occs) || (c1.kinks != old_kinks))
         elseif coin == :reject
