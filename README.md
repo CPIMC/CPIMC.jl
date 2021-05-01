@@ -18,7 +18,7 @@ As a gentle introduction we prepared a guided implementation of the ideal Fermi 
 
 ## Documentation
 
-Documentation and tutorials can be found [here](url).
+Documentation and tutorials can be found [here](https://cpimc.github.io/CPIMC.jl/dev/).
 
 
 ## References
