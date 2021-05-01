@@ -2,7 +2,7 @@ using Documenter, CPIMC
 
 makedocs(
     modules = [CPIMC],
-    sitename = "cpimc2020",
+    sitename = "CPIMC.jl",
     authors = "Kai Hunger, Arif Yilmaz, Paul Hamann",
     pages = [
         "Home" => "index.md",
@@ -13,7 +13,7 @@ makedocs(
             "ueg.md"
         ]])
 
-deploydocs(repo="https://gitlab.physik.uni-kiel.de/hunger/cpimc2020")
-
-
+deploydocs(
+    repo = "github.com/CPIMC/CPIMC.jl.git",
+)
 
