@@ -1,13 +1,12 @@
 # CPIMC2020
 
-New implementation of Configuration path-integral Monte Carlo (CPIMC) written in Julia.
+Implementation of Configuration path-integral Monte Carlo (CPIMC) in Julia.
 
-Compared to other implementations we put particular emphasis on flexibility. The goal of this project is to provide an environment for trying out new ideas that is both easy to use and extend.
+The goal of this project is to provide an environment for trying out new ideas that is both easy to use and extend.
 
 ## Features
 - full CPIMC simulation for the uniform electron gas using a plane waves basis
 - no artificial restriction on the number of basis functions
-- no explicit ordering of orbitals required
 - multi-threading
 
 ## Getting started
