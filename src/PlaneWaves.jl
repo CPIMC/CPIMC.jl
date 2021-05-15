@@ -3,7 +3,7 @@ Plane wave single-particle basis states.
 """
 module PlaneWaves
 
-export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin, shell, ξ, fractional_spin_polarization, find_fourth_orb_for_kink
+export Spin, Down, Up, PlaneWave, dimension, flip, sphere, sphere_with_same_spin, ξ, fractional_spin_polarization, find_fourth_orb_for_kink
 
 using ..CPIMC
 using StaticArrays
@@ -68,66 +68,12 @@ return the dimension of the momentum vectors of a Set{<:Orbital{D}}
 dimension(os::Set{<:PlaneWave{D}}) where {D} = D
 
 """
-    shell(o::PlaneWave{1};dw::Int=2)
-    shell(o::PlaneWave{2};dw::Int=2)
-    shell(o::PlaneWave{3};dw::Int=2)
+    sphere_with_same_spin(o::PlaneWave{1}; dk=2)
+    sphere_with_same_spin(o::PlaneWave{2}; dk=2)
+    sphere_with_same_spin(o::PlaneWave{3}; dk=2)
 
-Returns a set of all `PlaneWave` orbitals lying in the `dw`th shell.
+Return the set of all PlaneWaves in a sphere of radius `dk` around `o` in momentum space that also have the same spin as `o`.
 """
-function shell(o::PlaneWave{1};dw::Int=2)
-    eq = energy(o)
-    qmax = Int(floor(eq))
-
-    os = Set{PlaneWave{1}}()
-
-    for x in -qmax:qmax
-        if abs(x*x - eq) <= dw
-            push!(os, PlaneWave((x,1)))
-            push!(os, PlaneWave((x,-1)))
-        end
-    end
-
-    os
-end
-
-function shell(o::PlaneWave{2};dw::Int=2)
-    eq = energy(o)
-    qmax = Int(floor(eq))
-
-    os = Set{PlaneWave{2}}()
-
-    for x in -qmax:qmax
-        for y in -qmax:qmax
-            if abs(x*x + y*y - eq) <= dw
-                push!(os, PlaneWave((x,y),1))
-                push!(os, PlaneWave((x,y),-1))
-            end
-        end
-    end
-
-    os
-end
-
-function shell(o::PlaneWave{3};dw::Int=2)
-    eq = energy(o)
-    qmax = Int(floor(eq))
-
-    os = Set{PlaneWave{3}}()
-
-    for x in -qmax:qmax
-        for y in -qmax:qmax
-            for z in -qmax:qmax
-                if abs( x*x + y*y + z*z - eq ) <= dw
-                    push!(os, PlaneWave((x,y,z),1))
-                    push!(os, PlaneWave((x,y,z),-1))
-                end
-            end
-        end
-    end
-
-    os
-end
-
 function sphere_with_same_spin(o::PlaneWave{1}; dk::Number=2)
     os = Set{PlaneWave{1}}()
 
@@ -168,22 +114,16 @@ function sphere_with_same_spin(o::PlaneWave{3}; dk::Number=2)
     os
 end
 
-" return two spheres of each spin with radius dk around the wavevector of the argument orbital o"
+"""
+    sphere(o::PlaneWave{1}; dk=2)
+    sphere(o::PlaneWave{2}; dk=2)
+    sphere(o::PlaneWave{3}; dk=2)
+
+Return the set of all PlaneWaves in a sphere of radius `dk` around `o` in momentum space.
+"""
 sphere(o::PlaneWave; dk=2) = union(sphere_with_same_spin(o,dk=dk),sphere_with_same_spin(PlaneWave(o.vec,flip(o.spin)),dk=dk))
 
 
-function orbs_with_spin(orbitals::Set{PlaneWave{D}}, spin::Int) where {D}
-    orbs_s = Set{PlaneWave{D}}()
-    for orb in orbitals
-        if orb.spin==spin
-            push!(orbs_s, orb)
-        end
-    end
-    return orbs_s
-end
-
-
-# TODO: generalize over all <: Orbital which have field spin
 """
     fractional_spin_polarization(occ::Set{PlaneWave)
 calculate the fractional spin polarization from a set of Orbitals which each must have a field `spin` of type `@enum Spin Down Up`,

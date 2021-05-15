@@ -21,7 +21,6 @@ fractional_spin_polarization
 ```
 
 ```@docs
-shell
 sphere
 sphere_with_same_spin
 ```

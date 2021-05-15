@@ -161,16 +161,35 @@ Configuration{T}() where T = Configuration(Set{T}())
 
 Base.:(==)(c1::Configuration, c2::Configuration) = (c1.occupations == c2.occupations) && (c1.kinks == c2.kinks)
 
+"""
+    drop_orbs(occ, orbs)
 
+Return a copy of the occupation `occ` without the orbitals in `orbs`.
+"""
 drop_orbs(occ, ::Nothing) = occ
-drop_orbs(occ, s) = filter(o -> !in(o,s), occ)
+drop_orbs(occ, orbs) = filter(o -> !in(o,orbs), occ)
 
+"""
+    add_orbs(occ, orbs)
+
+Return a copy of the occupation `occ` with the orbitals in `orbs` added.
+"""
 add_orbs(occ, ::Nothing) = occ
-add_orbs(occ, s) = union(occ, s)
+add_orbs(occ, orbs) = union(occ, orbs)
 
+"""
+    drop_kinks(ck, s)
+
+Return a copy of the kinks in `ck` without the kinks in `s`.
+"""
 drop_kinks(ck, ::Nothing) = ck
 drop_kinks(ck, s) = filter(k -> !in(k,s), ck)
 
+"""
+    add_kinks(ck::Kinks, s)
+
+Return a copy of the kinks in `ck` with the kinks in `s` added.
+"""
 add_kinks(ck::Kinks, ::Nothing) = ck
 
 function add_kinks(ck::Kinks, s)
@@ -179,15 +198,35 @@ function add_kinks(ck::Kinks, s)
     return ck_copy
 end
 
+"""
+    drop_orbs!(occ, s)
+
+Remove the orbitals in `s` from the occupation `occ`.
+"""
 drop_orbs!(occ, ::Nothing) = nothing
 drop_orbs!(occ, s) = filter!(o -> !in(o,s), occ)
 
+"""
+    add_orbs!(occ, s)
+
+Add the orbitals in `s` to the occupation `occ`.
+"""
 add_orbs!(occ, ::Nothing) = nothing
 add_orbs!(occ, s) = union!(occ, s)
 
+"""
+   drop_kinks!(ck, s)
+
+Remove the kinks in `s` from `ck`.
+"""
 drop_kinks!(ck, ::Nothing) = nothing
 drop_kinks!(ck, s) = filter!(k -> !in(k,s), ck)
 
+"""
+   add_kinks!(ck::Kinks, s)
+
+Add the kinks in `s` to `ck`.
+"""
 add_kinks!(ck::Kinks, ::Nothing) = nothing
 function add_kinks!(ck::Kinks, s)
     for k in s

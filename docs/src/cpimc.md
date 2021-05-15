@@ -41,8 +41,6 @@ annihilators
 excite
 excite!
 occupations_at
-next
-prev
 ```
 
 ## weight calculation
@@ -70,8 +68,8 @@ drop_orbs
 drop_orbs!
 add_kinks
 add_kinks!
-remove_kinks
-remove_kinks!
+drop_kinks
+drop_kinks!
 UpdateCounter
 ```
 
