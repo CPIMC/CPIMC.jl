@@ -6,8 +6,8 @@ makedocs(
     authors = "Kai Hunger, Arif Yilmaz, Paul Hamann",
     pages = [
         "Home" => "index.md",
-        "Manual" => "overview.md",
-        "Library" => "internals.md"
+        "Manual" => "manual.md",
+        "API reference" => "api.md"
             ])
        
 

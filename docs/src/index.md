@@ -14,7 +14,7 @@ Compared to other implementations we put particular emphasis on flexibility. The
 
 A full description of the formalism can be found in Tim Schoof's PhD thesis[^1]. For a more modern perspective which is closer to this implementation one should also consider Kai Hunger's Master thesis [WIP].
 
-As a gentle introduction we prepared a guided implementation of the ideal Fermi gas in `examples/ideal.jl` which should get you accustomed to the core functionality of this package. This should prepare you to explore on your own how the model of the uniform electron gas is realized in `src/UniformElectronGas.jl`.
+As a gentle introduction we prepared an implementation of the ideal Fermi gas in `examples/ideal.jl` which should get you accustomed to the core functionality of this package. This should prepare you to explore on your own how the model of the uniform electron gas is realized in `src/UniformElectronGas.jl`.
 
 
 ## References
