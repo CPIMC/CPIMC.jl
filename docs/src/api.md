@@ -2,7 +2,7 @@
 
 ```@autodocs
 Modules = [CPIMC]
-Private = false
+Private = true
 Order = [:function]
 ```
 
@@ -10,7 +10,7 @@ Order = [:function]
 
 ```@autodocs
 Modules = [CPIMC.Estimators]
-Private = false
+Private = true
 Order = [:function]
 ```
 
@@ -19,7 +19,7 @@ Order = [:function]
 
 ```@autodocs
 Modules = [CPIMC.PlaneWaves]
-Private = false
+Private = true
 Order = [:function]
 ```
 
@@ -28,7 +28,7 @@ Order = [:function]
 
 ```@autodocs
 Modules = [CPIMC.UniformElectronGas]
-Private = false
+Private = true
 Order = [:function]
 ```
 
