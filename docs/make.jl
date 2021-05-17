@@ -6,12 +6,10 @@ makedocs(
     authors = "Kai Hunger, Arif Yilmaz, Paul Hamann",
     pages = [
         "Home" => "index.md",
-        "Manual" => Any[
-            "cpimc.md",
-            "estimators.md",
-            "planewaves.md",
-            "ueg.md"
-        ]])
+        "Manual" => "manual.md",
+        "API reference" => "api.md"
+            ])
+       
 
 deploydocs(
     repo = "github.com/CPIMC/CPIMC.jl.git",
